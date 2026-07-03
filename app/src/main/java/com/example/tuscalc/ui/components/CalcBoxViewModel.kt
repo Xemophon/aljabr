@@ -36,8 +36,8 @@ fun CalcBox(
     ) {
         Text(
             text = expression,
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontSize = if (expression.length > 12) 24.sp else 32.sp,
+            style = MaterialTheme.typography.displayMedium.copy(
+                fontSize = if (expression.length > 12) 32.sp else 40.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End
             ),

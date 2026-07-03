@@ -25,8 +25,7 @@ import com.example.tuscalc.ui.components.CalcButtons
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 
 @Composable
-fun BasicCalc() {
-    val viewModel: CalcBoxViewModel = viewModel()
+fun BasicCalc( viewModel: CalcBoxViewModel = viewModel() ) {
     var isExpanded by remember { mutableStateOf(false) }
     var isInverse by remember { mutableStateOf(false) }
 
