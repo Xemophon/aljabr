@@ -46,6 +46,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
                 ScientificType.COS -> CalcButtonAction.Scientific("acos", ScientificType.ACOS)
                 ScientificType.TAN -> CalcButtonAction.Scientific("atan", ScientificType.ATAN)
                 ScientificType.LOG -> CalcButtonAction.Scientific("ln", ScientificType.LN)
+                ScientificType.SQRT -> CalcButtonAction.Scientific(text= "!", ScientificType.FACTORIEL)
                 else -> this
             }
         }
@@ -53,7 +54,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
     }
 }
 
-enum class ScientificType { SQRT, PI, E, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN }
+enum class ScientificType { SQRT, PI, E, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIEL }
 
 val StandardButtonsGrid = listOf(
     listOf(CalcButtonAction.Clear, CalcButtonAction.Symbol("( )"), CalcButtonAction.Symbol("%"), CalcButtonAction.Symbol("/")),

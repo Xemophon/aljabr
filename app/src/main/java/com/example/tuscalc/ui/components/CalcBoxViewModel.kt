@@ -109,6 +109,13 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
+        if (action.type == ScientificType.FACTORIEL) {
+            if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
+                displayText += "!"
+            }
+            return
+        }
+
         val lastChar = displayText.trim().lastOrNull()
         val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')') && displayText != "0"
         val prefix = if (isPrevDigitOrParen) " * " else ""
@@ -147,7 +154,7 @@ class CalcBoxViewModel : ViewModel() {
             " * sin(", "sin(", " * cos(", "cos(", " * tan(", "tan(",
             " * log(", "log(", " * ln(", "ln(", " * sqrt(", "sqrt(",
             " * pi", "pi", " * e", "e",
-            " / ", " * ", " + ", " - ", " ^ ", "( )"
+            " / ", " * ", " + ", " - ", " ^ ", "( )", "!"
         )
         val matchedToken = tokens.find { displayText.endsWith(it) }
         if (matchedToken != null) {

@@ -151,10 +151,10 @@ object CalcFuncs {
                 // Postfix operators
                 while (true) {
                     while (ch == ' '.code) nextChar() // Skip spaces before postfix operators
-                    if (eat('!'.code)) {
-                        x = factorial(x)
-                    } else if (eat('%'.code)) {
+                    if (eat('%'.code)) {
                         x /= 100.0
+                    } else if (eat('!'.code)) {
+                        x = factorial(x)
                     } else if (eat('^'.code)) {
                         x = x.pow(parseFactor())
                     } else {
