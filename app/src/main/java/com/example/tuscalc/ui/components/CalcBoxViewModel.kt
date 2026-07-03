@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import com.example.tuscalc.CalcFuncs
+import com.example.tuscalc.basicCalc.CalcFuncs
 
 @Composable
 fun CalcBox(
