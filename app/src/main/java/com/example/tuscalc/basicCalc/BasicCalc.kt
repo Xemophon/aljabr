@@ -42,7 +42,8 @@ fun BasicCalc() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CalcBox(
-                num = viewModel.displayText,
+                expression = viewModel.displayText,
+                result = viewModel.resultText,
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.height(8.dp))

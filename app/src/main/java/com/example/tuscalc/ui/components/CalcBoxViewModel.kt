@@ -1,7 +1,10 @@
 package com.example.tuscalc.ui.components
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,24 +23,38 @@ import com.example.tuscalc.basicCalc.CalcFuncs
 
 @Composable
 fun CalcBox(
-    num: String,
+    expression: String,
+    result: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(24.dp),
-        contentAlignment = Alignment.BottomEnd
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.End
     ) {
         Text(
-            text = num,
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = if (num.length > 8) 48.sp else 64.sp,
+            text = expression,
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontSize = if (expression.length > 12) 24.sp else 32.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End
             ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
             maxLines = 2,
+            lineHeight = 36.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = result,
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = if (result.length > 8) 48.sp else 64.sp,
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.End
+            ),
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            maxLines = 1,
             lineHeight = 70.sp
         )
     }
@@ -47,19 +64,32 @@ class CalcBoxViewModel : ViewModel() {
     var displayText by mutableStateOf("0")
         private set
 
+    var resultText by mutableStateOf("")
+        private set
+
     fun handleAction(action: CalcButtonAction) {
         when (action) {
             is CalcButtonAction.Calculate -> calculateResult()
-            is CalcButtonAction.Clear -> displayText = "0"
-            is CalcButtonAction.Backspace -> handleBackspace()
+            is CalcButtonAction.Clear -> {
+                displayText = "0"
+                resultText = ""
+            }
+            is CalcButtonAction.Backspace -> {
+                handleBackspace()
+                updateInstantResult()
+            }
             is CalcButtonAction.Symbol -> {
                 when (action.text) {
                     "( )", "()" -> handleBrackets()
                     "%" -> handlePercentage()
                     else -> handleSymbol(action.text)
                 }
+                updateInstantResult()
             }
-            is CalcButtonAction.Scientific -> handleScientific(action)
+            is CalcButtonAction.Scientific -> {
+                handleScientific(action)
+                updateInstantResult()
+            }
         }
     }
 
@@ -139,12 +169,33 @@ class CalcBoxViewModel : ViewModel() {
         }
     }
 
-    private fun calculateResult() {
-        displayText = try {
+    private fun updateInstantResult() {
+        if (displayText == "0" || displayText.isBlank()) {
+            resultText = ""
+            return
+        }
+
+        try {
             val result = CalcFuncs.calculateExpression(displayText)
-            CalcFuncs.formatResult(result)
+            resultText = if (result.isNaN()) "" else CalcFuncs.formatResult(result)
         } catch (e: Exception) {
-            "Error"
+            resultText = ""
+        }
+    }
+
+    private fun calculateResult() {
+        if (resultText.isNotEmpty() && resultText != "Error") {
+            displayText = resultText
+            resultText = ""
+        } else {
+            try {
+                val result = CalcFuncs.calculateExpression(displayText)
+                displayText = CalcFuncs.formatResult(result)
+                resultText = ""
+            } catch (e: Exception) {
+                displayText = "Error"
+                resultText = ""
+            }
         }
     }
 
