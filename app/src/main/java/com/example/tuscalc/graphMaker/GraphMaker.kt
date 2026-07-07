@@ -24,10 +24,10 @@ import com.example.tuscalc.ui.components.CalcBox
 import com.example.tuscalc.ui.components.CalcBoxViewModel
 import com.example.tuscalc.ui.components.CalcButtonAction
 import com.example.tuscalc.ui.components.CalcButtonsGraph
+import com.example.tuscalc.ui.components.CalculatorScaffold
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GraphMaker(
     viewModel: CalcBoxViewModel = viewModel(),
@@ -40,28 +40,12 @@ fun GraphMaker(
     var isInverse by remember { mutableStateOf(false) }
     var showGraph by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(if (showGraph) "Graph Analysis" else "Graph Equation") },
-                navigationIcon = {
-                    if (showGraph) {
-                        IconButton(onClick = { showGraph = false }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    } else {
-                        IconButton(onClick = onOpenDrawer) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
+    CalculatorScaffold(
+        title = { Text(if (showGraph) "Graph Analysis" else "Graph Equation") },
+        onOpenDrawer = onOpenDrawer,
+        navigationIcon = if (showGraph) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Menu,
+        navigationIconAction = if (showGraph) { { showGraph = false } } else onOpenDrawer,
+        navigationIconContentDescription = if (showGraph) "Back" else "Menu"
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -82,6 +66,8 @@ fun GraphMaker(
                     CalcBox(
                         expression = viewModel.displayText,
                         result = viewModel.resultText,
+                        cursorIndex = viewModel.cursorIndex,
+                        onCursorIndexChange = { viewModel.updateCursorIndex(it) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.height(8.dp))

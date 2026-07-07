@@ -2,31 +2,23 @@ package com.example.tuscalc.basicCalc
 
 import java.math.RoundingMode
 import java.text.DecimalFormat
-import kotlin.math.E
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.acos
-import kotlin.math.asin
-import kotlin.math.atan
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.ln
-import kotlin.math.log10
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
-import kotlin.math.tan
+import kotlin.math.*
 
 object CalcFuncs {
+    private val visualToMathMap = mapOf(
+        "÷" to "/",
+        "×" to "*",
+        "√" to "sqrt",
+        "π" to "pi"
+    )
+
     fun calculateExpression(input: String, variables: Map<String, Double> = emptyMap(), useRadians: Boolean = false): Double {
         if (input.isBlank()) return 0.0
         return try {
-            // Clean up the input string: replace visual operators with math ones
-            val cleanedInput = input.replace("÷", "/")
-                .replace("×", "*")
-                .replace("√", "sqrt")
-                .replace("π", "pi")
-
+            var cleanedInput = input
+            visualToMathMap.forEach { (visual, math) ->
+                cleanedInput = cleanedInput.replace(visual, math)
+            }
             evaluate(cleanedInput, variables, useRadians)
         } catch (e: Exception) {
             Double.NaN
@@ -54,10 +46,8 @@ object CalcFuncs {
             fun parse(): Double {
                 nextChar()
                 val x = parseExpression()
-                // Skip trailing spaces
                 while (ch == ' '.code) nextChar()
-                if (pos < expression.length) return Double.NaN
-                return x
+                return if (pos < expression.length) Double.NaN else x
             }
 
             fun parseExpression(): Double {
@@ -67,20 +57,12 @@ object CalcFuncs {
                         eat('+'.code) -> {
                             val startPos = pos
                             val y = parseTerm()
-                            if (expression.substring(startPos, pos).trim().endsWith('%')) {
-                                x += x * (y * 100) * 0.01
-                            } else {
-                                x += y
-                            }
+                            x += if (expression.substring(startPos, pos).trim().endsWith('%')) x * (y * 100) * 0.01 else y
                         }
                         eat('-'.code) -> {
                             val startPos = pos
                             val y = parseTerm()
-                            if (expression.substring(startPos, pos).trim().endsWith('%')) {
-                                x -= x * (y * 100) * 0.01
-                            } else {
-                                x -= y
-                            }
+                            x -= if (expression.substring(startPos, pos).trim().endsWith('%')) x * (y * 100) * 0.01 else y
                         }
                         else -> return x
                     }
@@ -97,8 +79,6 @@ object CalcFuncs {
                             if (divisor == 0.0) throw ArithmeticException("Division by zero")
                             x /= divisor
                         }
-                        // Implicit multiplication ONLY if we have '(' or a letter (function/constant/variable)
-                        // AND we haven't just processed an operator (which would have been eaten by the 'when' above)
                         peekImplicit() -> x *= parseFactor()
                         else -> return x
                     }
@@ -107,79 +87,80 @@ object CalcFuncs {
 
             private fun peekImplicit(): Boolean {
                 var tempPos = pos
-                while (tempPos < expression.length && expression[tempPos] == ' ') {
-                    tempPos++
-                }
+                while (tempPos < expression.length && expression[tempPos] == ' ') tempPos++
                 if (tempPos >= expression.length) return false
                 val next = expression[tempPos]
-
                 return next == '(' || (next in 'a'..'z')
             }
 
             fun parseFactor(): Double {
-                // Skip leading spaces
                 while (ch == ' '.code) nextChar()
-
-                if (eat('+'.code)) return parseFactor() // unary plus
-                if (eat('-'.code)) return -parseFactor() // unary minus
+                if (eat('+'.code)) return parseFactor()
+                if (eat('-'.code)) return -parseFactor()
 
                 var x: Double
                 val startPos = pos
-                if (eat('('.code)) { // parentheses
+                if (eat('('.code)) {
                     x = parseExpression()
-                    eat(')'.code) // Auto-close: try to eat, but don't fail if missing
-                } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) { // numbers
+                    eat(')'.code)
+                } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                     x = expression.substring(startPos, pos).toDouble()
-                } else if (ch >= 'a'.code && ch <= 'z'.code) { // functions or variables
+                } else if (ch >= 'a'.code && ch <= 'z'.code) {
                     while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
                     val func = expression.substring(startPos, pos)
                     x = when {
                         variables.containsKey(func) -> variables[func]!!
                         func == "pi" -> PI
                         func == "e" -> E
-                        listOf("sqrt", "sin", "cos", "tan", "log", "ln", "atan", "acos", "asin").contains(func) -> {
-                            val arg = parseFactor()
-                            when (func) {
-                                "sqrt" -> sqrt(arg)
-                                "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
-                                "cos" -> if (useRadians) cos(arg) else cos(Math.toRadians(arg))
-                                "tan" -> if (useRadians) tan(arg) else tan(Math.toRadians(arg))
-                                "log" -> log10(arg)
-                                "asin" -> if (useRadians) asin(arg) else Math.toDegrees(asin(arg))
-                                "acos" -> if (useRadians) acos(arg) else Math.toDegrees(acos(arg))
-                                "atan" -> if (useRadians) atan(arg) else Math.toDegrees(atan(arg))
-                                "ln" -> ln(arg)
-                                else -> throw RuntimeException("Unknown function: $func")
-                            }
-                        }
-                        else -> throw RuntimeException("Unknown function or variable: $func")
+                        else -> handleFunction(func)
                     }
-                } else {
-                    return Double.NaN
-                }
+                } else return Double.NaN
 
-                // Postfix operators
+                return parsePostfix(x)
+            }
+
+            private fun handleFunction(func: String): Double {
+                val arg = parseFactor()
+                return when (func) {
+                    "sqrt" -> sqrt(arg)
+                    "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
+                    "cos" -> if (useRadians) cos(arg) else cos(Math.toRadians(arg))
+                    "tan" -> if (useRadians) tan(arg) else tan(Math.toRadians(arg))
+                    "log" -> log10(arg)
+                    "asin" -> if (useRadians) asin(arg) else Math.toDegrees(asin(arg))
+                    "acos" -> if (useRadians) acos(arg) else Math.toDegrees(acos(arg))
+                    "atan" -> if (useRadians) atan(arg) else Math.toDegrees(atan(arg))
+                    "ln" -> ln(arg)
+                    else -> throw RuntimeException("Unknown function: $func")
+                }
+            }
+
+            private fun parsePostfix(initialX: Double): Double {
+                var x = initialX
                 while (true) {
-                    while (ch == ' '.code) nextChar() // Skip spaces before postfix operators
-                    if (eat('%'.code)) {
-                        x /= 100.0
-                    } else if (eat('!'.code)) {
-                        x = factorial(x)
-                    } else if (eat('^'.code)) {
-                        val exponent = parseFactor()
-                        x = when {
-                            x < 0 && abs(exponent - (1.0 / 3.0)) < 1e-9 -> -abs(x).pow(1.0 / 3.0)
-                            x < 0 && abs(exponent - (1.0 / 5.0)) < 1e-9 -> -abs(x).pow(1.0 / 5.0)
-                            x < 0 && abs(exponent - (1.0 / 7.0)) < 1e-9 -> -abs(x).pow(1.0 / 7.0)
-                            else -> x.pow(exponent)
+                    while (ch == ' '.code) nextChar()
+                    when {
+                        eat('%'.code) -> x /= 100.0
+                        eat('!'.code) -> x = factorial(x)
+                        eat('^'.code) -> {
+                            val exponent = parseFactor()
+                            x = handlePower(x, exponent)
                         }
-                    } else {
-                        break
+                        else -> return x
                     }
                 }
+            }
 
-                return x
+            private fun handlePower(base: Double, exponent: Double): Double {
+                return if (base < 0) {
+                    when {
+                        abs(exponent - (1.0 / 3.0)) < 1e-9 -> -abs(base).pow(1.0 / 3.0)
+                        abs(exponent - (1.0 / 5.0)) < 1e-9 -> -abs(base).pow(1.0 / 5.0)
+                        abs(exponent - (1.0 / 7.0)) < 1e-9 -> -abs(base).pow(1.0 / 7.0)
+                        else -> base.pow(exponent)
+                    }
+                } else base.pow(exponent)
             }
 
             private fun factorial(n: Double): Double {
@@ -195,15 +176,10 @@ object CalcFuncs {
     fun formatResult(value: Double): String {
         if (value.isNaN()) return "Error"
         if (value.isInfinite()) return "Infinity"
-
-        // If it's effectively an integer, show as integer
-        if (value == floor(value) && value <= Long.MAX_VALUE && value >= Long.MIN_VALUE) {
+        if (value == floor(value) && value in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble()) {
             return value.toLong().toString()
         }
-
-        // Using DecimalFormat for precise rounding to 4th digit
-        val df = DecimalFormat("0.####")
-        df.roundingMode = RoundingMode.HALF_UP
+        val df = DecimalFormat("0.####").apply { roundingMode = RoundingMode.HALF_UP }
         val result = df.format(value).replace(",", ".")
         return if (result == "-0") "0" else result
     }

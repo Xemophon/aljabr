@@ -7,9 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
@@ -27,14 +24,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.tuscalc.graphMaker.GraphMaker
-import com.example.tuscalc.basicCalc.BasicCalc
+import com.example.tuscalc.navigation.AllCalculatorVariants
+import com.example.tuscalc.navigation.BasicCalcRoute
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-
-@Serializable object BasicCalcRoute
-@Serializable object GraphMaker
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,30 +46,24 @@ class MainActivity : ComponentActivity() {
                     drawerContent = {
                         ModalDrawerSheet {
                             Spacer(modifier = Modifier.height(12.dp))
-                            NavigationDrawerItem(
-                                label = { Text("Basic Calculator") },
-                                icon = { Icon(Icons.Default.Calculate, contentDescription = null) },
-                                selected = currentDestination?.hasRoute<BasicCalcRoute>() == true,
-                                onClick = {
-                                    navController.navigate(BasicCalcRoute) {
-                                        popUpTo(BasicCalcRoute) { inclusive = true }
-                                    }
-                                    scope.launch { drawerState.close() }
-                                },
-                                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                            )
-                            NavigationDrawerItem(
-                                label = { Text("Graph Maker") },
-                                icon = { Icon(Icons.Default.Functions, contentDescription = null) },
-                                selected = currentDestination?.hasRoute<GraphMaker>() == true,
-                                onClick = {
-                                    navController.navigate(GraphMaker) {
-                                        popUpTo(BasicCalcRoute) { saveState = true }
-                                    }
-                                    scope.launch { drawerState.close() }
-                                },
-                                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                            )
+                            AllCalculatorVariants.forEach { variant ->
+                                NavigationDrawerItem(
+                                    label = { Text(variant.label) },
+                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
+                                    onClick = {
+                                        navController.navigate(variant.route) {
+                                            if (variant.route is BasicCalcRoute) {
+                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                            } else {
+                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                            }
+                                        }
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                )
+                            }
                         }
                     }
                 ) {
@@ -84,11 +71,10 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = BasicCalcRoute
                     ) {
-                        composable<BasicCalcRoute> {
-                            BasicCalc(onOpenDrawer = { scope.launch { drawerState.open() } })
-                        }
-                        composable<GraphMaker> {
-                            GraphMaker(onOpenDrawer = { scope.launch { drawerState.open() } })
+                        AllCalculatorVariants.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
                         }
                     }
                 }

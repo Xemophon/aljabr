@@ -8,17 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +24,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tuscalc.ui.components.CalcBox
 import com.example.tuscalc.ui.components.CalcBoxViewModel
 import com.example.tuscalc.ui.components.CalcButtons
+import com.example.tuscalc.ui.components.CalculatorScaffold
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BasicCalc(
     viewModel: CalcBoxViewModel = viewModel(),
@@ -43,22 +35,9 @@ fun BasicCalc(
     var isExpanded by remember { mutableStateOf(false) }
     var isInverse by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Basic Calculator") },
-                navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
+    CalculatorScaffold(
+        title = { Text("Basic Calculator") },
+        onOpenDrawer = onOpenDrawer
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -76,6 +55,8 @@ fun BasicCalc(
                 CalcBox(
                     expression = viewModel.displayText,
                     result = viewModel.resultText,
+                    cursorIndex = viewModel.cursorIndex,
+                    onCursorIndexChange = { viewModel.updateCursorIndex(it) },
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
