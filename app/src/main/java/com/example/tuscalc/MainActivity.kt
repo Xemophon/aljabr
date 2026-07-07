@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                             )
                             NavigationDrawerItem(
-                                label = { Text("Advanced Calculator") },
+                                label = { Text("Graph Maker") },
                                 icon = { Icon(Icons.Default.Functions, contentDescription = null) },
                                 selected = currentDestination?.hasRoute<GraphMaker>() == true,
                                 onClick = {

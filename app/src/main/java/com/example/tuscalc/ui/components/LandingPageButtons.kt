@@ -158,23 +158,40 @@ fun CalcButtonsGraph(
                     onClick = onToggleInverse,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
-                    )
+                    ),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Inverse",
+                        text = "Inv",
                         color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
+
                 Button(
                     onClick = onVisualize,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Visualize",
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        text = "Graph",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+
+                Button(
+                    onClick = { onAction(CalcButtonAction.Clear) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Clear",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

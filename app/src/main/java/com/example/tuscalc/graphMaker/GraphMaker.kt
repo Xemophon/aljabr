@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tuscalc.ui.components.CalcBox
 import com.example.tuscalc.ui.components.CalcBoxViewModel
+import com.example.tuscalc.ui.components.CalcButtonAction
 import com.example.tuscalc.ui.components.CalcButtonsGraph
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 import kotlin.math.roundToInt
@@ -91,7 +92,11 @@ fun GraphMaker(
                         onVisualize = { showGraph = true },
                         modifier = Modifier.fillMaxWidth(),
                         onAction = { action ->
-                            viewModel.handleAction(action)
+                            if (action is CalcButtonAction.Graph) {
+                                showGraph = true
+                            } else {
+                                viewModel.handleAction(action)
+                            }
                         }
                     )
                 }
@@ -110,9 +115,11 @@ fun InteractiveGraphView(expression: String) {
     
     val minX = (-rangeX / 2 + viewportOffset.x).toDouble()
     val maxX = (rangeX / 2 + viewportOffset.x).toDouble()
+    val minY = (-rangeY / 2 + viewportOffset.y).toDouble()
+    val maxY = (rangeY / 2 + viewportOffset.y).toDouble()
 
-    val result = remember(expression, minX, maxX) {
-        GraphGenerator.generateAndAnalyze(expression, minX, maxX, 1000)
+    val result = remember(expression, minX, maxX, minY, maxY) {
+        GraphGenerator.generateAndAnalyze(expression, minX, maxX, minY, maxY, 1000)
     }
     val points = result.first
     val analysis = result.second
@@ -123,6 +130,11 @@ fun InteractiveGraphView(expression: String) {
     val graphColor = MaterialTheme.colorScheme.primary
     val asymptoteColor = MaterialTheme.colorScheme.error
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
+    // Material You Colors for elements
+    val critPointMin = MaterialTheme.colorScheme.secondaryFixed
+    val critPointMax = MaterialTheme.colorScheme.secondaryFixedDim
+    val inflectPoint = MaterialTheme.colorScheme.tertiaryFixed
+    val dotSize = 10f
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(
@@ -159,7 +171,7 @@ fun InteractiveGraphView(expression: String) {
                     color = gridColor,
                     start = Offset(x, 0f),
                     end = Offset(x, height),
-                    strokeWidth = 1f
+                    strokeWidth = 1.2f
                 )
                 startX += gridStep.toFloat()
             }
@@ -174,7 +186,7 @@ fun InteractiveGraphView(expression: String) {
                     color = gridColor,
                     start = Offset(0f, y),
                     end = Offset(width, y),
-                    strokeWidth = 1f
+                    strokeWidth = 1.2f
                 )
                 startY += gridStep.toFloat()
             }
@@ -216,7 +228,7 @@ fun InteractiveGraphView(expression: String) {
                     drawPath(
                         path = path,
                         color = graphColor,
-                        style = Stroke(width = 4f)
+                        style = Stroke(width = 4.5f)
                     )
                 }
             }
@@ -224,22 +236,22 @@ fun InteractiveGraphView(expression: String) {
             // Draw Critical Points
             analysis.localMaxima.forEach { p ->
                 drawCircle(
-                    color = Color.Red,
-                    radius = 6f,
+                    color = critPointMax,
+                    radius = dotSize,
                     center = Offset(centerX + p.x * scaleX, centerY - p.y * scaleY)
                 )
             }
             analysis.localMinima.forEach { p ->
                 drawCircle(
-                    color = Color.Blue,
-                    radius = 6f,
+                    color = critPointMin,
+                    radius = dotSize,
                     center = Offset(centerX + p.x * scaleX, centerY - p.y * scaleY)
                 )
             }
             analysis.inflectionPoints.forEach { p ->
                 drawCircle(
-                    color = Color(0xFF4CAF50), // Material Green
-                    radius = 6f,
+                    color = inflectPoint,
+                    radius = dotSize,
                     center = Offset(centerX + p.x * scaleX, centerY - p.y * scaleY)
                 )
             }

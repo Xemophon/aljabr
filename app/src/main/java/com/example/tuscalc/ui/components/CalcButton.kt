@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.annotation.DrawableRes
+import androidx.compose.ui.unit.sp
 import com.example.tuscalc.R
 
 import com.example.tuscalc.ui.theme.Dimens
@@ -28,14 +29,16 @@ sealed interface CalcButtonAction {
     data class Variable(val text: String, val type: Variables) : CalcButtonAction
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
+    data object Graph : CalcButtonAction
     data class Backspace(@param:DrawableRes val iconRes: Int) : CalcButtonAction
 }
 
 val CalcButtonAction.isOperator: Boolean
     get() = when (this) {
-        is CalcButtonAction.Symbol -> text in listOf("÷", "×", "-", "+", "C", "( )", "%", "^")
+        is CalcButtonAction.Symbol -> text in listOf("÷", "×", "-", "+", "C", "( )", "%", "^", "=")
         is CalcButtonAction.Clear -> true
         is CalcButtonAction.Calculate -> true
+        is CalcButtonAction.Graph -> true
         is CalcButtonAction.Variable -> false
         else -> false
     }
@@ -79,13 +82,13 @@ val ScientificButtonsGrid = listOf(
 )
 
 val GraphButtonsGrid = listOf(
-    listOf(CalcButtonAction.Variable("x", Variables.X), CalcButtonAction.Variable("y", Variables.Y), CalcButtonAction.Symbol("("), CalcButtonAction.Symbol(")"), CalcButtonAction.Clear),
+    listOf(CalcButtonAction.Variable("x", Variables.X), CalcButtonAction.Variable("y", Variables.Y), CalcButtonAction.Symbol("("), CalcButtonAction.Symbol(")")),
     listOf(CalcButtonAction.Scientific("sin", ScientificType.SIN), CalcButtonAction.Scientific("cos", ScientificType.COS), CalcButtonAction.Scientific("tan", ScientificType.TAN), CalcButtonAction.Scientific("log", ScientificType.LOG)),
-    listOf(CalcButtonAction.Symbol("^"), CalcButtonAction.Scientific("√", ScientificType.SQRT), CalcButtonAction.Scientific("π", ScientificType.PI), CalcButtonAction.Scientific("e", ScientificType.E)),
-    listOf(CalcButtonAction.Symbol("7"), CalcButtonAction.Symbol("8"), CalcButtonAction.Symbol("9"), CalcButtonAction.Symbol("÷", "/")),
-    listOf(CalcButtonAction.Symbol("4"), CalcButtonAction.Symbol("5"), CalcButtonAction.Symbol("6"), CalcButtonAction.Symbol("×", "*")),
+    listOf(CalcButtonAction.Scientific("π", ScientificType.PI), CalcButtonAction.Scientific("e", ScientificType.E), CalcButtonAction.Symbol("^", " ^ "),CalcButtonAction.Symbol("÷", "/")),
+    listOf(CalcButtonAction.Symbol("7"), CalcButtonAction.Symbol("8"), CalcButtonAction.Symbol("9"),CalcButtonAction.Symbol("×", "*"),),
+    listOf(CalcButtonAction.Symbol("4"), CalcButtonAction.Symbol("5"), CalcButtonAction.Symbol("6"), CalcButtonAction.Symbol("+")),
     listOf(CalcButtonAction.Symbol("1"), CalcButtonAction.Symbol("2"), CalcButtonAction.Symbol("3"), CalcButtonAction.Symbol("-")),
-    listOf(CalcButtonAction.Symbol("0"), CalcButtonAction.Symbol("."), CalcButtonAction.Backspace(R.drawable.backspace), CalcButtonAction.Symbol("+"))
+    listOf(CalcButtonAction.Symbol("0"), CalcButtonAction.Symbol("."), CalcButtonAction.Backspace(R.drawable.backspace), CalcButtonAction.Symbol("="))
 )
 
 @Composable
@@ -154,6 +157,14 @@ fun CalcButton(
                 Text(
                     text = "=",
                     style = textStyle,
+                    color = contentColor
+                )
+            }
+
+            CalcButtonAction.Graph -> {
+                Text(
+                    text = "Graph",
+                    style = textStyle.copy(fontSize = if (isExpanded) 14.sp else 18.sp),
                     color = contentColor
                 )
             }

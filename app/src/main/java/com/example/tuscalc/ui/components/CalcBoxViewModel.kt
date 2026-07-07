@@ -74,6 +74,7 @@ class CalcBoxViewModel : ViewModel() {
     fun handleAction(action: CalcButtonAction) {
         when (action) {
             is CalcButtonAction.Calculate -> calculateResult()
+            is CalcButtonAction.Graph -> { /* Handled in UI specifically for GraphMaker */ }
             is CalcButtonAction.Clear -> {
                 displayText = "0"
                 resultText = ""
