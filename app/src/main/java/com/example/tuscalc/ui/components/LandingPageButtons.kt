@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.tuscalc.ui.theme.Dimens
 
 @Composable
@@ -66,7 +66,9 @@ fun CalcButtons(
                 ) {
                     Text(
                         text = if (isExpanded) "Standard" else "Scientific",
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 24.sp
                     )
                 }
                 if (isExpanded) {
@@ -77,7 +79,7 @@ fun CalcButtons(
                             else MaterialTheme.colorScheme.tertiaryContainer
                         )) {
                         Text(
-                            text = "Inv",
+                            text = "Inverse",
                             color = if (isInverse)
                                 MaterialTheme.colorScheme.onTertiary
                             else MaterialTheme.colorScheme.onTertiaryContainer
@@ -126,6 +128,69 @@ fun CalcButtons(
 }
 
 @Composable
+fun CalcButtonsGraph(
+    modifier: Modifier = Modifier,
+    isInverse: Boolean = false,
+    onToggleInverse: () -> Unit,
+    onVisualize: () -> Unit,
+    onAction: (CalcButtonAction) -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.primaryFixedDim,
+        shape = AbsoluteRoundedCornerShape(
+            topLeft = Dimens.LandingPageCornerRadius,
+            topRight = Dimens.LandingPageCornerRadius
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+            ) {
+                Button(
+                    onClick = onToggleInverse,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Text(
+                        text = "Inverse",
+                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+                Button(
+                    onClick = onVisualize,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Text(
+                        text = "Visualize",
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
+            ButtonGrid(
+                gridData = GraphButtonsGrid,
+                buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
+                isExpanded = true,
+                isInverse = isInverse,
+                onAction = onAction
+            )
+        }
+    }
+}
+
+@Composable
 private fun ButtonGrid(
     gridData: List<List<CalcButtonAction>>,
     buttonAspectRatio: Float,
@@ -163,6 +228,10 @@ private data class ButtonColorPalette(val containerColor: Color, val contentColo
 private fun getButtonColors(action: CalcButtonAction): ButtonColorPalette {
     return when (action) {
         is CalcButtonAction.Calculate -> ButtonColorPalette(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        is CalcButtonAction.Variable -> ButtonColorPalette(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer
         )

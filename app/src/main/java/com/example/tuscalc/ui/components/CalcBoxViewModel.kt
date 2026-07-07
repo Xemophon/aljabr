@@ -41,22 +41,24 @@ fun CalcBox(
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End
             ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             maxLines = 2,
             lineHeight = 36.sp
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = result,
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = if (result.length > 8) 48.sp else 64.sp,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.End
-            ),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            maxLines = 1,
-            lineHeight = 70.sp
-        )
+        if (result.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = result,
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontSize = if (result.length > 8) 48.sp else 64.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.End
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                lineHeight = 70.sp
+            )
+        }
     }
 }
 
@@ -66,6 +68,8 @@ class CalcBoxViewModel : ViewModel() {
 
     var resultText by mutableStateOf("")
         private set
+
+    var calculationEnabled by mutableStateOf(true)
 
     fun handleAction(action: CalcButtonAction) {
         when (action) {
@@ -88,6 +92,11 @@ class CalcBoxViewModel : ViewModel() {
             }
             is CalcButtonAction.Scientific -> {
                 handleScientific(action)
+                updateInstantResult()
+            }
+
+            is CalcButtonAction.Variable -> {
+                handleVariable(action)
                 updateInstantResult()
             }
         }
@@ -116,15 +125,15 @@ class CalcBoxViewModel : ViewModel() {
         displayText = when {
             displayText == "0" -> "("
             openBrackets > closedBrackets -> {
-                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || displayText.endsWith("pi") || displayText.endsWith("e"))) {
+                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || displayText.endsWith("π") || displayText.endsWith("e"))) {
                     "$displayText)"
                 } else {
                     "$displayText("
                 }
             }
             else -> {
-                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || displayText.endsWith("pi") || displayText.endsWith("e"))) {
-                    "$displayText * ("
+                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || displayText.endsWith("π") || displayText.endsWith("e"))) {
+                    "$displayText × ("
                 } else {
                     if (displayText == "0") "(" else "$displayText("
                 }
@@ -139,7 +148,7 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
-        if (action.type == ScientificType.FACTORIEL) {
+        if (action.type == ScientificType.FACTORIAL) {
             if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
                 displayText += "!"
             }
@@ -147,15 +156,15 @@ class CalcBoxViewModel : ViewModel() {
         }
 
         val lastChar = displayText.trim().lastOrNull()
-        val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')') && displayText != "0"
-        val prefix = if (isPrevDigitOrParen) " * " else ""
+        val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+        val prefix = if (isPrevDigitOrParen) " × " else ""
 
         // If starting fresh, clear the default "0" unless multiplying
         if (displayText == "0" && prefix.isEmpty()) displayText = ""
 
         displayText += when(action.type) {
-            ScientificType.SQRT -> "${prefix}sqrt("
-            ScientificType.PI -> "${prefix}pi"
+            ScientificType.SQRT -> "${prefix}√("
+            ScientificType.PI -> "${prefix}π"
             ScientificType.E -> "${prefix}e"
             ScientificType.ASIN -> "${prefix}asin("
             ScientificType.ACOS -> "${prefix}acos("
@@ -169,8 +178,22 @@ class CalcBoxViewModel : ViewModel() {
         }
     }
 
+    private fun handleVariable(action: CalcButtonAction.Variable) {
+        val lastChar = displayText.trim().lastOrNull()
+        val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+        val prefix = if (isPrevDigitOrParen) " × " else ""
+
+        if (displayText == "0" && prefix.isEmpty()) displayText = ""
+        displayText += "$prefix${action.text}"
+    }
+
     private fun updateInstantResult() {
-        if (displayText == "0" || displayText.isBlank()) {
+        if (!calculationEnabled || displayText == "0" || displayText.isBlank()) {
+            resultText = ""
+            return
+        }
+
+        if (!shouldPerformInstantCalculation(displayText)) {
             resultText = ""
             return
         }
@@ -181,6 +204,13 @@ class CalcBoxViewModel : ViewModel() {
         } catch (e: Exception) {
             resultText = ""
         }
+    }
+
+    private fun shouldPerformInstantCalculation(input: String): Boolean {
+        // Only calculate if it contains operators, functions or constants
+        val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'x', 'y')
+        val hasScientific = listOf("sin", "cos", "tan", "log", "ln", "asin", "acos", "atan").any { input.contains(it) }
+        return input.any { it in operators } || hasScientific
     }
 
     private fun calculateResult() {
@@ -201,11 +231,11 @@ class CalcBoxViewModel : ViewModel() {
 
     private fun handleBackspace() {
         val tokens = listOf(
-            " * asin(", "asin(", " * acos(", "acos(", " * atan(", "atan(",
-            " * sin(", "sin(", " * cos(", "cos(", " * tan(", "tan(",
-            " * log(", "log(", " * ln(", "ln(", " * sqrt(", "sqrt(",
-            " * pi", "pi", " * e", "e",
-            " / ", " * ", " + ", " - ", " ^ ", "( )", "!"
+            " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
+            " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
+            " × log(", "log(", " × ln(", "ln(", " × √(", "√(",
+            " × π", "π", " × e", "e",
+            " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )
         val matchedToken = tokens.find { displayText.endsWith(it) }
         if (matchedToken != null) {

@@ -4,6 +4,7 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.math.E
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.asin
 import kotlin.math.atan
@@ -17,18 +18,22 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 
 object CalcFuncs {
-    fun calculateExpression(input: String): Double {
+    fun calculateExpression(input: String, variables: Map<String, Double> = emptyMap(), useRadians: Boolean = false): Double {
         if (input.isBlank()) return 0.0
         return try {
             // Clean up the input string: replace visual operators with math ones
-            val cleanedInput = input.replace("x", "*").replace("÷", "/")
-            evaluate(cleanedInput)
+            val cleanedInput = input.replace("÷", "/")
+                .replace("×", "*")
+                .replace("√", "sqrt")
+                .replace("π", "pi")
+
+            evaluate(cleanedInput, variables, useRadians)
         } catch (e: Exception) {
             Double.NaN
         }
     }
 
-    private fun evaluate(expression: String): Double {
+    private fun evaluate(expression: String, variables: Map<String, Double>, useRadians: Boolean): Double {
         return object : Any() {
             var pos = -1
             var ch = 0
@@ -92,7 +97,7 @@ object CalcFuncs {
                             if (divisor == 0.0) throw ArithmeticException("Division by zero")
                             x /= divisor
                         }
-                        // Implicit multiplication ONLY if we have '(' or a letter (function/constant)
+                        // Implicit multiplication ONLY if we have '(' or a letter (function/constant/variable)
                         // AND we haven't just processed an operator (which would have been eaten by the 'when' above)
                         peekImplicit() -> x *= parseFactor()
                         else -> return x
@@ -107,13 +112,6 @@ object CalcFuncs {
                 }
                 if (tempPos >= expression.length) return false
                 val next = expression[tempPos]
-
-                // Implicit multiplication happens before '(' or a function name/constant
-                // BUT not if the CURRENT character is an operator or we just ate one.
-                // In parseTerm, we call peekImplicit() AFTER parseFactor().
-                // So if we have "2(3)", after '2', peekImplicit sees '('.
-                // If we have "pi/2", after 'pi', peekImplicit sees '/'.
-                // '/' is NOT a start of a factor that triggers implicit mult.
 
                 return next == '(' || (next in 'a'..'z')
             }
@@ -133,28 +131,29 @@ object CalcFuncs {
                 } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) { // numbers
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                     x = expression.substring(startPos, pos).toDouble()
-                } else if (ch >= 'a'.code && ch <= 'z'.code) { // functions
+                } else if (ch >= 'a'.code && ch <= 'z'.code) { // functions or variables
                     while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
                     val func = expression.substring(startPos, pos)
-                    x = when (func) {
-                        "pi" -> PI
-                        "e" -> E
-                        "sqrt", "sin", "cos", "tan", "log", "ln", "atan", "acos", "asin" -> {
+                    x = when {
+                        variables.containsKey(func) -> variables[func]!!
+                        func == "pi" -> PI
+                        func == "e" -> E
+                        listOf("sqrt", "sin", "cos", "tan", "log", "ln", "atan", "acos", "asin").contains(func) -> {
                             val arg = parseFactor()
                             when (func) {
                                 "sqrt" -> sqrt(arg)
-                                "sin" -> sin(Math.toRadians(arg))
-                                "cos" -> cos(Math.toRadians(arg))
-                                "tan" -> tan(Math.toRadians(arg))
+                                "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
+                                "cos" -> if (useRadians) cos(arg) else cos(Math.toRadians(arg))
+                                "tan" -> if (useRadians) tan(arg) else tan(Math.toRadians(arg))
                                 "log" -> log10(arg)
-                                "asin" -> Math.toDegrees(asin(arg))
-                                "acos" -> Math.toDegrees(acos(arg))
-                                "atan" -> Math.toDegrees(atan(arg))
+                                "asin" -> if (useRadians) asin(arg) else Math.toDegrees(asin(arg))
+                                "acos" -> if (useRadians) acos(arg) else Math.toDegrees(acos(arg))
+                                "atan" -> if (useRadians) atan(arg) else Math.toDegrees(atan(arg))
                                 "ln" -> ln(arg)
                                 else -> throw RuntimeException("Unknown function: $func")
                             }
                         }
-                        else -> throw RuntimeException("Unknown function: $func")
+                        else -> throw RuntimeException("Unknown function or variable: $func")
                     }
                 } else {
                     return Double.NaN
@@ -168,7 +167,13 @@ object CalcFuncs {
                     } else if (eat('!'.code)) {
                         x = factorial(x)
                     } else if (eat('^'.code)) {
-                        x = x.pow(parseFactor())
+                        val exponent = parseFactor()
+                        x = when {
+                            x < 0 && abs(exponent - (1.0 / 3.0)) < 1e-9 -> -abs(x).pow(1.0 / 3.0)
+                            x < 0 && abs(exponent - (1.0 / 5.0)) < 1e-9 -> -abs(x).pow(1.0 / 5.0)
+                            x < 0 && abs(exponent - (1.0 / 7.0)) < 1e-9 -> -abs(x).pow(1.0 / 7.0)
+                            else -> x.pow(exponent)
+                        }
                     } else {
                         break
                     }
