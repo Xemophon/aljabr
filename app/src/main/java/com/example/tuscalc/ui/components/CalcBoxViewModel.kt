@@ -119,6 +119,13 @@ class CalcBoxViewModel : ViewModel() {
     private var isShowingResult = false
 
     fun handleAction(action: CalcButtonAction) {
+        // Clear mode-specific results when any input button is pressed
+        if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
+            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS) {
+                resultText = ""
+            }
+        }
+
         when (action) {
             is CalcButtonAction.Calculate -> calculateResult()
             is CalcButtonAction.Clear -> clearAll()
@@ -154,6 +161,7 @@ class CalcBoxViewModel : ViewModel() {
 
     fun setFocus(focus: CalculatorFocus) {
         currentFocus = focus
+        if (resultText.isNotEmpty()) resultText = ""
         if (focus == CalculatorFocus.EXPRESSION) {
             cursorIndex = displayText.length
         } else {
