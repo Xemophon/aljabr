@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.example.tuscalc.basicCalc.CalcFuncs
+import com.example.tuscalc.differentiate.DiffFunc
 import com.example.tuscalc.integrate.IntegFunc
 import com.example.tuscalc.limits.LimitsFunc
 
@@ -85,7 +86,7 @@ fun CalcBox(
     }
 }
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
 
 class CalcBoxViewModel : ViewModel() {
@@ -156,6 +157,9 @@ class CalcBoxViewModel : ViewModel() {
                 switchIntegMode(action.type)
             }
             is CalcButtonAction.Graph -> { /* Handled in UI */ }
+            is CalcButtonAction.Differentiate -> {
+                null
+            }
         }
     }
 
@@ -314,7 +318,10 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun updateInstantResult() {
-        if (!calculationEnabled || displayText == "0" || displayText.isBlank() || calculatorMode == CalculatorMode.LIMITS) {
+        if (!calculationEnabled || displayText == "0" || displayText.isBlank() || 
+            calculatorMode == CalculatorMode.LIMITS || 
+            calculatorMode == CalculatorMode.DIFFERENTIATE ||
+            (calculatorMode == CalculatorMode.INTEGRATE && integType == IntegralType.DEFINITE)) {
             resultText = ""
             return
         }
@@ -339,6 +346,8 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun calculateResult() {
+        if (displayText.isEmpty() || displayText == "0") return
+
         if (calculatorMode == CalculatorMode.LIMITS) {
             runLimitCalculation()
             return
@@ -347,18 +356,28 @@ class CalcBoxViewModel : ViewModel() {
             runIntegrationCalculation()
             return
         }
+        if (calculatorMode == CalculatorMode.DIFFERENTIATE) {
+            runDifferentiateCalculation()
+            return
+        }
 
+        // Standard calculation logic
         if (resultText.isNotEmpty() && resultText != "Error") {
             displayText = resultText
             resultText = ""
+            cursorIndex = displayText.length
         } else {
             try {
                 val result = CalcFuncs.calculateExpression(displayText)
-                displayText = CalcFuncs.formatResult(result)
-                resultText = ""
+                if (!result.isNaN()) {
+                    displayText = CalcFuncs.formatResult(result)
+                    resultText = ""
+                    cursorIndex = displayText.length
+                }
             } catch (e: Exception) {
                 displayText = "Error"
                 resultText = ""
+                cursorIndex = displayText.length
             }
         }
     }
@@ -381,6 +400,8 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun runIntegrationCalculation() {
+        if (displayText.isEmpty() || displayText == "0") return
+        
         if (integType == IntegralType.DEFINITE) {
             try {
                 // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
@@ -393,16 +414,35 @@ class CalcBoxViewModel : ViewModel() {
                 }
 
                 val result = IntegFunc.integrate(displayText, lower, upper)
-                resultText = CalcFuncs.formatResult(result)
+                if (result.isNaN()) {
+                    resultText = "No convergence"
+                } else {
+                    resultText = CalcFuncs.formatResult(result)
+                }
             } catch (e: Exception) {
-                resultText = "Error"
+                resultText = "Definite Error"
             }
         } else {
             try {
-                resultText = IntegFunc.integrateIndefinite(displayText)
+                val res = IntegFunc.integrateIndefinite(displayText)
+                if (res.isNotEmpty()) {
+                    resultText = res
+                }
             } catch (e: Exception) {
-                resultText = "Error"
+                resultText = "Indefinite Error"
             }
+        }
+    }
+
+    private fun runDifferentiateCalculation() {
+        if (displayText.isEmpty() || displayText == "0") return
+        try {
+            val res = DiffFunc.differentiate(displayText)
+            if (res.isNotEmpty()) {
+                resultText = res
+            }
+        } catch (e: Exception) {
+            resultText = "Error"
         }
     }
 

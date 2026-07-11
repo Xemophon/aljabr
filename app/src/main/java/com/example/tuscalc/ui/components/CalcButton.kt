@@ -29,6 +29,7 @@ sealed interface CalcButtonAction {
     data class Variable(val text: String, val type: Variables) : CalcButtonAction
     data class Limits(val text:String, val type: LimitType) : CalcButtonAction
     data class Integrals(val text:String, val type: IntegralType) : CalcButtonAction
+    data class Differentiate(val text: String = "d/dx") : CalcButtonAction
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
     data object Graph : CalcButtonAction
@@ -44,6 +45,7 @@ val CalcButtonAction.isOperator: Boolean
         is CalcButtonAction.Variable -> false
         is CalcButtonAction.Limits -> false
         is CalcButtonAction.Integrals -> false
+        is CalcButtonAction.Differentiate -> false
         else -> false
     }
 
@@ -87,16 +89,6 @@ val ScientificButtonsGrid = listOf(
     listOf(CalcButtonAction.Scientific("√", ScientificType.SQRT), CalcButtonAction.Scientific("π", ScientificType.PI), CalcButtonAction.Scientific("e", ScientificType.E), CalcButtonAction.Symbol("^", " ^ "))
 )
 
-val LimitsButtonsGrid = listOf(
-    listOf(CalcButtonAction.Variable("x", Variables.X), CalcButtonAction.Symbol("("), CalcButtonAction.Symbol(")"), CalcButtonAction.Clear),
-    listOf(CalcButtonAction.Scientific("sin", ScientificType.SIN), CalcButtonAction.Scientific("cos", ScientificType.COS), CalcButtonAction.Scientific("tan", ScientificType.TAN), CalcButtonAction.Scientific("log", ScientificType.LOG)),
-    listOf(CalcButtonAction.Scientific("π", ScientificType.PI), CalcButtonAction.Scientific("e", ScientificType.E), CalcButtonAction.Symbol("^", " ^ "),CalcButtonAction.Symbol("÷", "/")),
-    listOf(CalcButtonAction.Symbol("7"), CalcButtonAction.Symbol("8"), CalcButtonAction.Symbol("9"),CalcButtonAction.Symbol("×", "*"),),
-    listOf(CalcButtonAction.Symbol("4"), CalcButtonAction.Symbol("5"), CalcButtonAction.Symbol("6"), CalcButtonAction.Symbol("+")),
-    listOf(CalcButtonAction.Symbol("1"), CalcButtonAction.Symbol("2"), CalcButtonAction.Symbol("3"), CalcButtonAction.Symbol("-")),
-    listOf(CalcButtonAction.Symbol("0"), CalcButtonAction.Symbol("."), CalcButtonAction.Backspace(R.drawable.backspace), CalcButtonAction.Calculate)
-)
-
 val GraphButtonsGrid = listOf(
     listOf(CalcButtonAction.Variable("x", Variables.X), CalcButtonAction.Variable("y", Variables.Y), CalcButtonAction.Symbol("("), CalcButtonAction.Symbol(")")),
     listOf(CalcButtonAction.Scientific("sin", ScientificType.SIN), CalcButtonAction.Scientific("cos", ScientificType.COS), CalcButtonAction.Scientific("tan", ScientificType.TAN), CalcButtonAction.Scientific("log", ScientificType.LOG)),
@@ -107,7 +99,7 @@ val GraphButtonsGrid = listOf(
     listOf(CalcButtonAction.Symbol("0"), CalcButtonAction.Symbol("."), CalcButtonAction.Backspace(R.drawable.backspace), CalcButtonAction.Symbol("="))
 )
 
-val IntegralsButtonsGrid = listOf(
+val SingleVariableGrid = listOf(
     listOf(CalcButtonAction.Variable("x", Variables.X), CalcButtonAction.Symbol("("), CalcButtonAction.Symbol(")"), CalcButtonAction.Clear),
     listOf(CalcButtonAction.Scientific("sin", ScientificType.SIN), CalcButtonAction.Scientific("cos", ScientificType.COS), CalcButtonAction.Scientific("tan", ScientificType.TAN), CalcButtonAction.Scientific("log", ScientificType.LOG)),
     listOf(CalcButtonAction.Scientific("π", ScientificType.PI), CalcButtonAction.Scientific("e", ScientificType.E), CalcButtonAction.Symbol("^", " ^ "),CalcButtonAction.Symbol("÷", "/")),
@@ -172,6 +164,14 @@ fun CalcButton(
             }
 
             is CalcButtonAction.Integrals -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = contentColor
+                )
+            }
+
+            is CalcButtonAction.Differentiate -> {
                 Text(
                     text = action.text,
                     style = textStyle,

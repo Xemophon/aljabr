@@ -26,8 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tuscalc.ui.components.AdvancedButtonsGrid
 import com.example.tuscalc.ui.components.CalcBoxViewModel
-import com.example.tuscalc.ui.components.CalcButtonsLimits
 import com.example.tuscalc.ui.components.CalculatorFocus
 import com.example.tuscalc.ui.components.CalculatorMode
 import com.example.tuscalc.ui.components.CalculatorScaffold
@@ -72,8 +72,9 @@ fun Limits(onOpenDrawer: () -> Unit) {
                         onCursorIndexChange = { viewModel.updateCursorIndex(it) }
                     )
                 }
-                CalcButtonsLimits(
+                AdvancedButtonsGrid(
                     isInverse = isInverse,
+                    mode = "Limits",
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )

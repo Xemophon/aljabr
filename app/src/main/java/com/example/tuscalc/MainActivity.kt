@@ -24,6 +24,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tuscalc.differentiate.DiffFunc
+import com.example.tuscalc.integrate.IntegFunc
 import com.example.tuscalc.navigation.AllCalculatorVariants
 import com.example.tuscalc.navigation.BasicCalcRoute
 import com.example.tuscalc.ui.theme.TUsCalcTheme
@@ -33,6 +35,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Warm up the math engines in the background to improve first-use performance
+        IntegFunc.warmUp()
+        DiffFunc.warmUp()
+
         setContent {
             TUsCalcTheme {
                 val navController = rememberNavController()

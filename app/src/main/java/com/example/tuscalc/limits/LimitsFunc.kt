@@ -43,13 +43,22 @@ object LimitsFunc {
         direction: Direction
     ): Double {
         val epsilons = listOf(1e-4, 1e-6, 1e-8, 1e-10)
+        val startTime = System.currentTimeMillis()
         
         val leftResults = if (direction != Direction.RIGHT) {
-            epsilons.map { evaluateAt(expression, variable, target - it) }.filter { !it.isNaN() }
+            epsilons.mapNotNull { 
+                if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
+                val res = evaluateAt(expression, variable, target - it)
+                if (res.isNaN()) null else res
+            }
         } else emptyList()
 
         val rightResults = if (direction != Direction.LEFT) {
-            epsilons.map { evaluateAt(expression, variable, target + it) }.filter { !it.isNaN() }
+            epsilons.mapNotNull { 
+                if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
+                val res = evaluateAt(expression, variable, target + it)
+                if (res.isNaN()) null else res
+            }
         } else emptyList()
 
         if (leftResults.isEmpty() && rightResults.isEmpty()) return Double.NaN
@@ -86,8 +95,13 @@ object LimitsFunc {
         } else {
             listOf(-1e4, -1e6, -1e8, -1e10)
         }
+        val startTime = System.currentTimeMillis()
 
-        val results = largeValues.map { evaluateAt(expression, variable, it) }.filter { !it.isNaN() }
+        val results = largeValues.mapNotNull { 
+            if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
+            val res = evaluateAt(expression, variable, it)
+            if (res.isNaN()) null else res
+        }
         if (results.isEmpty()) return Double.NaN
         
         val last = results.last()

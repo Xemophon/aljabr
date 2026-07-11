@@ -20,7 +20,7 @@ object CalcFuncs {
                 cleanedInput = cleanedInput.replace(visual, math)
             }
             evaluate(cleanedInput, variables, useRadians)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Double.NaN
         }
     }
@@ -29,6 +29,12 @@ object CalcFuncs {
         return object : Any() {
             var pos = -1
             var ch = 0
+            var recursionDepth = 0
+            val MAX_DEPTH = 128
+
+            private fun checkDepth() {
+                if (++recursionDepth > MAX_DEPTH) throw RuntimeException("Expression too complex")
+            }
 
             fun nextChar() {
                 ch = if (++pos < expression.length) expression[pos].code else -1
@@ -51,6 +57,7 @@ object CalcFuncs {
             }
 
             fun parseExpression(): Double {
+                checkDepth()
                 var x = parseTerm()
                 while (true) {
                     when {
@@ -64,12 +71,16 @@ object CalcFuncs {
                             val y = parseTerm()
                             x -= if (expression.substring(startPos, pos).trim().endsWith('%')) x * (y * 100) * 0.01 else y
                         }
-                        else -> return x
+                        else -> {
+                            recursionDepth--
+                            return x
+                        }
                     }
                 }
             }
 
             fun parseTerm(): Double {
+                checkDepth()
                 var x = parseFactor()
                 while (true) {
                     when {
@@ -80,7 +91,10 @@ object CalcFuncs {
                             x /= divisor
                         }
                         peekImplicit() -> x *= parseFactor()
-                        else -> return x
+                        else -> {
+                            recursionDepth--
+                            return x
+                        }
                     }
                 }
             }
@@ -94,9 +108,18 @@ object CalcFuncs {
             }
 
             fun parseFactor(): Double {
+                checkDepth()
                 while (ch == ' '.code) nextChar()
-                if (eat('+'.code)) return parseFactor()
-                if (eat('-'.code)) return -parseFactor()
+                if (eat('+'.code)) {
+                    val res = parseFactor()
+                    recursionDepth--
+                    return res
+                }
+                if (eat('-'.code)) {
+                    val res = -parseFactor()
+                    recursionDepth--
+                    return res
+                }
 
                 var x: Double
                 val startPos = pos
@@ -115,9 +138,14 @@ object CalcFuncs {
                         func == "e" -> E
                         else -> handleFunction(func)
                     }
-                } else return Double.NaN
+                } else {
+                    recursionDepth--
+                    return Double.NaN
+                }
 
-                return parsePostfix(x)
+                val res = parsePostfix(x)
+                recursionDepth--
+                return res
             }
 
             private fun handleFunction(func: String): Double {

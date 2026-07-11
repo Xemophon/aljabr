@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,8 +54,9 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
                         onCursorIndexChange = { viewModel.updateCursorIndex(it) }
                     )
                 }
-                CalcButtonsIntegrate(
+                AdvancedButtonsGrid(
                     isInverse = isInverse,
+                    mode = "Integration",
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )
@@ -103,7 +103,7 @@ fun IntegDisplay(
                             text = upper.ifEmpty { "b" },
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .offset(x = 22.dp, y = (-10).dp)
+                                .offset(x = 25.dp, y = (-8).dp)
                                 .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
                             fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
@@ -114,7 +114,7 @@ fun IntegDisplay(
                             text = lower.ifEmpty { "a" },
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .offset(x = 10.dp, y = 10.dp)
+                                .offset(x = (-10).dp, y = 18.dp)
                                 .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
                             fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
@@ -162,13 +162,12 @@ fun IntegDisplay(
             Text(
                 text = result,
                 style = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = if (result.length > 10) 32.sp else 48.sp
+                    fontSize = if (result.length > 15) 28.sp else 40.sp
                 ),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
-                textAlign = TextAlign.Center,
                 modifier = Modifier.clickable { 
-                    // Clicking the result can reset focus to edit the expression again
+                    // Clear result to edit again
                     onFocusChange(CalculatorFocus.EXPRESSION)
                 }
             )

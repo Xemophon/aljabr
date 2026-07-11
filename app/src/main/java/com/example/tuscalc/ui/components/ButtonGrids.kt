@@ -21,6 +21,30 @@ import androidx.compose.ui.unit.sp
 import com.example.tuscalc.ui.theme.Dimens
 
 @Composable
+private fun CalcButtonSheet(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.primaryFixedDim,
+        shape = AbsoluteRoundedCornerShape(
+            topLeft = Dimens.LandingPageCornerRadius,
+            topRight = Dimens.LandingPageCornerRadius
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal)
+                .animateContentSize(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
+            content = content
+        )
+    }
+}
+
+@Composable
 fun CalcButtons(
     modifier: Modifier = Modifier,
     isExpanded: Boolean = false,
@@ -39,131 +63,106 @@ fun CalcButtons(
     ) { state ->
         if (state) 1f else 0f
     }
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.primaryFixedDim,
-        shape = AbsoluteRoundedCornerShape(topLeft = Dimens.LandingPageCornerRadius, topRight = Dimens.LandingPageCornerRadius)
-    ) {
-        Column(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal)
-                .animateContentSize()
-                .graphicsLayer(clip = true),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+
+    CalcButtonSheet(modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
         ) {
-            Row (
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)) {
-                Button(
-                    onClick = onToggleExpand,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Text(
-                        text = if (isExpanded) "Standard" else "Scientific",
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontSize = 24.sp
-                    )
-                }
-                if (isExpanded) {
-                    Button(onClick = onToggleInverse,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isInverse)
-                                MaterialTheme.colorScheme.tertiary
-                            else MaterialTheme.colorScheme.tertiaryContainer
-                        )) {
-                        Text(
-                            text = "Inverse",
-                            color = if (isInverse)
-                                MaterialTheme.colorScheme.onTertiary
-                            else MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
-            }
-
-            if (expandFraction > 0f) {
-                Layout(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clipToBounds()
-                        .graphicsLayer { alpha = expandFraction },
-                    content = {
-                        Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
-                            ButtonGrid(
-                                gridData = ScientificButtonsGrid,
-                                buttonAspectRatio = 1.5f,
-                                isExpanded = true,
-                                isInverse = isInverse,
-                                onAction = onAction
-                            )
-                        }
-                    }
-                ) { measurables, constraints ->
-                    val placeable = measurables.first().measure(constraints)
-                    val animatedHeight = (placeable.height * expandFraction).toInt()
-
-                    layout(placeable.width, animatedHeight) {
-                        val yOffset = animatedHeight - placeable.height
-                        placeable.placeRelative(0, yOffset)
-                    }
-                }
-            }
-
-            ButtonGrid(
-                gridData = StandardButtonsGrid,
-                buttonAspectRatio = buttonAspectRatio,
-                isExpanded = isExpanded,
-                onAction = onAction
-            )
-        }
-    }
-}
-
-@Composable
-fun CalcButtonsLimits(
-    modifier: Modifier = Modifier,
-    isInverse: Boolean = false,
-    onToggleInverse: () -> Unit,
-    onAction: (CalcButtonAction) -> Unit
-){
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.primaryFixedDim,
-        shape = AbsoluteRoundedCornerShape(
-            topLeft = Dimens.LandingPageCornerRadius,
-            topRight = Dimens.LandingPageCornerRadius
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+            Button(
+                onClick = onToggleExpand,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
             ) {
+                Text(
+                    text = if (isExpanded) "Standard" else "Scientific",
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontSize = 24.sp
+                )
+            }
+            if (isExpanded) {
                 Button(
                     onClick = onToggleInverse,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
-                    ),
-                    modifier = Modifier.weight(1f)
+                    )
                 ) {
                     Text(
-                        text = "Inv",
-                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelLarge
+                        text = "Inverse",
+                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
+            }
+        }
 
+        if (expandFraction > 0f) {
+            Layout(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clipToBounds()
+                    .graphicsLayer { alpha = expandFraction },
+                content = {
+                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
+                        ButtonGrid(
+                            gridData = ScientificButtonsGrid,
+                            buttonAspectRatio = 1.5f,
+                            isExpanded = true,
+                            isInverse = isInverse,
+                            onAction = onAction
+                        )
+                    }
+                }
+            ) { measurables, constraints ->
+                val placeable = measurables.first().measure(constraints)
+                val animatedHeight = (placeable.height * expandFraction).toInt()
+
+                layout(placeable.width, animatedHeight) {
+                    val yOffset = animatedHeight - placeable.height
+                    placeable.placeRelative(0, yOffset)
+                }
+            }
+        }
+
+        ButtonGrid(
+            gridData = StandardButtonsGrid,
+            buttonAspectRatio = buttonAspectRatio,
+            isExpanded = isExpanded,
+            onAction = onAction
+        )
+    }
+}
+
+@Composable
+fun AdvancedButtonsGrid(
+    modifier: Modifier = Modifier,
+    mode: String = "Limits",
+    isInverse: Boolean = false,
+    onToggleInverse: () -> Unit,
+    onAction: (CalcButtonAction) -> Unit
+) = CalcButtonSheet(modifier) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+    ) {
+        Button(
+            onClick = onToggleInverse,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+            ),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "Inv",
+                color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        when (mode) {
+            "Limits" -> {
                 Button(
                     onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
                     colors = ButtonDefaults.buttonColors(
@@ -172,12 +171,8 @@ fun CalcButtonsLimits(
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = "∞",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Text(text = "∞", style = MaterialTheme.typography.labelLarge)
                 }
-
                 Button(
                     onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
                     colors = ButtonDefaults.buttonColors(
@@ -186,63 +181,11 @@ fun CalcButtonsLimits(
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = "a",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Text(text = "a", style = MaterialTheme.typography.labelLarge)
                 }
             }
-            ButtonGrid(
-                gridData = LimitsButtonsGrid,
-                buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
-                isExpanded = true,
-                isInverse = isInverse,
-                onAction = onAction
-            )
-        }
-    }
-}
 
-@Composable
-fun CalcButtonsIntegrate(
-    modifier: Modifier = Modifier,
-    isInverse: Boolean = false,
-    onToggleInverse: () -> Unit,
-    onAction: (CalcButtonAction) -> Unit
-){
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.primaryFixedDim,
-        shape = AbsoluteRoundedCornerShape(
-            topLeft = Dimens.LandingPageCornerRadius,
-            topRight = Dimens.LandingPageCornerRadius
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
-            ) {
-                Button(
-                    onClick = onToggleInverse,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Inv",
-                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
+            "Integration" -> {
                 Button(
                     onClick = { onAction(CalcButtonAction.Integrals("∫", IntegralType.INDEFINITE)) },
                     colors = ButtonDefaults.buttonColors(
@@ -251,10 +194,7 @@ fun CalcButtonsIntegrate(
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = "∫",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Text(text = "∫", style = MaterialTheme.typography.labelLarge)
                 }
 
                 Button(
@@ -265,21 +205,31 @@ fun CalcButtonsIntegrate(
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = "∫ ab",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Text(text = "∫ ab", style = MaterialTheme.typography.labelLarge)
                 }
             }
-            ButtonGrid(
-                gridData = IntegralsButtonsGrid,
-                buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
-                isExpanded = true,
-                isInverse = isInverse,
-                onAction = onAction
-            )
+
+            "Differentiate" -> {
+                Button(
+                    onClick = { onAction(CalcButtonAction.Differentiate("d/dx")) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.weight(2f)
+                ) {
+                    Text(text = "d/dx", style = MaterialTheme.typography.labelLarge)
+                }
+            }
         }
     }
+    ButtonGrid(
+        gridData = SingleVariableGrid,
+        buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
+        isExpanded = true,
+        isInverse = isInverse,
+        onAction = onAction
+    )
 }
 
 @Composable
@@ -289,77 +239,55 @@ fun CalcButtonsGraph(
     onToggleInverse: () -> Unit,
     onVisualize: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.primaryFixedDim,
-        shape = AbsoluteRoundedCornerShape(
-            topLeft = Dimens.LandingPageCornerRadius,
-            topRight = Dimens.LandingPageCornerRadius
-        )
+) = CalcButtonSheet(modifier) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
     ) {
-        Column(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+        Button(
+            onClick = onToggleInverse,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+            ),
+            modifier = Modifier.weight(1f)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
-            ) {
-                Button(
-                    onClick = onToggleInverse,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Inv",
-                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
-                Button(
-                    onClick = onVisualize,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Graph",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
-                Button(
-                    onClick = { onAction(CalcButtonAction.Clear) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Clear",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
-            ButtonGrid(
-                gridData = GraphButtonsGrid,
-                buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
-                isExpanded = true,
-                isInverse = isInverse,
-                onAction = onAction
+            Text(
+                text = "Inv",
+                color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
+                style = MaterialTheme.typography.labelLarge
             )
         }
+
+        Button(
+            onClick = onVisualize,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(text = "Graph", style = MaterialTheme.typography.labelLarge)
+        }
+
+        Button(
+            onClick = { onAction(CalcButtonAction.Clear) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
+        }
     }
+    ButtonGrid(
+        gridData = GraphButtonsGrid,
+        buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
+        isExpanded = true,
+        isInverse = isInverse,
+        onAction = onAction
+    )
 }
 
 @Composable
@@ -398,39 +326,20 @@ private data class ButtonColorPalette(val containerColor: Color, val contentColo
 
 @Composable
 private fun getButtonColors(action: CalcButtonAction): ButtonColorPalette {
-    return when (action) {
-        is CalcButtonAction.Calculate -> ButtonColorPalette(
+    return when {
+        action is CalcButtonAction.Calculate || action is CalcButtonAction.Variable -> ButtonColorPalette(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer
         )
-        is CalcButtonAction.Variable -> ButtonColorPalette(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-        )
-        is CalcButtonAction.Scientific -> ButtonColorPalette(
+
+        action is CalcButtonAction.Scientific || (action is CalcButtonAction.Symbol && action.isOperator) -> ButtonColorPalette(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
-        is CalcButtonAction.Symbol -> {
-            if (action.isOperator) {
-                ButtonColorPalette(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            } else {
-                ButtonColorPalette(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-        is CalcButtonAction.Backspace -> ButtonColorPalette(
+
+        else -> ButtonColorPalette(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-        else -> ButtonColorPalette(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }
