@@ -3,13 +3,33 @@ package com.example.tuscalc.graphMaker
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -44,7 +64,9 @@ fun GraphMaker(
         title = { Text(if (showGraph) "Graph Analysis" else "Graph Equation") },
         onOpenDrawer = onOpenDrawer,
         navigationIcon = if (showGraph) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Menu,
-        navigationIconAction = if (showGraph) { { showGraph = false } } else onOpenDrawer,
+        navigationIconAction = if (showGraph) {
+            { showGraph = false }
+        } else onOpenDrawer,
         navigationIconContentDescription = if (showGraph) "Back" else "Menu"
     ) { padding ->
         Surface(
@@ -97,7 +119,7 @@ fun InteractiveGraphView(expression: String) {
 
     val rangeX = 20f / viewportScale
     val rangeY = 20f / viewportScale
-    
+
     val minX = (-rangeX / 2 + viewportOffset.x).toDouble()
     val maxX = (rangeX / 2 + viewportOffset.x).toDouble()
     val minY = (-rangeY / 2 + viewportOffset.y).toDouble()
@@ -147,7 +169,7 @@ fun InteractiveGraphView(expression: String) {
 
             // Draw Grid
             val gridStep = if (viewportScale > 2f) 1f else if (viewportScale < 0.5f) 5f else 2f
-            
+
             // Vertical grid lines
             var startX = ((minX / gridStep).roundToInt() * gridStep).toFloat()
             while (startX <= maxX) {
@@ -198,8 +220,8 @@ fun InteractiveGraphView(expression: String) {
                     segment.forEach { point ->
                         val x = centerX + point.x * scaleX
                         val y = centerY - point.y * scaleY
-                        
-                        if (y in -height..height * 2) { 
+
+                        if (y in -height..height * 2) {
                             if (first) {
                                 path.moveTo(x, y)
                                 first = false
@@ -217,7 +239,7 @@ fun InteractiveGraphView(expression: String) {
                     )
                 }
             }
-            
+
             // Draw Critical Points
             analysis.localMaxima.forEach { p ->
                 drawCircle(
@@ -240,7 +262,7 @@ fun InteractiveGraphView(expression: String) {
                     center = Offset(centerX + p.x * scaleX, centerY - p.y * scaleY)
                 )
             }
-            
+
             // Draw Asymptotes
             analysis.verticalAsymptotes.forEach { vX ->
                 val x = centerX + vX * scaleX
@@ -249,7 +271,12 @@ fun InteractiveGraphView(expression: String) {
                     start = Offset(x, 0f),
                     end = Offset(x, height),
                     strokeWidth = 2f,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                        floatArrayOf(
+                            10f,
+                            10f
+                        ), 0f
+                    )
                 )
             }
         }
@@ -286,7 +313,7 @@ fun AnalysisWidget(
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
-            
+
             if (analysis.localMaxima.isNotEmpty()) {
                 AnalysisSection("Maxima", analysis.localMaxima)
             }
@@ -298,12 +325,18 @@ fun AnalysisWidget(
             }
             if (analysis.verticalAsymptotes.isNotEmpty()) {
                 Text(
-                    text = "Asymptotes: x ≈ ${analysis.verticalAsymptotes.joinToString { "%.1f".format(it) }}",
+                    text = "Asymptotes: x ≈ ${
+                        analysis.verticalAsymptotes.joinToString {
+                            "%.1f".format(
+                                it
+                            )
+                        }
+                    }",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 10.sp
                 )
             }
-            
+
             if (analysis.localMaxima.isEmpty() && analysis.localMinima.isEmpty() && analysis.inflectionPoints.isEmpty() && analysis.verticalAsymptotes.isEmpty()) {
                 Text(
                     text = "No critical points detected in view",

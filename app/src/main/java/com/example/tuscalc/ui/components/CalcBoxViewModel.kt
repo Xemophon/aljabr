@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,11 +48,11 @@ fun CalcBox(
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End
             )
-            
+
             // Using a hidden or overlaid clickable area is complex for exact character positioning
             // For now, let's make the whole expression box clickable to focus the end,
             // or just allow the user to see where they are typing.
-            
+
             Text(
                 text = if (cursorIndex != -1 && cursorIndex < expression.length) {
                     StringBuilder(expression).insert(cursorIndex, "|").toString()
@@ -134,6 +133,7 @@ class CalcBoxViewModel : ViewModel() {
                 handleBackspace()
                 updateInstantResult()
             }
+
             is CalcButtonAction.Symbol -> {
                 when (action.text) {
                     "( )", "()" -> handleBrackets()
@@ -142,21 +142,28 @@ class CalcBoxViewModel : ViewModel() {
                 }
                 updateInstantResult()
             }
+
             is CalcButtonAction.Scientific -> {
                 handleScientific(action)
                 updateInstantResult()
             }
+
             is CalcButtonAction.Variable -> {
                 handleVariable(action)
                 updateInstantResult()
             }
+
             is CalcButtonAction.Limits -> {
                 switchLimitMode(action.type)
             }
+
             is CalcButtonAction.Integrals -> {
                 switchIntegMode(action.type)
             }
-            is CalcButtonAction.Graph -> { /* Handled in UI */ }
+
+            is CalcButtonAction.Graph -> { /* Handled in UI */
+            }
+
             is CalcButtonAction.Differentiate -> {
                 null
             }
@@ -202,7 +209,7 @@ class CalcBoxViewModel : ViewModel() {
         }
 
         if (symbol == "0" && displayText == "0") return
-        
+
         if (displayText == "Error" || displayText == "NaN" || displayText == "Infinity") {
             displayText = if (symbol.contains(Regex("[0-9]"))) symbol else "0"
             cursorIndex = displayText.length
@@ -235,12 +242,14 @@ class CalcBoxViewModel : ViewModel() {
                     "("
                 }
             }
+
             else -> {
-                val prefix = if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e')) " × " else ""
+                val prefix =
+                    if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e')) " × " else ""
                 if (displayText == "0") "(" else "${prefix}("
             }
         }
-        
+
         if (displayText == "0" && !toInsert.startsWith(" × ")) {
             displayText = toInsert
             cursorIndex = toInsert.length
@@ -270,10 +279,11 @@ class CalcBoxViewModel : ViewModel() {
         }
 
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+        val isPrevDigitOrParen =
+            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
         val prefix = if (isPrevDigitOrParen) " × " else ""
 
-        val toInsert = when(action.type) {
+        val toInsert = when (action.type) {
             ScientificType.SQRT -> "${prefix}√("
             ScientificType.PI -> "${prefix}π"
             ScientificType.E -> "${prefix}e"
@@ -301,11 +311,12 @@ class CalcBoxViewModel : ViewModel() {
 
     private fun handleVariable(action: CalcButtonAction.Variable) {
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        val isPrevDigitOrParen = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+        val isPrevDigitOrParen =
+            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
         val prefix = if (isPrevDigitOrParen) " × " else ""
 
         val toInsert = "$prefix${action.text}"
-        
+
         if (displayText == "0" && !toInsert.startsWith(" × ")) {
             displayText = toInsert
             cursorIndex = toInsert.length
@@ -318,10 +329,11 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun updateInstantResult() {
-        if (!calculationEnabled || displayText == "0" || displayText.isBlank() || 
-            calculatorMode == CalculatorMode.LIMITS || 
+        if (!calculationEnabled || displayText == "0" || displayText.isBlank() ||
+            calculatorMode == CalculatorMode.LIMITS ||
             calculatorMode == CalculatorMode.DIFFERENTIATE ||
-            (calculatorMode == CalculatorMode.INTEGRATE && integType == IntegralType.DEFINITE)) {
+            (calculatorMode == CalculatorMode.INTEGRATE && integType == IntegralType.DEFINITE)
+        ) {
             resultText = ""
             return
         }
@@ -341,7 +353,16 @@ class CalcBoxViewModel : ViewModel() {
 
     private fun shouldPerformInstantCalculation(input: String): Boolean {
         val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'x', 'y')
-        val hasScientific = listOf("sin", "cos", "tan", "log", "ln", "asin", "acos", "atan").any { input.contains(it) }
+        val hasScientific = listOf(
+            "sin",
+            "cos",
+            "tan",
+            "log",
+            "ln",
+            "asin",
+            "acos",
+            "atan"
+        ).any { input.contains(it) }
         return input.any { it in operators } || hasScientific
     }
 
@@ -387,11 +408,11 @@ class CalcBoxViewModel : ViewModel() {
         try {
             val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
             val formatted = if (res.isNaN()) "DNE" else CalcFuncs.formatResult(res)
-            
+
             lastExpression = displayText
             displayText = formatted
             cursorIndex = displayText.length
-            resultText = "" 
+            resultText = ""
             isShowingResult = true
         } catch (e: Exception) {
             displayText = "Error"
@@ -401,7 +422,7 @@ class CalcBoxViewModel : ViewModel() {
 
     private fun runIntegrationCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
-        
+
         if (integType == IntegralType.DEFINITE) {
             try {
                 // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
@@ -457,7 +478,8 @@ class CalcBoxViewModel : ViewModel() {
         displayText = "0"
         cursorIndex = 1
         resultText = ""
-        targetText = if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
+        targetText =
+            if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""
         upperLimitText = ""
         isShowingResult = false
@@ -512,10 +534,10 @@ class CalcBoxViewModel : ViewModel() {
             " × π", "π", " × e", "e",
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )
-        
+
         val textBeforeCursor = displayText.substring(0, cursorIndex)
         val matchedToken = tokens.find { textBeforeCursor.endsWith(it) }
-        
+
         if (matchedToken != null) {
             val newTextBefore = textBeforeCursor.removeSuffix(matchedToken)
             val textAfter = displayText.substring(cursorIndex)
@@ -527,7 +549,7 @@ class CalcBoxViewModel : ViewModel() {
             displayText = newTextBefore + textAfter
             cursorIndex -= 1
         }
-        
+
         if (displayText.isEmpty()) {
             displayText = "0"
             cursorIndex = 1

@@ -3,13 +3,23 @@ package com.example.tuscalc.ui.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring.DampingRatioLowBouncy
 import androidx.compose.animation.core.Spring.StiffnessLow
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.ui.layout.Layout
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -17,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.sp
 import com.example.tuscalc.ui.theme.Dimens
 
@@ -53,7 +64,8 @@ fun CalcButtons(
     onToggleInverse: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) {
-    val buttonAspectRatio = if (isExpanded) Dimens.ButtonAspectRatioExpanded else Dimens.ButtonAspectRatioStandard
+    val buttonAspectRatio =
+        if (isExpanded) Dimens.ButtonAspectRatioExpanded else Dimens.ButtonAspectRatioStandard
     val transition = updateTransition(targetState = isExpanded, label = "ScientificTransition")
     val expandFraction by transition.animateFloat(
         transitionSpec = {
@@ -68,7 +80,10 @@ fun CalcButtons(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+            horizontalArrangement = Arrangement.spacedBy(
+                Dimens.SpacingSmall,
+                Alignment.CenterHorizontally
+            )
         ) {
             Button(
                 onClick = onToggleExpand,
@@ -146,7 +161,10 @@ fun AdvancedButtonsGrid(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(
+            Dimens.SpacingSmall,
+            Alignment.CenterHorizontally
+        )
     ) {
         Button(
             onClick = onToggleInverse,
@@ -187,7 +205,14 @@ fun AdvancedButtonsGrid(
 
             "Integration" -> {
                 Button(
-                    onClick = { onAction(CalcButtonAction.Integrals("∫", IntegralType.INDEFINITE)) },
+                    onClick = {
+                        onAction(
+                            CalcButtonAction.Integrals(
+                                "∫",
+                                IntegralType.INDEFINITE
+                            )
+                        )
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -198,7 +223,14 @@ fun AdvancedButtonsGrid(
                 }
 
                 Button(
-                    onClick = { onAction(CalcButtonAction.Integrals("∫ab", IntegralType.DEFINITE)) },
+                    onClick = {
+                        onAction(
+                            CalcButtonAction.Integrals(
+                                "∫ab",
+                                IntegralType.DEFINITE
+                            )
+                        )
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -243,7 +275,10 @@ fun CalcButtonsGraph(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(
+            Dimens.SpacingSmall,
+            Alignment.CenterHorizontally
+        )
     ) {
         Button(
             onClick = onToggleInverse,

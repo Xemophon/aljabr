@@ -13,11 +13,16 @@ import com.example.tuscalc.integrate.IntegCalc
 import com.example.tuscalc.limits.Limits
 import kotlinx.serialization.Serializable
 
-@Serializable object BasicCalcRoute
-@Serializable object GraphMakerRoute
-@Serializable object LimitsRoute
-@Serializable object IntegrateRoute
-@Serializable object DifferentiateRoute
+@Serializable
+object BasicCalcRoute
+@Serializable
+object GraphMakerRoute
+@Serializable
+object LimitsRoute
+@Serializable
+object IntegrateRoute
+@Serializable
+object DifferentiateRoute
 
 val AllCalculatorVariants = listOf(
     CalculatorVariant(

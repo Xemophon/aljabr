@@ -4,7 +4,7 @@ import com.example.tuscalc.basicCalc.CalcFuncs
 import kotlin.math.abs
 
 object LimitsFunc {
-    
+
     enum class Direction { LEFT, RIGHT, BOTH }
 
     fun calculateLimit(
@@ -44,9 +44,9 @@ object LimitsFunc {
     ): Double {
         val epsilons = listOf(1e-4, 1e-6, 1e-8, 1e-10)
         val startTime = System.currentTimeMillis()
-        
+
         val leftResults = if (direction != Direction.RIGHT) {
-            epsilons.mapNotNull { 
+            epsilons.mapNotNull {
                 if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
                 val res = evaluateAt(expression, variable, target - it)
                 if (res.isNaN()) null else res
@@ -54,7 +54,7 @@ object LimitsFunc {
         } else emptyList()
 
         val rightResults = if (direction != Direction.LEFT) {
-            epsilons.mapNotNull { 
+            epsilons.mapNotNull {
                 if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
                 val res = evaluateAt(expression, variable, target + it)
                 if (res.isNaN()) null else res
@@ -72,11 +72,12 @@ object LimitsFunc {
             Direction.BOTH -> {
                 if (leftLimit.isNaN()) return rightLimit
                 if (rightLimit.isNaN()) return leftLimit
-                
+
                 if (abs(leftLimit - rightLimit) < 1e-4) {
                     (leftLimit + rightLimit) / 2.0
-                } else if (leftLimit.isInfinite() && rightLimit.isInfinite() && 
-                    ((leftLimit > 0 && rightLimit > 0) || (leftLimit < 0 && rightLimit < 0))) {
+                } else if (leftLimit.isInfinite() && rightLimit.isInfinite() &&
+                    ((leftLimit > 0 && rightLimit > 0) || (leftLimit < 0 && rightLimit < 0))
+                ) {
                     leftLimit
                 } else {
                     Double.NaN
@@ -97,24 +98,24 @@ object LimitsFunc {
         }
         val startTime = System.currentTimeMillis()
 
-        val results = largeValues.mapNotNull { 
+        val results = largeValues.mapNotNull {
             if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
             val res = evaluateAt(expression, variable, it)
             if (res.isNaN()) null else res
         }
         if (results.isEmpty()) return Double.NaN
-        
+
         val last = results.last()
         if (abs(last) > 1e9) {
             return if (last > 0) Double.POSITIVE_INFINITY else Double.NEGATIVE_INFINITY
         }
 
         val prev = if (results.size > 1) results[results.size - 2] else last
-        
+
         return if (abs(last - prev) < 1e-4 || (last.isInfinite() && prev.isInfinite())) {
             last
         } else {
-            last 
+            last
         }
     }
 }

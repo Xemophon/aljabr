@@ -22,7 +22,8 @@ object IntegFunc {
         Thread {
             try {
                 evaluator.eval("1+1")
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }.start()
     }
 
@@ -34,13 +35,17 @@ object IntegFunc {
     ): Double {
         return try {
             if (lower == upper) return 0.0
-            
+
             // Use Simpson's 1/3 rule
-            val n = 1000 
+            val n = 1000
             val h = (upper - lower) / n
-            
-            var sum = evaluateAt(expression, lower, useRadians) + evaluateAt(expression, upper, useRadians)
-            
+
+            var sum = evaluateAt(expression, lower, useRadians) + evaluateAt(
+                expression,
+                upper,
+                useRadians
+            )
+
             val startTime = System.currentTimeMillis()
             for (i in 1 until n) {
                 if (i % 50 == 0 && System.currentTimeMillis() - startTime > 2000) {
@@ -53,7 +58,7 @@ object IntegFunc {
                 if (valAtX.isNaN() || valAtX.isInfinite()) return Double.NaN
                 sum += factor * valAtX
             }
-            
+
             (h / 3) * sum
         } catch (e: Throwable) {
             Double.NaN
@@ -73,12 +78,12 @@ object IntegFunc {
             // We use Integrate[...] square brackets to be explicit for the CAS engine
             val result = evaluator.eval("Integrate[$cleaned, x]")
             val resStr = result.toString()
-            
+
             // If Symja couldn't solve it, it returns the input string Integrate(...)
             if (resStr.contains("Integrate", ignoreCase = true)) {
                 return "∫($expression)dx"
             }
-            
+
             // Debug check: If input was NOT zero but result IS zero, something is likely wrong
             // with how the variable or expression is being parsed on this device.
             if (resStr == "0" && cleaned != "0" && cleaned != "0.0") {
@@ -129,7 +134,7 @@ object IntegFunc {
             .replace("[", "(")
             .replace("]", ")")
             .replace(",", ", ")
-        
+
         return "$formatted + C"
     }
 }

@@ -34,7 +34,7 @@ object GraphGenerator {
 
         val allSegments = mutableListOf<MutableList<Point>>()
         var currentSegment = mutableListOf<Point>()
-        
+
         val maxima = mutableListOf<Point>()
         val minima = mutableListOf<Point>()
         val inflections = mutableListOf<Point>()
@@ -43,7 +43,7 @@ object GraphGenerator {
         // For f(x), we use more steps
         val fSteps = 1000
         val stepSize = (maxX - minX) / fSteps
-        val h = stepSize * 0.01 
+        val h = stepSize * 0.01
 
         var lastDySign = 0
         var lastDdySign = 0
@@ -51,13 +51,21 @@ object GraphGenerator {
         for (i in 0..fSteps) {
             val x = minX + i * stepSize
             val y = CalcFuncs.calculateExpression(expression, mapOf("x" to x), useRadians = true)
-            
+
             if (!y.isNaN() && !y.isInfinite()) {
                 val point = Point(x.toFloat(), y.toFloat())
-                
-                val yPlus = CalcFuncs.calculateExpression(expression, mapOf("x" to x + h), useRadians = true)
-                val yMinus = CalcFuncs.calculateExpression(expression, mapOf("x" to x - h), useRadians = true)
-                
+
+                val yPlus = CalcFuncs.calculateExpression(
+                    expression,
+                    mapOf("x" to x + h),
+                    useRadians = true
+                )
+                val yMinus = CalcFuncs.calculateExpression(
+                    expression,
+                    mapOf("x" to x - h),
+                    useRadians = true
+                )
+
                 if (!yPlus.isNaN() && !yPlus.isInfinite() && !yMinus.isNaN() && !yMinus.isInfinite()) {
                     val dy = (yPlus - yMinus) / (2 * h)
                     val ddy = (yPlus - 2 * y + yMinus) / (h * h)
@@ -74,7 +82,7 @@ object GraphGenerator {
                             inflections.add(point)
                         }
                     }
-                    
+
                     if (currentDySign != 0) lastDySign = currentDySign
                     if (currentDdySign != 0) lastDdySign = currentDdySign
                 } else {
@@ -128,22 +136,24 @@ object GraphGenerator {
 
         val lhs = parts[0]
         val rhs = parts[1]
-        
+
         // We evaluate f(x,y) = LHS - RHS
         val gridSteps = 80 // 80x80 grid for performance
         val stepX = (maxX - minX) / gridSteps
         val stepY = (maxY - minY) / gridSteps
-        
+
         val segments = mutableListOf<List<Point>>()
-        
+
         // Simple Marching Squares-like approach to find zero crossings
         val grid = Array(gridSteps + 1) { DoubleArray(gridSteps + 1) }
         for (i in 0..gridSteps) {
             val x = minX + i * stepX
             for (j in 0..gridSteps) {
                 val y = minY + j * stepY
-                val valL = CalcFuncs.calculateExpression(lhs, mapOf("x" to x, "y" to y), useRadians = true)
-                val valR = CalcFuncs.calculateExpression(rhs, mapOf("x" to x, "y" to y), useRadians = true)
+                val valL =
+                    CalcFuncs.calculateExpression(lhs, mapOf("x" to x, "y" to y), useRadians = true)
+                val valR =
+                    CalcFuncs.calculateExpression(rhs, mapOf("x" to x, "y" to y), useRadians = true)
                 grid[i][j] = valL - valR
             }
         }
@@ -162,7 +172,7 @@ object GraphGenerator {
 
                 // Check for zero crossings on edges
                 val crossingPoints = mutableListOf<Point>()
-                
+
                 if (v00 * v10 <= 0) crossingPoints.add(lerpPoint(v00, v10, x1, x2, y1, y1))
                 if (v10 * v11 <= 0) crossingPoints.add(lerpPoint(v10, v11, x2, x2, y1, y2))
                 if (v11 * v01 <= 0) crossingPoints.add(lerpPoint(v11, v01, x2, x1, y2, y2))
@@ -177,7 +187,14 @@ object GraphGenerator {
         return segments to GraphAnalysis()
     }
 
-    private fun lerpPoint(v1: Double, v2: Double, x1: Double, x2: Double, y1: Double, y2: Double): Point {
+    private fun lerpPoint(
+        v1: Double,
+        v2: Double,
+        x1: Double,
+        x2: Double,
+        y1: Double,
+        y2: Double
+    ): Point {
         if (abs(v1 - v2) < 1e-9) return Point(x1.toFloat(), y1.toFloat())
         val t = (0 - v1) / (v2 - v1)
         return Point(
@@ -186,7 +203,12 @@ object GraphGenerator {
         )
     }
 
-    fun generatePoints(expression: String, minX: Double, maxX: Double, steps: Int = 1000): List<List<Point>> {
+    fun generatePoints(
+        expression: String,
+        minX: Double,
+        maxX: Double,
+        steps: Int = 1000
+    ): List<List<Point>> {
         return generateAndAnalyze(expression, minX, maxX, steps = steps).first
     }
 }

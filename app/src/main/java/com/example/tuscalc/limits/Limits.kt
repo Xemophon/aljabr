@@ -48,8 +48,8 @@ fun Limits(onOpenDrawer: () -> Unit) {
     ) { padding ->
         Surface(
             modifier = Modifier
-            .fillMaxSize()
-            .padding(padding),
+                .fillMaxSize()
+                .padding(padding),
             color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Column(
@@ -135,7 +135,7 @@ fun LimitDisplay(
             // Expression f(x)
             Box(
                 modifier = Modifier
-                    .clickable { 
+                    .clickable {
                         onFocusChange(CalculatorFocus.EXPRESSION)
                         onCursorIndexChange(expression.length)
                     }

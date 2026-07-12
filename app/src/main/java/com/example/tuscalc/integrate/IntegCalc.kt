@@ -1,9 +1,26 @@
 package com.example.tuscalc.integrate
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -11,7 +28,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tuscalc.ui.components.*
+import com.example.tuscalc.ui.components.AdvancedButtonsGrid
+import com.example.tuscalc.ui.components.CalcBoxViewModel
+import com.example.tuscalc.ui.components.CalculatorFocus
+import com.example.tuscalc.ui.components.CalculatorMode
+import com.example.tuscalc.ui.components.CalculatorScaffold
+import com.example.tuscalc.ui.components.IntegralType
 import com.example.tuscalc.ui.theme.TUsCalcTheme
 
 @Composable
@@ -78,7 +100,9 @@ fun IntegDisplay(
     onCursorIndexChange: (Int) -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         if (result.isEmpty()) {
@@ -135,15 +159,16 @@ fun IntegDisplay(
                         .padding(8.dp)
                 ) {
                     val base = if (expression == "0") "" else expression
-                    val textWithCursor = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                        if (cursorIndex < base.length) {
-                            StringBuilder(base).insert(cursorIndex, "|").toString()
+                    val textWithCursor =
+                        if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                            if (cursorIndex < base.length) {
+                                StringBuilder(base).insert(cursorIndex, "|").toString()
+                            } else {
+                                "$base|"
+                            }
                         } else {
-                            "$base|"
+                            base.ifEmpty { "f(x)" }
                         }
-                    } else {
-                        base.ifEmpty { "f(x)" }
-                    }
 
                     val displayText = "$textWithCursor dx"
 
@@ -166,7 +191,7 @@ fun IntegDisplay(
                 ),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.clickable { 
+                modifier = Modifier.clickable {
                     // Clear result to edit again
                     onFocusChange(CalculatorFocus.EXPRESSION)
                 }
@@ -177,8 +202,8 @@ fun IntegDisplay(
 
 @Preview(showBackground = true)
 @Composable
-fun IntegPreview(){
-    TUsCalcTheme() {
+fun IntegPreview() {
+    TUsCalcTheme {
         IntegCalc(onOpenDrawer = {})
     }
 }

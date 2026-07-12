@@ -2,7 +2,20 @@ package com.example.tuscalc.basicCalc
 
 import java.math.RoundingMode
 import java.text.DecimalFormat
-import kotlin.math.*
+import kotlin.math.E
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.acos
+import kotlin.math.asin
+import kotlin.math.atan
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.ln
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlin.math.tan
 
 object CalcFuncs {
     private val visualToMathMap = mapOf(
@@ -12,7 +25,11 @@ object CalcFuncs {
         "π" to "pi"
     )
 
-    fun calculateExpression(input: String, variables: Map<String, Double> = emptyMap(), useRadians: Boolean = false): Double {
+    fun calculateExpression(
+        input: String,
+        variables: Map<String, Double> = emptyMap(),
+        useRadians: Boolean = false
+    ): Double {
         if (input.isBlank()) return 0.0
         return try {
             var cleanedInput = input
@@ -25,7 +42,11 @@ object CalcFuncs {
         }
     }
 
-    private fun evaluate(expression: String, variables: Map<String, Double>, useRadians: Boolean): Double {
+    private fun evaluate(
+        expression: String,
+        variables: Map<String, Double>,
+        useRadians: Boolean
+    ): Double {
         return object : Any() {
             var pos = -1
             var ch = 0
@@ -64,13 +85,19 @@ object CalcFuncs {
                         eat('+'.code) -> {
                             val startPos = pos
                             val y = parseTerm()
-                            x += if (expression.substring(startPos, pos).trim().endsWith('%')) x * (y * 100) * 0.01 else y
+                            x += if (expression.substring(startPos, pos).trim()
+                                    .endsWith('%')
+                            ) x * (y * 100) * 0.01 else y
                         }
+
                         eat('-'.code) -> {
                             val startPos = pos
                             val y = parseTerm()
-                            x -= if (expression.substring(startPos, pos).trim().endsWith('%')) x * (y * 100) * 0.01 else y
+                            x -= if (expression.substring(startPos, pos).trim()
+                                    .endsWith('%')
+                            ) x * (y * 100) * 0.01 else y
                         }
+
                         else -> {
                             recursionDepth--
                             return x
@@ -90,6 +117,7 @@ object CalcFuncs {
                             if (divisor == 0.0) throw ArithmeticException("Division by zero")
                             x /= divisor
                         }
+
                         peekImplicit() -> x *= parseFactor()
                         else -> {
                             recursionDepth--
@@ -175,6 +203,7 @@ object CalcFuncs {
                             val exponent = parseFactor()
                             x = handlePower(x, exponent)
                         }
+
                         else -> return x
                     }
                 }

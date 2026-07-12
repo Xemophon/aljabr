@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         // Warm up the math engines in the background to improve first-use performance
         IntegFunc.warmUp()
         DiffFunc.warmUp()

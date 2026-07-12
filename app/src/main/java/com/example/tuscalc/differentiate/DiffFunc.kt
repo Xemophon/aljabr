@@ -19,7 +19,8 @@ object DiffFunc {
         Thread {
             try {
                 evaluator.eval("D[x, x]")
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }.start()
     }
 
