@@ -1,6 +1,8 @@
 package com.example.tuscalc.graphMaker
 
 import com.example.tuscalc.basicCalc.CalcFuncs
+import com.example.tuscalc.utils.SymjaUtils
+import org.matheclipse.core.interfaces.IAST
 import kotlin.math.abs
 
 data class Point(val x: Float, val y: Float)
@@ -14,9 +16,6 @@ data class GraphAnalysis(
 )
 
 object GraphGenerator {
-    /**
-     * Generates segments of points and analyzes them during the evaluation phase.
-     */
     fun generateAndAnalyze(
         expression: String,
         minX: Double,
@@ -34,19 +33,11 @@ object GraphGenerator {
 
         val allSegments = mutableListOf<MutableList<Point>>()
         var currentSegment = mutableListOf<Point>()
-
-        val maxima = mutableListOf<Point>()
-        val minima = mutableListOf<Point>()
-        val inflections = mutableListOf<Point>()
         val vAsymptotes = mutableListOf<Float>()
 
         // For f(x), we use more steps
         val fSteps = 1000
         val stepSize = (maxX - minX) / fSteps
-        val h = stepSize * 0.01
-
-        var lastDySign = 0
-        var lastDdySign = 0
 
         for (i in 0..fSteps) {
             val x = minX + i * stepSize
@@ -54,41 +45,6 @@ object GraphGenerator {
 
             if (!y.isNaN() && !y.isInfinite()) {
                 val point = Point(x.toFloat(), y.toFloat())
-
-                val yPlus = CalcFuncs.calculateExpression(
-                    expression,
-                    mapOf("x" to x + h),
-                    useRadians = true
-                )
-                val yMinus = CalcFuncs.calculateExpression(
-                    expression,
-                    mapOf("x" to x - h),
-                    useRadians = true
-                )
-
-                if (!yPlus.isNaN() && !yPlus.isInfinite() && !yMinus.isNaN() && !yMinus.isInfinite()) {
-                    val dy = (yPlus - yMinus) / (2 * h)
-                    val ddy = (yPlus - 2 * y + yMinus) / (h * h)
-
-                    val currentDySign = if (dy > 1e-9) 1 else if (dy < -1e-9) -1 else 0
-                    val currentDdySign = if (ddy > 1e-9) 1 else if (ddy < -1e-9) -1 else 0
-
-                    if (abs(y) < 1000) {
-                        if (lastDySign != 0 && currentDySign != 0 && currentDySign != lastDySign) {
-                            if (lastDySign > 0) maxima.add(point)
-                            else minima.add(point)
-                        }
-                        if (lastDdySign != 0 && currentDdySign != 0 && currentDdySign != lastDdySign) {
-                            inflections.add(point)
-                        }
-                    }
-
-                    if (currentDySign != 0) lastDySign = currentDySign
-                    if (currentDdySign != 0) lastDdySign = currentDdySign
-                } else {
-                    lastDySign = 0
-                    lastDdySign = 0
-                }
 
                 if (currentSegment.isNotEmpty()) {
                     val prev = currentSegment.last()
@@ -98,8 +54,6 @@ object GraphGenerator {
                         vAsymptotes.add(((point.x + prev.x) / 2))
                         allSegments.add(currentSegment)
                         currentSegment = mutableListOf()
-                        lastDySign = 0
-                        lastDdySign = 0
                     }
                 }
                 currentSegment.add(point)
@@ -108,11 +62,12 @@ object GraphGenerator {
                     allSegments.add(currentSegment)
                     currentSegment = mutableListOf()
                 }
-                lastDySign = 0
-                lastDdySign = 0
             }
         }
         if (currentSegment.isNotEmpty()) allSegments.add(currentSegment)
+
+        // Symja based analysis for extremas and inflections
+        val (maxima, minima, inflections) = analyzeWithSymja(expression, minX, maxX)
 
         val points = allSegments.flatten()
         return allSegments to GraphAnalysis(
@@ -123,6 +78,86 @@ object GraphGenerator {
             horizontalTrends = (points.firstOrNull()?.y) to (points.lastOrNull()?.y)
         )
     }
+
+    private fun analyzeWithSymja(
+        expression: String,
+        minX: Double,
+        maxX: Double
+    ): Triple<List<Point>, List<Point>, List<Point>> {
+        val maxima = mutableListOf<Point>()
+        val minima = mutableListOf<Point>()
+        val inflections = mutableListOf<Point>()
+
+        try {
+            val cleaned = SymjaUtils.prepareForSymja(expression)
+
+            // 1. Find Extrema: f'(x) = 0
+            val rootsExtrema = findRoots("D[$cleaned, x]", minX, maxX)
+
+            // 2. Find Inflections: f''(x) = 0
+            val d2Expr = SymjaUtils.evaluator.eval("D[$cleaned, {x, 2}]")
+            val d2Str = SymjaUtils.formatResult(d2Expr.toString())
+            val rootsInflections = findRoots("D[$cleaned, {x, 2}]", minX, maxX)
+
+            // Classify extrema using 2nd derivative
+            for (x in rootsExtrema) {
+                val y = CalcFuncs.calculateExpression(expression, mapOf("x" to x), useRadians = true)
+                if (y.isNaN() || y.isInfinite()) continue
+
+                // Evaluate f''(x) using CalcFuncs for numerical safety
+                try {
+                    val ddyVal = CalcFuncs.calculateExpression(d2Str, mapOf("x" to x), useRadians = true)
+                    if (!ddyVal.isNaN()) {
+                        if (ddyVal < -1e-7) maxima.add(Point(x.toFloat(), y.toFloat()))
+                        else if (ddyVal > 1e-7) minima.add(Point(x.toFloat(), y.toFloat()))
+                    }
+                } catch (_: Exception) {
+                }
+            }
+
+            for (x in rootsInflections) {
+                val y = CalcFuncs.calculateExpression(expression, mapOf("x" to x), useRadians = true)
+                if (y.isNaN() || y.isInfinite()) continue
+                inflections.add(Point(x.toFloat(), y.toFloat()))
+            }
+        } catch (_: Exception) {
+        }
+
+        return Triple(maxima, minima, inflections)
+    }
+
+    private fun findRoots(
+        derivativeExpr: String,
+        minX: Double,
+        maxX: Double
+    ): List<Double> {
+        val roots = mutableListOf<Double>()
+        try {
+            // Evaluates roots and returns them as a list {val1, val2, ...}
+            // We use NSolve[expr == 0, x] to get numerical roots.
+            val result = SymjaUtils.evaluator.eval("x /. NSolve[($derivativeExpr) == 0, x]")
+
+            if (result is IAST) {
+                // IAST indices are 1-based for arguments
+                for (i in 1 until result.size()) {
+                    val resStr = result.get(i).toString()
+                    val value = resStr.toDoubleOrNull() ?: Double.NaN
+                    if (!value.isNaN() && value >= minX && value <= maxX) {
+                        roots.add(value)
+                    }
+                }
+            } else {
+                // Single value case (not a list)
+                val value = result.toString().toDoubleOrNull() ?: Double.NaN
+                if (!value.isNaN() && value >= minX && value <= maxX) {
+                    roots.add(value)
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return roots.distinct()
+    }
+
 
     private fun generateImplicit(
         expression: String,

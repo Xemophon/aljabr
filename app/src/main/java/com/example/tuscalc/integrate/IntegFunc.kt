@@ -1,18 +1,9 @@
 package com.example.tuscalc.integrate
 
 import com.example.tuscalc.basicCalc.CalcFuncs
-import org.matheclipse.core.eval.ExprEvaluator
+import com.example.tuscalc.utils.SymjaUtils
 
 object IntegFunc {
-    // Shared evaluator to avoid expensive re-initialization.
-    // Initialized lazily but can be warmed up manually.
-    private val evaluator by lazy {
-        ExprEvaluator().apply {
-            evalEngine.isRelaxedSyntax = true
-            evalEngine.recursionLimit = 128
-            evalEngine.iterationLimit = 500
-        }
-    }
 
     /**
      * Warms up the CAS engine by performing a dummy evaluation.
@@ -21,7 +12,7 @@ object IntegFunc {
     fun warmUp() {
         Thread {
             try {
-                evaluator.eval("1+1")
+                SymjaUtils.evaluator.eval("1+1")
             } catch (_: Throwable) {
             }
         }.start()
@@ -71,12 +62,12 @@ object IntegFunc {
 
     fun integrateIndefinite(expression: String): String {
         return try {
-            val cleaned = prepareForSymja(expression)
+            val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return ""
 
             // Use the shared evaluator with relaxed syntax
             // We use Integrate[...] square brackets to be explicit for the CAS engine
-            val result = evaluator.eval("Integrate[$cleaned, x]")
+            val result = SymjaUtils.evaluator.eval("Integrate[$cleaned, x]")
             val resStr = result.toString()
 
             // If Symja couldn't solve it, it returns the input string Integrate(...)
@@ -97,44 +88,8 @@ object IntegFunc {
         }
     }
 
-    private fun prepareForSymja(expression: String): String {
-        return expression
-            .replace(" ", "")
-            .replace("×", "*")
-            .replace("÷", "/")
-            .replace("sin", "Sin", ignoreCase = true)
-            .replace("cos", "Cos", ignoreCase = true)
-            .replace("tan", "Tan", ignoreCase = true)
-            .replace("asin", "ArcSin", ignoreCase = true)
-            .replace("acos", "ArcCos", ignoreCase = true)
-            .replace("atan", "ArcTan", ignoreCase = true)
-            .replace("ln", "Log", ignoreCase = true)
-            .replace("log", "Log10", ignoreCase = true)
-            .replace("sqrt", "Sqrt", ignoreCase = true)
-            .replace("π", "Pi")
-            .replace("e", "E")
-            .replace("√", "Sqrt")
-    }
-
     private fun formatResult(resStr: String): String {
-        var formatted = resStr
-            .replace("Log10", "log")
-            .replace("Log", "ln")
-            .replace("ArcSin", "asin")
-            .replace("ArcCos", "acos")
-            .replace("ArcTan", "atan")
-            .replace("Sin", "sin")
-            .replace("Cos", "cos")
-            .replace("Tan", "tan")
-            .replace("Pi", "π")
-            .replace("E", "e")
-            .replace("Sqrt", "√")
-            .replace("*x", "x") // Only remove * if it's followed by x
-            .replace("*(", "(")
-            .replace("[", "(")
-            .replace("]", ")")
-            .replace(",", ", ")
-
+        var formatted = SymjaUtils.formatResult(resStr)
         return "$formatted + C"
     }
 }
