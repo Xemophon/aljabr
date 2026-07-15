@@ -68,3 +68,7 @@ The project is organized into modular packages based on functionality:
     - `limits/`: Numerical limit calculation logic.
     - `navigation/`: Type-safe navigation using Jetpack Navigation Compose.
     - `ui/theme/`: Material 3 theme and color definitions.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
