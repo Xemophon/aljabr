@@ -117,8 +117,11 @@ fun InteractiveGraphView(expression: String) {
     var viewportOffset by remember { mutableStateOf(Offset.Zero) }
     var viewportScale by remember { mutableFloatStateOf(1f) }
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val aspectRatio = configuration.screenHeightDp.toFloat() / configuration.screenWidthDp.toFloat()
+
     val rangeX = 20f / viewportScale
-    val rangeY = 20f / viewportScale
+    val rangeY = rangeX * aspectRatio
 
     val minX = (-rangeX / 2 + viewportOffset.x).toDouble()
     val maxX = (rangeX / 2 + viewportOffset.x).toDouble()
@@ -132,7 +135,7 @@ fun InteractiveGraphView(expression: String) {
     val analysis = result.second
 
     // Material You Colors
-    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
     val axisColor = MaterialTheme.colorScheme.outline
     val graphColor = MaterialTheme.colorScheme.primary
     val asymptoteColor = MaterialTheme.colorScheme.error
@@ -308,7 +311,11 @@ fun AnalysisWidget(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "f(x) = $expression",
+                text = if ("y" in expression) {
+                    expression
+                } else {
+                    "f(x) = $expression"
+                },
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -316,12 +323,15 @@ fun AnalysisWidget(
 
             if (analysis.localMaxima.isNotEmpty()) {
                 AnalysisSection("Maxima", analysis.localMaxima)
+                Spacer(modifier = Modifier.height(4.dp))
             }
             if (analysis.localMinima.isNotEmpty()) {
                 AnalysisSection("Minima", analysis.localMinima)
+                Spacer(modifier = Modifier.height(4.dp))
             }
             if (analysis.inflectionPoints.isNotEmpty()) {
                 AnalysisSection("Inflections", analysis.inflectionPoints)
+                Spacer(modifier = Modifier.height(4.dp))
             }
             if (analysis.verticalAsymptotes.isNotEmpty()) {
                 Text(
