@@ -35,3 +35,5 @@ object DiffFunc {
         }
     }
 }
+
+/*TODO: Implement extremes of two variables*/

@@ -102,12 +102,13 @@ fun CalcButtons(
                 Button(
                     onClick = onToggleInverse,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+                        containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text(
                         text = "Inverse",
-                        color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer
+                        color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -155,6 +156,8 @@ fun AdvancedButtonsGrid(
     modifier: Modifier = Modifier,
     mode: String = "Limits",
     isInverse: Boolean = false,
+    limitType: LimitType = LimitType.FINITE,
+    integType: IntegralType = IntegralType.DEFINITE,
     onToggleInverse: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) = CalcButtonSheet(modifier) {
@@ -169,13 +172,13 @@ fun AdvancedButtonsGrid(
         Button(
             onClick = onToggleInverse,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+                containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
             ),
             modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = "Inv",
-                color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
                 style = MaterialTheme.typography.labelLarge
             )
         }
@@ -184,8 +187,8 @@ fun AdvancedButtonsGrid(
                 Button(
                     onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
@@ -194,8 +197,8 @@ fun AdvancedButtonsGrid(
                 Button(
                     onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
@@ -203,7 +206,7 @@ fun AdvancedButtonsGrid(
                 }
             }
 
-            "Integration" -> {
+            "Integration", "Integrate" -> {
                 Button(
                     onClick = {
                         onAction(
@@ -214,8 +217,8 @@ fun AdvancedButtonsGrid(
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
@@ -232,8 +235,8 @@ fun AdvancedButtonsGrid(
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.weight(1f)
                 ) {
@@ -241,7 +244,7 @@ fun AdvancedButtonsGrid(
                 }
             }
 
-            "Differentiate" -> {
+            "Differentiation", "Differentiate" -> {
                 Button(
                     onClick = { onAction(CalcButtonAction.Differentiate("d/dx")) },
                     colors = ButtonDefaults.buttonColors(
@@ -283,13 +286,13 @@ fun CalcButtonsGraph(
         Button(
             onClick = onToggleInverse,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isInverse) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer
+                containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
             ),
             modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = "Inv",
-                color = if (isInverse) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
                 style = MaterialTheme.typography.labelLarge
             )
         }
@@ -308,8 +311,8 @@ fun CalcButtonsGraph(
         Button(
             onClick = { onAction(CalcButtonAction.Clear) },
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             ),
             modifier = Modifier.weight(1f)
         ) {
@@ -361,20 +364,62 @@ private data class ButtonColorPalette(val containerColor: Color, val contentColo
 
 @Composable
 private fun getButtonColors(action: CalcButtonAction): ButtonColorPalette {
-    return when {
-        action is CalcButtonAction.Calculate || action is CalcButtonAction.Variable -> ButtonColorPalette(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    val colorScheme = MaterialTheme.colorScheme
+    return when (action) {
+        is CalcButtonAction.Calculate -> ButtonColorPalette(
+            containerColor = colorScheme.primary,
+            contentColor = colorScheme.onPrimary
         )
 
-        action is CalcButtonAction.Scientific || (action is CalcButtonAction.Symbol && action.isOperator) -> ButtonColorPalette(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        is CalcButtonAction.Clear, is CalcButtonAction.Backspace -> ButtonColorPalette(
+            containerColor = colorScheme.tertiaryContainer,
+            contentColor = colorScheme.onTertiaryContainer
+        )
+
+        is CalcButtonAction.Symbol -> {
+            val text = action.text
+            when {
+                text == "=" -> ButtonColorPalette(
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
+                )
+
+                text in listOf("÷", "×", "-", "+") -> ButtonColorPalette(
+                    containerColor = colorScheme.primaryContainer,
+                    contentColor = colorScheme.onPrimaryContainer
+                )
+
+                text in listOf("(", ")", "( )", "^", "π", "e", "%") -> ButtonColorPalette(
+                    containerColor = colorScheme.secondaryContainer,
+                    contentColor = colorScheme.onSecondaryContainer
+                )
+
+                // Numbers 0-9 and .
+                text.all { it.isDigit() || it == '.' } -> ButtonColorPalette(
+                    containerColor = colorScheme.surfaceContainerHigh,
+                    contentColor = colorScheme.onSurface
+                )
+
+                else -> ButtonColorPalette(
+                    containerColor = colorScheme.secondaryContainer,
+                    contentColor = colorScheme.onSecondaryContainer
+                )
+            }
+        }
+
+        is CalcButtonAction.Scientific -> ButtonColorPalette(
+            containerColor = colorScheme.secondaryContainer,
+            contentColor = colorScheme.onSecondaryContainer
+        )
+
+        is CalcButtonAction.Variable -> ButtonColorPalette(
+            containerColor = colorScheme.secondaryContainer,
+            contentColor = colorScheme.onSecondaryContainer
         )
 
         else -> ButtonColorPalette(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            containerColor = colorScheme.surfaceContainerHigh,
+            contentColor = colorScheme.onSurface
         )
     }
 }

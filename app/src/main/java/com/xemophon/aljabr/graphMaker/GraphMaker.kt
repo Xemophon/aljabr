@@ -1,5 +1,6 @@
 package com.xemophon.aljabr.graphMaker
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -64,6 +65,10 @@ fun GraphMaker(
     var isInverse by remember { mutableStateOf(false) }
     var showGraph by remember { mutableStateOf(false) }
 
+    BackHandler(enabled = showGraph) {
+        showGraph = false
+    }
+
     CalculatorScaffold(
         title = { Text(if (showGraph) "Graph Analysis" else "Graph Equation") },
         onOpenDrawer = onOpenDrawer,
@@ -77,7 +82,7 @@ fun GraphMaker(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            color = MaterialTheme.colorScheme.surfaceVariant
+            color = if (showGraph) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
         ) {
             if (showGraph) {
                 InteractiveGraphView(expression = viewModel.displayText)
@@ -148,11 +153,11 @@ fun InteractiveGraphView(expression: String) {
     val axisColor = MaterialTheme.colorScheme.outline
     val graphColor = MaterialTheme.colorScheme.primary
     val asymptoteColor = MaterialTheme.colorScheme.error
-    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
+    val surfaceColor = MaterialTheme.colorScheme.surface
     // Material You Colors for elements
-    val critPointMin = MaterialTheme.colorScheme.onPrimary
-    val critPointMax = MaterialTheme.colorScheme.onSecondary
-    val inflectPoint = MaterialTheme.colorScheme.onTertiary
+    val critPointMax = MaterialTheme.colorScheme.primary
+    val critPointMin = MaterialTheme.colorScheme.secondary
+    val inflectPoint = MaterialTheme.colorScheme.tertiary
     val dotSize = 10f
 
     Box(modifier = Modifier.fillMaxSize()) {

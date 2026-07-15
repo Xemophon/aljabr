@@ -73,7 +73,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    mode = "Differentiation",
+                    mode = "Differentiate",
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )

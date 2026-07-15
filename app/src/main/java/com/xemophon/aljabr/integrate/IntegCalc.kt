@@ -79,6 +79,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
                     mode = "Integration",
+                    integType = viewModel.integType,
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )

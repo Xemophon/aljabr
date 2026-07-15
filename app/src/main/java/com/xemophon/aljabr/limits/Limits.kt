@@ -75,6 +75,7 @@ fun Limits(onOpenDrawer: () -> Unit) {
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
                     mode = "Limits",
+                    limitType = viewModel.limitType,
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )
