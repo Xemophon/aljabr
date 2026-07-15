@@ -1,6 +1,6 @@
-# TUsCalc
+# AlJabr
 
-TUsCalc is a modern, feature-rich calculator and mathematical toolkit for Android. Built using **Jetpack Compose** and **Material Design 3**, it provides a clean, responsive interface for everything from simple arithmetic to advanced calculus and graphing.
+AlJabr is a modern, feature-rich calculator and mathematical toolkit for Android. Built using **Jetpack Compose** and **Material Design 3**, it provides a clean, responsive interface for everything from simple arithmetic to advanced calculus and graphing.
 
 ## 🚀 Features
 
