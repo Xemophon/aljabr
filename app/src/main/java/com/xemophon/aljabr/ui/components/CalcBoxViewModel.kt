@@ -216,40 +216,11 @@ class CalcBoxViewModel : ViewModel() {
             return
         }
 
-        if (displayText == "0") {
-            displayText = symbol
-            cursorIndex = symbol.length
-        } else {
-            val sb = StringBuilder(displayText)
-            sb.insert(cursorIndex, symbol)
-            displayText = sb.toString()
-            cursorIndex += symbol.length
-        }
+        insertText(symbol)
         isShowingResult = false
     }
 
-    private fun handleBrackets() {
-        val openBrackets = displayText.count { it == '(' }
-        val closedBrackets = displayText.count { it == ')' }
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-
-        val toInsert = when {
-            displayText == "0" -> "("
-            openBrackets > closedBrackets -> {
-                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e')) {
-                    ")"
-                } else {
-                    "("
-                }
-            }
-
-            else -> {
-                val prefix =
-                    if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e')) " × " else ""
-                if (displayText == "0") "(" else "${prefix}("
-            }
-        }
-
+    private fun insertText(toInsert: String) {
         if (displayText == "0" && !toInsert.startsWith(" × ")) {
             displayText = toInsert
             cursorIndex = toInsert.length
@@ -261,6 +232,31 @@ class CalcBoxViewModel : ViewModel() {
         }
     }
 
+    private fun handleBrackets() {
+        val openBrackets = displayText.count { it == '(' }
+        val closedBrackets = displayText.count { it == ')' }
+        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
+
+        val toInsert = when {
+            displayText == "0" -> "("
+            openBrackets > closedBrackets -> {
+                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e' || lastChar == 'x' || lastChar == 'y')) {
+                    ")"
+                } else {
+                    "("
+                }
+            }
+
+            else -> {
+                val prefix =
+                    if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e' || lastChar == 'x' || lastChar == 'y')) " × " else ""
+                if (displayText == "0") "(" else "${prefix}("
+            }
+        }
+
+        insertText(toInsert)
+    }
+
     private fun handlePercentage() {
         if (displayText != "0" && displayText != "Error") {
             displayText += "%"
@@ -268,6 +264,17 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
+        if (calculatorMode == CalculatorMode.INTEGRATE) {
+            if (currentFocus == CalculatorFocus.INTEG_LOWER) {
+                lowerLimitText += action.text
+                return
+            }
+            if (currentFocus == CalculatorFocus.INTEG_UPPER) {
+                upperLimitText += action.text
+                return
+            }
+        }
+
         if (action.type == ScientificType.FACTORIAL) {
             if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
                 val sb = StringBuilder(displayText)
@@ -280,7 +287,7 @@ class CalcBoxViewModel : ViewModel() {
 
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
         val isPrevDigitOrParen =
-            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e') && displayText != "0"
         val prefix = if (isPrevDigitOrParen) " × " else ""
 
         val toInsert = when (action.type) {
@@ -298,41 +305,36 @@ class CalcBoxViewModel : ViewModel() {
             else -> "$prefix${action.text.lowercase()}("
         }
 
-        if (displayText == "0" && !toInsert.startsWith(" × ")) {
-            displayText = toInsert
-            cursorIndex = toInsert.length
-        } else {
-            val sb = StringBuilder(displayText)
-            sb.insert(cursorIndex, toInsert)
-            displayText = sb.toString()
-            cursorIndex += toInsert.length
-        }
+        insertText(toInsert)
     }
 
     private fun handleVariable(action: CalcButtonAction.Variable) {
+        if (calculatorMode == CalculatorMode.INTEGRATE) {
+            if (currentFocus == CalculatorFocus.INTEG_LOWER) {
+                lowerLimitText += action.text
+                return
+            }
+            if (currentFocus == CalculatorFocus.INTEG_UPPER) {
+                upperLimitText += action.text
+                return
+            }
+        }
+
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
         val isPrevDigitOrParen =
-            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y') && displayText != "0"
+            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e') && displayText != "0"
         val prefix = if (isPrevDigitOrParen) " × " else ""
 
         val toInsert = "$prefix${action.text}"
 
-        if (displayText == "0" && !toInsert.startsWith(" × ")) {
-            displayText = toInsert
-            cursorIndex = toInsert.length
-        } else {
-            val sb = StringBuilder(displayText)
-            sb.insert(cursorIndex, toInsert)
-            displayText = sb.toString()
-            cursorIndex += toInsert.length
-        }
+        insertText(toInsert)
     }
 
     private fun updateInstantResult() {
         if (!calculationEnabled || displayText == "0" || displayText.isBlank() ||
             calculatorMode == CalculatorMode.LIMITS ||
-            calculatorMode == CalculatorMode.DIFFERENTIATE ||
-            (calculatorMode == CalculatorMode.INTEGRATE && integType == IntegralType.DEFINITE)
+            calculatorMode == CalculatorMode.INTEGRATE ||
+            calculatorMode == CalculatorMode.DIFFERENTIATE
         ) {
             resultText = ""
             return
