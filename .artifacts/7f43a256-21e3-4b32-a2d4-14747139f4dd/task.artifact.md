@@ -1,0 +1,15 @@
+- [x] Update Gradle configuration
+    - [x] Update `settings.gradle.kts` (root project name)
+    - [x] Update `app/build.gradle.kts` (namespace and applicationId)
+- [x] Update Manifest and Resources
+    - [x] Update `AndroidManifest.xml` (Activity name and theme)
+    - [x] Update `themes.xml` (Theme name)
+- [x] Refactor Source Code
+    - [x] Create new package directory structure `app/src/main/java/com/xemophon/aljabr/`
+    - [x] Move files from `com/example/aljabr/` to `com/xemophon/aljabr/`
+    - [x] Update `package` and `import` statements in all Kotlin files
+    - [x] Rename `TUsCalcTheme` to `AlJabrTheme`
+- [x] Clean up and Verify
+    - [x] Delete old empty package directories
+    - [x] Sync Gradle
+    - [x] Build project

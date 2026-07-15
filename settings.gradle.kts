@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TUsCalc"
+rootProject.name = "AlJabr"
 include(":app")
