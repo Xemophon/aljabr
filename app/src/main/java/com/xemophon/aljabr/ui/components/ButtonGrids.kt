@@ -38,7 +38,7 @@ private fun CalcButtonSheet(
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.primaryFixedDim,
+        color = MaterialTheme.colorScheme.inversePrimary,
         shape = AbsoluteRoundedCornerShape(
             topLeft = Dimens.LandingPageCornerRadius,
             topRight = Dimens.LandingPageCornerRadius
