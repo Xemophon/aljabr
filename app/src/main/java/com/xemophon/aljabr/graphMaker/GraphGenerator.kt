@@ -12,10 +12,23 @@ data class GraphAnalysis(
     val localMinima: List<Point> = emptyList(),
     val inflectionPoints: List<Point> = emptyList(),
     val verticalAsymptotes: List<Float> = emptyList(),
+    val horizontalAsymptotes: List<Float> = emptyList(),
     val horizontalTrends: Pair<Float?, Float?> = null to null // left, right
 )
 
 object GraphGenerator {
+    private data class AnalysisCache(
+        val expression: String,
+        val firstDerivative: String?,
+        val secondDerivative: String?,
+        val globalRootsExtrema: List<Double>,
+        val globalRootsInflections: List<Double>,
+        val globalVerticalAsymptotes: List<Float>,
+        val globalHorizontalAsymptotes: List<Float>
+    )
+
+    private var cache: AnalysisCache? = null
+
     fun generateAndAnalyze(
         expression: String,
         minX: Double,
@@ -33,7 +46,6 @@ object GraphGenerator {
 
         val allSegments = mutableListOf<MutableList<Point>>()
         var currentSegment = mutableListOf<Point>()
-        val vAsymptotes = mutableListOf<Float>()
 
         // For f(x), we use more steps
         val fSteps = 1000
@@ -51,7 +63,6 @@ object GraphGenerator {
                     val dyJump = abs(point.y - prev.y)
                     val slope = dyJump / stepSize
                     if (slope > 5000 && (point.y * prev.y < 0 || abs(point.y) > 40 || abs(prev.y) > 40)) {
-                        vAsymptotes.add(((point.x + prev.x) / 2))
                         allSegments.add(currentSegment)
                         currentSegment = mutableListOf()
                     }
@@ -66,15 +77,16 @@ object GraphGenerator {
         }
         if (currentSegment.isNotEmpty()) allSegments.add(currentSegment)
 
-        // Symja based analysis for extremas and inflections
-        val (maxima, minima, inflections) = analyzeWithSymja(expression, minX, maxX)
+        // Symja based analysis for extremas, inflections and asymptotes
+        val (maxima, minima, inflections, vAsymptotesSymja, hAsymptotesSymja) = analyzeWithSymja(expression, minX, maxX)
 
         val points = allSegments.flatten()
         return allSegments to GraphAnalysis(
             localMaxima = maxima,
             localMinima = minima,
             inflectionPoints = inflections,
-            verticalAsymptotes = vAsymptotes.distinct(),
+            verticalAsymptotes = vAsymptotesSymja,
+            horizontalAsymptotes = hAsymptotesSymja,
             horizontalTrends = (points.firstOrNull()?.y) to (points.lastOrNull()?.y)
         )
     }
@@ -83,28 +95,73 @@ object GraphGenerator {
         expression: String,
         minX: Double,
         maxX: Double
-    ): Triple<List<Point>, List<Point>, List<Point>> {
+    ): Quintuple<List<Point>, List<Point>, List<Point>, List<Float>, List<Float>> {
         val maxima = mutableListOf<Point>()
         val minima = mutableListOf<Point>()
         val inflections = mutableListOf<Point>()
 
         try {
-            val cleaned = SymjaUtils.prepareForSymja(expression)
+            val currentCache = if (cache?.expression == expression) {
+                cache
+            } else {
+                val cleaned = SymjaUtils.prepareForSymja(expression)
+                
+                // Precompute derivatives
+                SymjaUtils.evaluator.eval("D[$cleaned, x]")
+                val d2Expr = SymjaUtils.evaluator.eval("D[$cleaned, {x, 2}]")
+                val d2Str = SymjaUtils.formatResult(d2Expr.toString())
+                
+                // Find roots in a very large "global" range once
+                val globalRootsExtrema = findRoots("D[$cleaned, x]", -10000.0, 10000.0)
+                val globalRootsInflections = findRoots("D[$cleaned, {x, 2}]", -10000.0, 10000.0)
 
-            // 1. Find Extrema: f'(x) = 0
-            val rootsExtrema = findRoots("D[$cleaned, x]", minX, maxX)
+                // --- Global Asymptote Detection ---
+                val globalVAsymptotes = mutableListOf<Float>()
+                val globalHAsymptotes = mutableListOf<Float>()
 
-            // 2. Find Inflections: f''(x) = 0
-            val d2Expr = SymjaUtils.evaluator.eval("D[$cleaned, {x, 2}]")
-            val d2Str = SymjaUtils.formatResult(d2Expr.toString())
-            val rootsInflections = findRoots("D[$cleaned, {x, 2}]", minX, maxX)
+                // 1. Vertical: Use Together to simplify fractions (e.g. tan(x) = sin/cos)
+                val denRoots = findRoots("Denominator[Together[$cleaned]]", -1000.0, 1000.0)
+                for (x in denRoots) {
+                    val limitLeft = SymjaUtils.evaluator.eval("Limit[$cleaned, x -> $x, Direction -> 1]")
+                    val limitRight = SymjaUtils.evaluator.eval("Limit[$cleaned, x -> $x, Direction -> -1]")
+                    if (limitLeft.toString().contains("Infinity") || limitRight.toString().contains("Infinity")) {
+                        globalVAsymptotes.add(x.toFloat())
+                    }
+                }
+
+                // 2. Horizontal
+                val limitInf = SymjaUtils.evaluator.eval("Limit[$cleaned, x -> Infinity]")
+                val limitNegInf = SymjaUtils.evaluator.eval("Limit[$cleaned, x -> -Infinity]")
+                listOf(limitInf, limitNegInf).forEach { limitRes ->
+                    val limitStr = limitRes.toString()
+                    val value = limitStr.toDoubleOrNull()
+                    if (value != null && !value.isInfinite() && !value.isNaN()) {
+                        globalHAsymptotes.add(value.toFloat())
+                    }
+                }
+                
+                AnalysisCache(
+                    expression = expression,
+                    firstDerivative = cleaned,
+                    secondDerivative = d2Str,
+                    globalRootsExtrema = globalRootsExtrema,
+                    globalRootsInflections = globalRootsInflections,
+                    globalVerticalAsymptotes = globalVAsymptotes.distinct(),
+                    globalHorizontalAsymptotes = globalHAsymptotes.distinct()
+                ).also { cache = it }
+            }
+
+            val d2Str = currentCache?.secondDerivative ?: ""
+            val rootsExtrema = currentCache?.globalRootsExtrema?.filter { it in minX..maxX } ?: emptyList()
+            val rootsInflections = currentCache?.globalRootsInflections?.filter { it in minX..maxX } ?: emptyList()
+            val vAsymptotes = currentCache?.globalVerticalAsymptotes?.filter { it.toDouble() in minX..maxX } ?: emptyList()
+            val hAsymptotes = currentCache?.globalHorizontalAsymptotes ?: emptyList()
 
             // Classify extrema using 2nd derivative
             for (x in rootsExtrema) {
                 val y = CalcFuncs.calculateExpression(expression, mapOf("x" to x), useRadians = true)
                 if (y.isNaN() || y.isInfinite()) continue
 
-                // Evaluate f''(x) using CalcFuncs for numerical safety
                 try {
                     val ddyVal = CalcFuncs.calculateExpression(d2Str, mapOf("x" to x), useRadians = true)
                     if (!ddyVal.isNaN()) {
@@ -120,11 +177,16 @@ object GraphGenerator {
                 if (y.isNaN() || y.isInfinite()) continue
                 inflections.add(Point(x.toFloat(), y.toFloat()))
             }
+
+            return Quintuple(maxima, minima, inflections, vAsymptotes, hAsymptotes)
+
         } catch (_: Exception) {
         }
 
-        return Triple(maxima, minima, inflections)
+        return Quintuple(maxima, minima, inflections, emptyList(), emptyList())
     }
+
+    private data class Quintuple<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
     private fun findRoots(
         derivativeExpr: String,

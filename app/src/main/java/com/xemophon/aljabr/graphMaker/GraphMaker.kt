@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +47,9 @@ import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalcButtonsGraph
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
@@ -128,8 +132,13 @@ fun InteractiveGraphView(expression: String) {
     val minY = (-rangeY / 2 + viewportOffset.y).toDouble()
     val maxY = (rangeY / 2 + viewportOffset.y).toDouble()
 
-    val result = remember(expression, minX, maxX, minY, maxY) {
-        GraphGenerator.generateAndAnalyze(expression, minX, maxX, minY, maxY, 1000)
+    val result by produceState<Pair<List<List<Point>>, GraphAnalysis>>(
+        initialValue = emptyList<List<Point>>() to GraphAnalysis(),
+        expression, minX, maxX, minY, maxY
+    ) {
+        value = withContext(Dispatchers.Default) {
+            GraphGenerator.generateAndAnalyze(expression, minX, maxX, minY, maxY, 1000)
+        }
     }
     val points = result.first
     val analysis = result.second
@@ -141,9 +150,9 @@ fun InteractiveGraphView(expression: String) {
     val asymptoteColor = MaterialTheme.colorScheme.error
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
     // Material You Colors for elements
-    val critPointMin = MaterialTheme.colorScheme.secondaryFixed
-    val critPointMax = MaterialTheme.colorScheme.secondaryFixedDim
-    val inflectPoint = MaterialTheme.colorScheme.tertiaryFixed
+    val critPointMin = MaterialTheme.colorScheme.onPrimary
+    val critPointMax = MaterialTheme.colorScheme.onSecondary
+    val inflectPoint = MaterialTheme.colorScheme.onTertiary
     val dotSize = 10f
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -275,10 +284,19 @@ fun InteractiveGraphView(expression: String) {
                     end = Offset(x, height),
                     strokeWidth = 2f,
                     pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                        floatArrayOf(
-                            10f,
-                            10f
-                        ), 0f
+                        floatArrayOf(10f, 10f), 0f
+                    )
+                )
+            }
+            analysis.horizontalAsymptotes.forEach { hY ->
+                val y = centerY - hY * scaleY
+                drawLine(
+                    color = asymptoteColor,
+                    start = Offset(0f, y),
+                    end = Offset(width, y),
+                    strokeWidth = 2f,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                        floatArrayOf(10f, 10f), 0f
                     )
                 )
             }
@@ -333,21 +351,19 @@ fun AnalysisWidget(
                 AnalysisSection("Inflections", analysis.inflectionPoints)
                 Spacer(modifier = Modifier.height(4.dp))
             }
-            if (analysis.verticalAsymptotes.isNotEmpty()) {
+            if (analysis.verticalAsymptotes.isNotEmpty() || analysis.horizontalAsymptotes.isNotEmpty()) {
+                val vTexts = analysis.verticalAsymptotes.map { "x ≈ %.1f".format(it) }
+                val hTexts = analysis.horizontalAsymptotes.map { "y ≈ %.1f".format(it) }
+                val allTexts = vTexts + hTexts
+
                 Text(
-                    text = "Asymptotes: x ≈ ${
-                        analysis.verticalAsymptotes.joinToString {
-                            "%.1f".format(
-                                it
-                            )
-                        }
-                    }",
+                    text = "Asymptotes: ${allTexts.joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 10.sp
                 )
             }
 
-            if (analysis.localMaxima.isEmpty() && analysis.localMinima.isEmpty() && analysis.inflectionPoints.isEmpty() && analysis.verticalAsymptotes.isEmpty()) {
+            if (analysis.localMaxima.isEmpty() && analysis.localMinima.isEmpty() && analysis.inflectionPoints.isEmpty() && analysis.verticalAsymptotes.isEmpty() && analysis.horizontalAsymptotes.isEmpty()) {
                 Text(
                     text = "No critical points detected in view",
                     style = MaterialTheme.typography.bodySmall,
