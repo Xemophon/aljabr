@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.xemophon.aljabr.basicCalc.CalcFuncs
+import com.xemophon.aljabr.differentiate.AnalysisFunc
+import com.xemophon.aljabr.differentiate.AnalysisResult
 import com.xemophon.aljabr.differentiate.DiffFunc
 import com.xemophon.aljabr.integrate.IntegFunc
 import com.xemophon.aljabr.limits.LimitsFunc
@@ -107,6 +109,11 @@ class CalcBoxViewModel : ViewModel() {
     var upperLimitText by mutableStateOf("")
         private set
 
+    var analysisResult by mutableStateOf<AnalysisResult?>(null)
+        private set
+
+    var diffGridMode by mutableStateOf("Single") // "Single" or "Multiple"
+
     var currentFocus by mutableStateOf(CalculatorFocus.EXPRESSION)
         private set
 
@@ -165,7 +172,11 @@ class CalcBoxViewModel : ViewModel() {
             }
 
             is CalcButtonAction.Differentiate -> {
-                null
+                diffGridMode = "Multiple"
+            }
+
+            is CalcButtonAction.DifferentiateSingle -> {
+                diffGridMode = "Single"
             }
         }
     }
@@ -460,6 +471,8 @@ class CalcBoxViewModel : ViewModel() {
     private fun runDifferentiateCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
         try {
+            analysisResult = AnalysisFunc.fullAnalysis(displayText)
+            // Still set resultText for basic compatibility if needed
             val res = DiffFunc.differentiate(displayText)
             if (res.isNotEmpty()) {
                 resultText = res
@@ -480,6 +493,7 @@ class CalcBoxViewModel : ViewModel() {
         displayText = "0"
         cursorIndex = 1
         resultText = ""
+        analysisResult = null
         targetText =
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""

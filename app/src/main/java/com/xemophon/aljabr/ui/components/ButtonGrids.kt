@@ -158,9 +158,11 @@ fun AdvancedButtonsGrid(
     isInverse: Boolean = false,
     limitType: LimitType = LimitType.FINITE,
     integType: IntegralType = IntegralType.DEFINITE,
+    diffGridMode: String = "Single",
     onToggleInverse: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) = CalcButtonSheet(modifier) {
+    val selectedGrid = if (diffGridMode == "Single") SingleVariableGrid else MultipleVariableGrid
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -246,20 +248,30 @@ fun AdvancedButtonsGrid(
 
             "Differentiation", "Differentiate" -> {
                 Button(
-                    onClick = { onAction(CalcButtonAction.Differentiate("d/dx")) },
+                    onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    modifier = Modifier.weight(2f)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(text = "d/dx", style = MaterialTheme.typography.labelLarge)
+                }
+                Button(
+                    onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = "∇f", style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
     }
     ButtonGrid(
-        gridData = SingleVariableGrid,
+        gridData = selectedGrid,
         buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
         isExpanded = true,
         isInverse = isInverse,

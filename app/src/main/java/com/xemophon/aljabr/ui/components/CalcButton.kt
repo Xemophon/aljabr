@@ -29,24 +29,12 @@ sealed interface CalcButtonAction {
     data class Limits(val text: String, val type: LimitType) : CalcButtonAction
     data class Integrals(val text: String, val type: IntegralType) : CalcButtonAction
     data class Differentiate(val text: String = "d/dx") : CalcButtonAction
+    data class DifferentiateSingle(val text: String = "d/dx") : CalcButtonAction
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
     data object Graph : CalcButtonAction
     data class Backspace(@param:DrawableRes val iconRes: Int) : CalcButtonAction
 }
-
-val CalcButtonAction.isOperator: Boolean
-    get() = when (this) {
-        is CalcButtonAction.Symbol -> text in listOf("÷", "×", "-", "+", "C", "( )", "%", "^", "=")
-        is CalcButtonAction.Clear -> true
-        is CalcButtonAction.Calculate -> true
-        is CalcButtonAction.Graph -> true
-        is CalcButtonAction.Variable -> false
-        is CalcButtonAction.Limits -> false
-        is CalcButtonAction.Integrals -> false
-        is CalcButtonAction.Differentiate -> false
-        else -> false
-    }
 
 fun CalcButtonAction.toInverse(): CalcButtonAction {
     return when (this) {
@@ -174,6 +162,50 @@ val GraphButtonsGrid = listOf(
     )
 )
 
+val MultipleVariableGrid = listOf(
+    listOf(
+        CalcButtonAction.Variable("x", Variables.X),
+        CalcButtonAction.Variable("y", Variables.Y),
+        CalcButtonAction.Symbol("("),
+        CalcButtonAction.Symbol(")")
+    ),
+    listOf(
+        CalcButtonAction.Scientific("sin", ScientificType.SIN),
+        CalcButtonAction.Scientific("cos", ScientificType.COS),
+        CalcButtonAction.Scientific("tan", ScientificType.TAN),
+        CalcButtonAction.Scientific("log", ScientificType.LOG)
+    ),
+    listOf(
+        CalcButtonAction.Scientific("π", ScientificType.PI),
+        CalcButtonAction.Scientific("e", ScientificType.E),
+        CalcButtonAction.Symbol("^", " ^ "),
+        CalcButtonAction.Symbol("÷", "/")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("7"),
+        CalcButtonAction.Symbol("8"),
+        CalcButtonAction.Symbol("9"),
+        CalcButtonAction.Symbol("×", "*"),
+    ),
+    listOf(
+        CalcButtonAction.Symbol("4"),
+        CalcButtonAction.Symbol("5"),
+        CalcButtonAction.Symbol("6"),
+        CalcButtonAction.Symbol("+")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("1"),
+        CalcButtonAction.Symbol("2"),
+        CalcButtonAction.Symbol("3"),
+        CalcButtonAction.Symbol("-")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("0"),
+        CalcButtonAction.Symbol("."),
+        CalcButtonAction.Backspace(R.drawable.backspace),
+        CalcButtonAction.Calculate
+    )
+)
 val SingleVariableGrid = listOf(
     listOf(
         CalcButtonAction.Variable("x", Variables.X),
@@ -284,6 +316,14 @@ fun CalcButton(
             }
 
             is CalcButtonAction.Differentiate -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = contentColor
+                )
+            }
+
+            is CalcButtonAction.DifferentiateSingle -> {
                 Text(
                     text = action.text,
                     style = textStyle,
