@@ -1,6 +1,9 @@
 package com.xemophon.aljabr.graphMaker
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -36,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,7 +54,6 @@ import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
@@ -159,6 +162,16 @@ fun InteractiveGraphView(expression: String) {
     val critPointMin = MaterialTheme.colorScheme.secondary
     val inflectPoint = MaterialTheme.colorScheme.tertiary
     val dotSize = 10f
+    //Draw animation
+    val animProgress = remember { Animatable(0f) }
+
+    LaunchedEffect(expression) {
+        animProgress.snapTo(0f) // Reset only on expression change
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(
@@ -230,6 +243,8 @@ fun InteractiveGraphView(expression: String) {
             )
 
             // Draw Graph
+            val progress = animProgress.value
+
             points.forEach { segment ->
                 if (segment.isNotEmpty()) {
                     val path = Path()
@@ -249,11 +264,29 @@ fun InteractiveGraphView(expression: String) {
                             first = true
                         }
                     }
-                    drawPath(
-                        path = path,
-                        color = graphColor,
-                        style = Stroke(width = 4.5f)
-                    )
+                    if (progress < 1f) {
+                        val pathMeasure = PathMeasure()
+                        pathMeasure.setPath(path, false)
+                        val animatedPath = Path()
+
+                        pathMeasure.getSegment(
+                            startDistance = 0f,
+                            stopDistance = pathMeasure.length * progress,
+                            destination = animatedPath
+                        )
+
+                        drawPath(
+                            path = animatedPath,
+                            color = graphColor,
+                            style = Stroke(width = 4.5f)
+                        )
+                    } else {
+                        drawPath(
+                            path = path,
+                            color = graphColor,
+                            style = Stroke(width = 4.5f)
+                        )
+                    }
                 }
             }
 

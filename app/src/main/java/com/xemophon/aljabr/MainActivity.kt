@@ -4,9 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -80,11 +85,48 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = BasicCalcRoute,
-                        enterTransition = { fadeIn(animationSpec = tween(300)) },
-                        exitTransition = { fadeOut(animationSpec = tween(300)) },
-                        popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                        popExitTransition = { fadeOut(animationSpec = tween(300)) },
-                    ) {
+                        enterTransition = {
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                                    slideInHorizontally(
+                                        initialOffsetX = { it / 10 },
+                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                    ) +
+                                    scaleIn(
+                                        initialScale = 0.92f,
+                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                    )
+                        },
+                        exitTransition = {
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
+                                    slideOutHorizontally(
+                                        targetOffsetX = { -it / 10 },
+                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
+                                    )
+                        },
+                        popEnterTransition = {
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                                    slideInHorizontally(
+                                        initialOffsetX = { -it / 10 },
+                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                    ) +
+                                    scaleIn(
+                                        initialScale = 0.92f,
+                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                    )
+                        },
+                        popExitTransition = {
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
+                                    slideOutHorizontally(
+                                        targetOffsetX = { it / 10 },
+                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
+                                    ) +
+                                    scaleOut(
+                                        targetScale = 0.92f,
+                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
+                                    )
+                        },
+                    )
+ {
                         AllCalculatorVariants.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }

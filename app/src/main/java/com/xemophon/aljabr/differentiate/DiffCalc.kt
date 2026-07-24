@@ -41,7 +41,6 @@ import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import com.xemophon.aljabr.utils.SymjaUtils
 
 object DiffFunc {
-
     /**
      * Warms up the CAS engine.
      */
@@ -182,14 +181,6 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
                 }
             }
 
-            // Stationary Points (Others)
-//            if (result.stationaryPoints.isNotEmpty()) {
-//                item { AnalysisSectionHeader("Stationary Points") }
-//                items(result.stationaryPoints) { point ->
-//                    AnalysisItemCard("Point", point)
-//                }
-//            }
-
             // Inflection Points
             if (result.inflectionPoints.isNotEmpty()) {
                 item { AnalysisSectionHeader("Inflection Points") }
@@ -283,7 +274,7 @@ fun DiffDisplay(
             } else {
                 Text(
                     text = "∇f",
-                    style = MaterialTheme.typography.displayMedium.copy(fontSize = 48.sp),
+                    style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
