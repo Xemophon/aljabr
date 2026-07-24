@@ -32,8 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.differentiate.DiffFunc
 import com.xemophon.aljabr.integrate.IntegFunc
-import com.xemophon.aljabr.navigation.AllCalculatorVariants
-import com.xemophon.aljabr.navigation.BasicCalcRoute
+import com.xemophon.aljabr.navigation.*
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +62,7 @@ class MainActivity : ComponentActivity() {
                     drawerContent = {
                         ModalDrawerSheet {
                             Spacer(modifier = Modifier.height(12.dp))
-                            AllCalculatorVariants.forEach { variant ->
+                            Calculus.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
                                     icon = { Icon(variant.icon, contentDescription = null) },
@@ -109,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         },
                     )
  {
-                        AllCalculatorVariants.forEach { variant ->
+                        Calculus.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }

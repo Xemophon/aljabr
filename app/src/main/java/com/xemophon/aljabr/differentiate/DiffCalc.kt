@@ -155,6 +155,22 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
                     AnalysisItemCard("Inflection", point)
                 }
             }
+
+            // Saddle Points
+            if (result.saddlePoints.isNotEmpty()) {
+                item { AnalysisSectionHeader("Saddle Points") }
+                items(result.saddlePoints) { point ->
+                    AnalysisItemCard("Saddle", point)
+                }
+            }
+
+            // Other Stationary Points
+            if (result.stationaryPoints.isNotEmpty()) {
+                item { AnalysisSectionHeader("Stationary Points") }
+                items(result.stationaryPoints) { point ->
+                    AnalysisItemCard("Stationary", point)
+                }
+            }
         }
 
         item {

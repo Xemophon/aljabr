@@ -27,7 +27,7 @@ object IntegrateRoute
 object DifferentiateRoute
 @Serializable
 object AboutRoute
-val AllCalculatorVariants = listOf(
+val Calculus = listOf(
     CalculatorVariant(
         route = BasicCalcRoute,
         routeClass = BasicCalcRoute::class,

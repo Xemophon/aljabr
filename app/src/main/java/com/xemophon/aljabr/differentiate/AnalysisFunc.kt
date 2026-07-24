@@ -10,6 +10,7 @@ data class AnalysisResult(
     val localMinima: List<String> = emptyList(),
     val inflectionPoints: List<String> = emptyList(),
     val stationaryPoints: List<String> = emptyList(),
+    val saddlePoints: List<String> = emptyList(),
     val error: String? = null
 )
 
@@ -80,24 +81,109 @@ object AnalysisFunc {
                 
                 val fx = eval.eval("D[$cleaned, $x]").toString()
                 val fy = eval.eval("D[$cleaned, $y]").toString()
+                val fxx = eval.eval("D[$cleaned, {$x, 2}]").toString()
+                val fyy = eval.eval("D[$cleaned, {$y, 2}]").toString()
+                val fxy = eval.eval("D[$cleaned, $x, $y]").toString()
                 
-                val critPoints = try {
+                val critPointsRes = try {
                     eval.eval("Solve[{D[$cleaned, $x] == 0, D[$cleaned, $y] == 0}, {$x, $y}]").toString()
                 } catch (e: Exception) { "Could not solve" }
+
+                val (maxima, minima, saddles, others) = classifyStationaryPoints2D(critPointsRes, cleaned, x, y)
 
                 AnalysisResult(
                     variables = listOf(x, y),
                     derivatives = listOf(
                         NamedExpression("f_$x", SymjaUtils.formatResult(fx)),
-                        NamedExpression("f_$y", SymjaUtils.formatResult(fy))
+                        NamedExpression("f_$y", SymjaUtils.formatResult(fy)),
+                        NamedExpression("f_$x$x", SymjaUtils.formatResult(fxx)),
+                        NamedExpression("f_$y$y", SymjaUtils.formatResult(fyy)),
+                        NamedExpression("f_$x$y", SymjaUtils.formatResult(fxy))
                     ),
-                    stationaryPoints = calculatePoints(critPoints, cleaned, vars)
+                    localMaxima = maxima,
+                    localMinima = minima,
+                    saddlePoints = saddles,
+                    stationaryPoints = others
                 )
             }
         } catch (e: Exception) {
             AnalysisResult(emptyList(), emptyList(), error = e.message ?: "Analysis failed")
         }
     }
+
+    private fun classifyStationaryPoints2D(
+        solveRes: String,
+        originalExpr: String,
+        xVar: String,
+        yVar: String
+    ): Fourth<List<String>, List<String>, List<String>, List<String>> {
+        val eval = SymjaUtils.evaluator
+        val solutions = SymjaUtils.parseSolveResult(solveRes)
+        
+        val maxima = mutableListOf<String>()
+        val minima = mutableListOf<String>()
+        val saddles = mutableListOf<String>()
+        val others = mutableListOf<String>()
+
+        val fxxExpr = "D[$originalExpr, {$xVar, 2}]"
+        val fyyExpr = "D[$originalExpr, {$yVar, 2}]"
+        val fxyExpr = "D[$originalExpr, $xVar, $yVar]"
+
+        for (sol in solutions) {
+            try {
+                // sol is like "x -> 0, y -> 0"
+                val fValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
+                val fValStr = fValExpr.toString()
+                if (fValStr.contains("Infinity") || fValStr.contains("Indeterminate")) continue
+
+                // Check for complex solutions
+                val parts = sol.split(",").map { it.trim() }
+                var isComplex = false
+                val coords = mutableListOf<String>()
+                for (part in parts) {
+                    val valStr = part.split("->").last().trim()
+                    val imPart = eval.eval("Im[N[$valStr]]").toString().toDoubleOrNull()
+                    if (imPart == null || abs(imPart) > 1e-9) {
+                        isComplex = true
+                        break
+                    }
+                    coords.add(SymjaUtils.formatResult(valStr))
+                }
+                if (isComplex) continue
+
+                val pointStr = "(${coords.joinToString(", ")}, ${SymjaUtils.formatResult(fValStr)})"
+
+                // Hessian components
+                val fxxVal = eval.eval("N[ReplaceAll[$fxxExpr, {$sol}]]").toString().toDoubleOrNull()
+                val fyyVal = eval.eval("N[ReplaceAll[$fyyExpr, {$sol}]]").toString().toDoubleOrNull()
+                val fxyVal = eval.eval("N[ReplaceAll[$fxyExpr, {$sol}]]").toString().toDoubleOrNull()
+
+                if (fxxVal != null && fyyVal != null && fxyVal != null) {
+                    val detH = fxxVal * fyyVal - fxyVal * fxyVal
+                    if (detH > 1e-9) {
+                        if (fxxVal > 1e-9) minima.add(pointStr)
+                        else if (fxxVal < -1e-9) maxima.add(pointStr)
+                        else others.add(pointStr)
+                    } else if (detH < -1e-9) {
+                        saddles.add(pointStr)
+                    } else {
+                        others.add(pointStr) // Inconclusive
+                    }
+                } else {
+                    others.add(pointStr)
+                }
+            } catch (_: Exception) {}
+        }
+
+        return Fourth(maxima.distinct(), minima.distinct(), saddles.distinct(), others.distinct())
+    }
+
+    data class Fourth<out A, out B, out C, out D>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D
+    )
 
     private fun classifyStationaryPoints(
         solveRes: String,
