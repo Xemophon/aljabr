@@ -38,6 +38,41 @@ import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import com.xemophon.aljabr.utils.SymjaUtils
+
+object DiffFunc {
+
+    /**
+     * Warms up the CAS engine.
+     */
+    fun warmUp() {
+        Thread {
+            try {
+                SymjaUtils.evaluator.eval("D[x, x]")
+            } catch (_: Throwable) {
+            }
+        }.start()
+    }
+
+    fun differentiate(expression: String): String {
+        return try {
+            val cleaned = SymjaUtils.prepareForSymja(expression)
+            if (cleaned.isBlank()) return ""
+
+            // Use D[...] for differentiation in Symja
+            val result = SymjaUtils.evaluator.eval("D[$cleaned, x]")
+            val resStr = result.toString()
+
+            if (resStr.contains("D", ignoreCase = true)) {
+                return "d/dx($expression)"
+            }
+
+            SymjaUtils.formatResult(resStr)
+        } catch (e: Throwable) {
+            "Error"
+        }
+    }
+}
 
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
@@ -131,13 +166,29 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
                 AnalysisItemCard(deriv.name, deriv.expression)
             }
 
-            // Stationary Points
-            if (result.stationaryPoints.isNotEmpty()) {
-                item { AnalysisSectionHeader("Stationary Points") }
-                items(result.stationaryPoints) { point ->
-                    AnalysisItemCard("Point", point)
+            // Maxima
+            if (result.localMaxima.isNotEmpty()) {
+                item { AnalysisSectionHeader("Local Maxima") }
+                items(result.localMaxima) { point ->
+                    AnalysisItemCard("Maximum", point)
                 }
             }
+
+            // Minima
+            if (result.localMinima.isNotEmpty()) {
+                item { AnalysisSectionHeader("Local Minima") }
+                items(result.localMinima) { point ->
+                    AnalysisItemCard("Minimum", point)
+                }
+            }
+
+            // Stationary Points (Others)
+//            if (result.stationaryPoints.isNotEmpty()) {
+//                item { AnalysisSectionHeader("Stationary Points") }
+//                items(result.stationaryPoints) { point ->
+//                    AnalysisItemCard("Point", point)
+//                }
+//            }
 
             // Inflection Points
             if (result.inflectionPoints.isNotEmpty()) {

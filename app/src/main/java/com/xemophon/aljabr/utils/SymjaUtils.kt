@@ -42,6 +42,8 @@ object SymjaUtils {
             .replace("Cos", "cos")
             .replace("Tan", "tan")
             .replace("Pi", "π")
+            .replace("pi", "π")
+            .replace("*π", "π")
             .replace("E", "e")
             .replace("Sqrt", "√")
             .replace("*x", "x")
@@ -49,5 +51,21 @@ object SymjaUtils {
             .replace("[", "(")
             .replace("]", ")")
             .replace(",", ", ")
+    }
+
+    /**
+     * Parses Symja's Solve/NSolve output like {{x -> 0}, {y -> 2}} or {{x -> 1}}
+     * into a list of rules like ["x -> 0", "y -> 2"] or ["x -> 1"].
+     */
+    fun parseSolveResult(solveRes: String): List<String> {
+        if (solveRes == "{}" || solveRes.isBlank()) return emptyList()
+
+        // Match content inside the inner-most braces: {rule1, rule2, ...}
+        // This handles {{x -> 0}, {x -> 1}} and {{x -> 0, y -> 1}}
+        val regex = Regex("\\{([^\\{\\}]+)\\}")
+        return regex.findAll(solveRes)
+            .map { it.groupValues[1].trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
     }
 }

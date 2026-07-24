@@ -233,11 +233,66 @@ object CalcFuncs {
     fun formatResult(value: Double): String {
         if (value.isNaN()) return "Error"
         if (value.isInfinite()) return "Infinity"
+
+        checkPiDerivation(value)?.let { return it }
+
         if (value == floor(value) && value in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble()) {
             return value.toLong().toString()
         }
         val df = DecimalFormat("0.####").apply { roundingMode = RoundingMode.HALF_UP }
         val result = df.format(value).replace(",", ".")
         return if (result == "-0") "0" else result
+    }
+
+    private fun checkPiDerivation(value: Double): String? {
+        if (abs(value) < 1e-12) return null
+        val piRatio = value / PI
+        
+        // Check for integer multiples n*PI
+        val n = Math.round(piRatio).toInt()
+        if (abs(piRatio - n) < 1e-10) {
+            return when (n) {
+                0 -> null
+                1 -> "π"
+                -1 -> "-π"
+                else -> "${n}π"
+            }
+        }
+
+        // Check for fractions (m/d)*PI
+        for (d in 2..16) {
+            val mDouble = piRatio * d
+            val m = Math.round(mDouble).toInt()
+            if (abs(mDouble - m) < 1e-10) {
+                val common = gcd(abs(m), d)
+                val num = m / common
+                val den = d / common
+
+                return if (den == 1) {
+                    when (num) {
+                        1 -> "π"
+                        -1 -> "-π"
+                        else -> "${num}π"
+                    }
+                } else {
+                    val sign = if (num < 0) "-" else ""
+                    val absNum = abs(num)
+                    val numeratorStr = if (absNum == 1) "π" else "${absNum}π"
+                    "$sign$numeratorStr/$den"
+                }
+            }
+        }
+        return null
+    }
+
+    private fun gcd(a: Int, b: Int): Int {
+        var x = a
+        var y = b
+        while (y != 0) {
+            val temp = y
+            y = x % y
+            x = temp
+        }
+        return x
     }
 }

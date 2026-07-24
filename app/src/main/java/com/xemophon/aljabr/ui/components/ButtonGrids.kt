@@ -1,11 +1,16 @@
 package com.xemophon.aljabr.ui.components
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring.DampingRatioLowBouncy
 import androidx.compose.animation.core.Spring.StiffnessLow
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -47,8 +52,7 @@ private fun CalcButtonSheet(
         Column(
             modifier = Modifier
                 .navigationBarsPadding()
-                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal)
-                .animateContentSize(),
+                .padding(horizontal = Dimens.PaddingNormal, vertical = Dimens.PaddingNormal),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
             content = content
         )
@@ -64,12 +68,15 @@ fun CalcButtons(
     onToggleInverse: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) {
-    val buttonAspectRatio =
-        if (isExpanded) Dimens.ButtonAspectRatioExpanded else Dimens.ButtonAspectRatioStandard
+    val buttonAspectRatio by animateFloatAsState(
+        targetValue = if (isExpanded) Dimens.ButtonAspectRatioExpanded else Dimens.ButtonAspectRatioStandard,
+        animationSpec = spring(stiffness = StiffnessLow, dampingRatio = DampingRatioLowBouncy),
+        label = "ButtonAspectRatio"
+    )
     val transition = updateTransition(targetState = isExpanded, label = "ScientificTransition")
     val expandFraction by transition.animateFloat(
         transitionSpec = {
-            spring(stiffness = StiffnessLow, dampingRatio = DampingRatioLowBouncy)
+            spring(stiffness = StiffnessLow, dampingRatio = 0.8f) // Slightly less bouncy
         },
         label = "ExpandFraction"
     ) { state ->
@@ -91,14 +98,22 @@ fun CalcButtons(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
             ) {
-                Text(
-                    text = if (isExpanded) "Standard" else "Scientific",
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontSize = 24.sp
-                )
+                AnimatedContent(
+                    targetState = if (isExpanded) "Standard" else "Scientific",
+                    transitionSpec = {
+                        fadeIn() togetherWith fadeOut()
+                    },
+                    label = "ToggleButtonText"
+                ) { targetText ->
+                    Text(
+                        text = targetText,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 24.sp
+                    )
+                }
             }
-            if (isExpanded) {
+            AnimatedVisibility(visible = isExpanded) {
                 Button(
                     onClick = onToggleInverse,
                     colors = ButtonDefaults.buttonColors(
@@ -184,88 +199,100 @@ fun AdvancedButtonsGrid(
                 style = MaterialTheme.typography.labelLarge
             )
         }
-        when (mode) {
-            "Limits" -> {
-                Button(
-                    onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "∞", style = MaterialTheme.typography.labelLarge)
-                }
-                Button(
-                    onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "a", style = MaterialTheme.typography.labelLarge)
-                }
-            }
+        
+        AnimatedContent(
+            targetState = mode,
+            transitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            },
+            modifier = Modifier.weight(2f),
+            label = "AdvancedModeButtons"
+        ) { targetMode ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
+                when (targetMode) {
+                    "Limits" -> {
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "∞", style = MaterialTheme.typography.labelLarge)
+                        }
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "a", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
 
-            "Integration", "Integrate" -> {
-                Button(
-                    onClick = {
-                        onAction(
-                            CalcButtonAction.Integrals(
-                                "∫",
-                                IntegralType.INDEFINITE
-                            )
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "∫", style = MaterialTheme.typography.labelLarge)
-                }
+                    "Integration", "Integrate" -> {
+                        Button(
+                            onClick = {
+                                onAction(
+                                    CalcButtonAction.Integrals(
+                                        "∫",
+                                        IntegralType.INDEFINITE
+                                    )
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "∫", style = MaterialTheme.typography.labelLarge)
+                        }
 
-                Button(
-                    onClick = {
-                        onAction(
-                            CalcButtonAction.Integrals(
-                                "∫ab",
-                                IntegralType.DEFINITE
-                            )
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "∫ ab", style = MaterialTheme.typography.labelLarge)
-                }
-            }
+                        Button(
+                            onClick = {
+                                onAction(
+                                    CalcButtonAction.Integrals(
+                                        "∫ab",
+                                        IntegralType.DEFINITE
+                                    )
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "∫ ab", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
 
-            "Differentiation", "Differentiate" -> {
-                Button(
-                    onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "d/dx", style = MaterialTheme.typography.labelLarge)
-                }
-                Button(
-                    onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = "∇f", style = MaterialTheme.typography.labelLarge)
+                    "Differentiation", "Differentiate" -> {
+                        Button(
+                            onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "d/dx", style = MaterialTheme.typography.labelLarge)
+                        }
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "∇f", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                 }
             }
         }

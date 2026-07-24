@@ -1,5 +1,12 @@
 package com.xemophon.aljabr.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,8 +24,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -37,6 +47,17 @@ fun CalcBox(
     cursorIndex: Int = -1,
     onCursorIndexChange: (Int) -> Unit = {}
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "Cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "CursorAlpha"
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -44,45 +65,53 @@ fun CalcBox(
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.End,
     ) {
+        val expressionFontSize = if (expression.length > 12) 32f else 40f
+
         Box(contentAlignment = Alignment.CenterEnd) {
             val textStyle = MaterialTheme.typography.displayMedium.copy(
-                fontSize = if (expression.length > 12) 32.sp else 40.sp,
+                fontSize = expressionFontSize.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End
             )
 
-            // Using a hidden or overlaid clickable area is complex for exact character positioning
-            // For now, let's make the whole expression box clickable to focus the end,
-            // or just allow the user to see where they are typing.
+            val annotatedExpression = buildAnnotatedString {
+                if (cursorIndex != -1 && cursorIndex <= expression.length) {
+                    append(expression.substring(0, cursorIndex))
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = cursorAlpha))) {
+                        append("|")
+                    }
+                    append(expression.substring(cursorIndex))
+                } else {
+                    append(expression)
+                }
+            }
 
             Text(
-                text = if (cursorIndex != -1 && cursorIndex < expression.length) {
-                    StringBuilder(expression).insert(cursorIndex, "|").toString()
-                } else if (cursorIndex == expression.length) {
-                    "$expression|"
-                } else {
-                    expression
-                },
+                text = annotatedExpression,
                 style = textStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 maxLines = 2,
-                lineHeight = 36.sp,
+                lineHeight = expressionFontSize.sp * 1.1f,
                 modifier = Modifier.clickable { onCursorIndexChange(expression.length) }
             )
         }
+
         if (result.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = result,
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontSize = if (result.length > 8) 48.sp else 64.sp,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.End
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                lineHeight = 70.sp
-            )
+            val resultFontSize = if (result.length > 8) 48f else 64f
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = result,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = resultFontSize.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.End
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    lineHeight = resultFontSize.sp * 1.1f
+                )
+            }
         }
     }
 }

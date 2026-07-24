@@ -1,9 +1,14 @@
 package com.xemophon.aljabr.ui.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,12 +17,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.R
 import com.xemophon.aljabr.ui.theme.Dimens
@@ -261,19 +269,49 @@ fun CalcButton(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Animate scale on press
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f, // Slightly less aggressive
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f), // Snappier
+        label = "ButtonScale"
+    )
 
     // Values based on isExpanded from Theme Dimens
-    val cornerRadius =
+    val targetCornerRadius =
         if (isExpanded) Dimens.ButtonCornerRadiusExpanded else Dimens.ButtonCornerRadiusStandard
+    val animatedCornerRadius by animateDpAsState(
+        targetValue = targetCornerRadius,
+        label = "CornerRadius"
+    )
+
+    val animatedContainerColor by animateColorAsState(
+        targetValue = containerColor,
+        label = "ContainerColor"
+    )
+    val animatedContentColor by animateColorAsState(
+        targetValue = contentColor,
+        label = "ContentColor"
+    )
+
     val textStyle =
         if (isExpanded) MaterialTheme.typography.labelLarge else MaterialTheme.typography.displaySmall
-    val iconSize = if (isExpanded) Dimens.ButtonIconSizeExpanded else Dimens.ButtonIconSizeStandard
+    val targetIconSize = if (isExpanded) Dimens.ButtonIconSizeExpanded else Dimens.ButtonIconSizeStandard
+    val animatedIconSize by animateDpAsState(
+        targetValue = targetIconSize,
+        label = "IconSize"
+    )
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(containerColor)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(animatedCornerRadius))
+            .background(animatedContainerColor)
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(),
@@ -286,8 +324,8 @@ fun CalcButton(
                 Icon(
                     painter = painterResource(id = action.iconRes),
                     contentDescription = "Backspace",
-                    modifier = Modifier.size(iconSize),
-                    tint = contentColor
+                    modifier = Modifier.size(animatedIconSize),
+                    tint = animatedContentColor
                 )
             }
 
@@ -295,7 +333,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -303,7 +341,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -311,7 +349,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -319,7 +357,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -327,7 +365,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -335,7 +373,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -343,7 +381,7 @@ fun CalcButton(
                 Text(
                     text = action.text,
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -351,7 +389,7 @@ fun CalcButton(
                 Text(
                     text = "=",
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -359,7 +397,7 @@ fun CalcButton(
                 Text(
                     text = "Graph",
                     style = textStyle.copy(fontSize = if (isExpanded) 14.sp else 18.sp),
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
 
@@ -367,7 +405,7 @@ fun CalcButton(
                 Text(
                     text = "C",
                     style = textStyle,
-                    color = contentColor
+                    color = animatedContentColor
                 )
             }
         }
