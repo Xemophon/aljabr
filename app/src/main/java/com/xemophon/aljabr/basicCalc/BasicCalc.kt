@@ -64,8 +64,10 @@ fun BasicCalc(
                 CalcButtons(
                     isExpanded = isExpanded,
                     isInverse = isInverse,
+                    useRadians = viewModel.useRadians,
                     onToggleExpand = { isExpanded = !isExpanded },
                     onToggleInverse = { isInverse = !isInverse },
+                    onToggleAngleUnit = { viewModel.toggleAngleUnit() },
                     modifier = Modifier.fillMaxWidth(),
                     onAction = { action ->
                         viewModel.handleAction(action)

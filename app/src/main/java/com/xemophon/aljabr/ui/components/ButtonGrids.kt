@@ -24,6 +24,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,8 +66,10 @@ fun CalcButtons(
     modifier: Modifier = Modifier,
     isExpanded: Boolean = false,
     isInverse: Boolean = false,
+    useRadians: Boolean = false,
     onToggleExpand: () -> Unit,
     onToggleInverse: () -> Unit,
+    onToggleAngleUnit: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) {
     val buttonAspectRatio by animateFloatAsState(
@@ -114,16 +118,26 @@ fun CalcButtons(
                 }
             }
             AnimatedVisibility(visible = isExpanded) {
-                Button(
-                    onClick = onToggleInverse,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
                 ) {
-                    Text(
-                        text = "Inverse",
-                        color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                    Button(
+                        onClick = onToggleInverse,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Text(
+                            text = "Inverse",
+                            color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    AngleUnitSwitch(
+                        useRadians = useRadians,
+                        onToggleAngleUnit = onToggleAngleUnit
                     )
                 }
             }
@@ -396,6 +410,37 @@ private fun ButtonGrid(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AngleUnitSwitch(
+    useRadians: Boolean,
+    onToggleAngleUnit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+    ) {
+        Switch(
+            checked = useRadians,
+            onCheckedChange = { onToggleAngleUnit() },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
+                uncheckedTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+            ),
+            thumbContent = {
+                Text(
+                    text = if (useRadians) "Rad" else "Deg",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 8.sp
+                )
+            }
+        )
     }
 }
 

@@ -150,6 +150,7 @@ class CalcBoxViewModel : ViewModel() {
     var limitType by mutableStateOf(LimitType.FINITE)
     var integType by mutableStateOf(IntegralType.DEFINITE)
     var calculationEnabled by mutableStateOf(true)
+    var useRadians by mutableStateOf(false)
 
     private var lastExpression = ""
     private var isShowingResult = false
@@ -208,6 +209,11 @@ class CalcBoxViewModel : ViewModel() {
                 diffGridMode = "Single"
             }
         }
+    }
+
+    fun toggleAngleUnit() {
+        useRadians = !useRadians
+        updateInstantResult()
     }
 
     fun setFocus(focus: CalculatorFocus) {
@@ -386,7 +392,7 @@ class CalcBoxViewModel : ViewModel() {
         }
 
         try {
-            val result = CalcFuncs.calculateExpression(displayText)
+            val result = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
             resultText = if (result.isNaN()) "" else CalcFuncs.formatResult(result)
         } catch (_: Exception) {
             resultText = ""
@@ -431,7 +437,7 @@ class CalcBoxViewModel : ViewModel() {
             cursorIndex = displayText.length
         } else {
             try {
-                val result = CalcFuncs.calculateExpression(displayText)
+                val result = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
                 if (!result.isNaN()) {
                     displayText = CalcFuncs.formatResult(result)
                     resultText = ""
@@ -448,7 +454,7 @@ class CalcBoxViewModel : ViewModel() {
     private fun runLimitCalculation() {
         if (displayText.isBlank() || targetText.isBlank()) return
         try {
-            val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
+            val res = LimitsFunc.calculateLimit(displayText, "x", targetText, useRadians = useRadians)
             val formatted = if (res.isNaN()) "DNE" else CalcFuncs.formatResult(res)
 
             lastExpression = displayText
@@ -476,7 +482,7 @@ class CalcBoxViewModel : ViewModel() {
                     return
                 }
 
-                val result = IntegFunc.integrate(displayText, lower, upper)
+                val result = IntegFunc.integrate(displayText, lower, upper, useRadians = useRadians)
                 if (result.isNaN()) {
                     resultText = "No convergence"
                 } else {

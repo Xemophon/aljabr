@@ -11,7 +11,8 @@ object LimitsFunc {
         expression: String,
         variable: String = "x",
         target: String,
-        direction: Direction = Direction.BOTH
+        direction: Direction = Direction.BOTH,
+        useRadians: Boolean = true
     ): Double {
         val targetVal = when (target) {
             "∞" -> Double.POSITIVE_INFINITY
@@ -22,15 +23,15 @@ object LimitsFunc {
         if (targetVal.isNaN()) return Double.NaN
 
         return if (targetVal.isInfinite()) {
-            calculateInfiniteLimit(expression, variable, targetVal)
+            calculateInfiniteLimit(expression, variable, targetVal, useRadians)
         } else {
-            calculateFiniteLimit(expression, variable, targetVal, direction)
+            calculateFiniteLimit(expression, variable, targetVal, direction, useRadians)
         }
     }
 
-    private fun evaluateAt(expression: String, variable: String, valAt: Double): Double {
+    private fun evaluateAt(expression: String, variable: String, valAt: Double, useRadians: Boolean): Double {
         return try {
-            CalcFuncs.calculateExpression(expression, mapOf(variable to valAt), useRadians = true)
+            CalcFuncs.calculateExpression(expression, mapOf(variable to valAt), useRadians = useRadians)
         } catch (e: Exception) {
             Double.NaN
         }
@@ -40,7 +41,8 @@ object LimitsFunc {
         expression: String,
         variable: String,
         target: Double,
-        direction: Direction
+        direction: Direction,
+        useRadians: Boolean
     ): Double {
         val epsilons = listOf(1e-4, 1e-6, 1e-8, 1e-10)
         val startTime = System.currentTimeMillis()
@@ -48,7 +50,7 @@ object LimitsFunc {
         val leftResults = if (direction != Direction.RIGHT) {
             epsilons.mapNotNull {
                 if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
-                val res = evaluateAt(expression, variable, target - it)
+                val res = evaluateAt(expression, variable, target - it, useRadians)
                 if (res.isNaN()) null else res
             }
         } else emptyList()
@@ -56,7 +58,7 @@ object LimitsFunc {
         val rightResults = if (direction != Direction.LEFT) {
             epsilons.mapNotNull {
                 if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
-                val res = evaluateAt(expression, variable, target + it)
+                val res = evaluateAt(expression, variable, target + it, useRadians)
                 if (res.isNaN()) null else res
             }
         } else emptyList()
@@ -89,7 +91,8 @@ object LimitsFunc {
     private fun calculateInfiniteLimit(
         expression: String,
         variable: String,
-        target: Double
+        target: Double,
+        useRadians: Boolean
     ): Double {
         val largeValues = if (target > 0) {
             listOf(1e4, 1e6, 1e8, 1e10)
@@ -100,7 +103,7 @@ object LimitsFunc {
 
         val results = largeValues.mapNotNull {
             if (System.currentTimeMillis() - startTime > 1000) return@mapNotNull null
-            val res = evaluateAt(expression, variable, it)
+            val res = evaluateAt(expression, variable, it, useRadians)
             if (res.isNaN()) null else res
         }
         if (results.isEmpty()) return Double.NaN
