@@ -1,12 +1,18 @@
 package com.xemophon.aljabr.ui.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,7 +71,10 @@ fun CalcBox(
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.End,
     ) {
-        val expressionFontSize = if (expression.length > 12) 32f else 40f
+        val expressionFontSize by animateFloatAsState(
+            targetValue = if (expression.length > 12) 32f else 40f,
+            label = "ExpressionFontSize"
+        )
 
         Box(contentAlignment = Alignment.CenterEnd) {
             val textStyle = MaterialTheme.typography.displayMedium.copy(
@@ -96,21 +105,33 @@ fun CalcBox(
             )
         }
 
-        if (result.isNotEmpty()) {
-            val resultFontSize = if (result.length > 8) 48f else 64f
-            Column {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = result,
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = resultFontSize.sp,
-                        fontWeight = FontWeight.Normal,
-                        textAlign = TextAlign.End
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    lineHeight = resultFontSize.sp * 1.1f
+        AnimatedContent(
+            targetState = result,
+            transitionSpec = {
+                (slideInVertically { height -> height } + fadeIn()) togetherWith
+                        (slideOutVertically { height -> -height } + fadeOut())
+            },
+            label = "ResultAnimation"
+        ) { targetResult ->
+            if (targetResult.isNotEmpty()) {
+                val resultFontSize by animateFloatAsState(
+                    targetValue = if (targetResult.length > 8) 48f else 64f,
+                    label = "ResultFontSize"
                 )
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = targetResult,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = resultFontSize.sp,
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.End
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        lineHeight = resultFontSize.sp * 1.1f
+                    )
+                }
             }
         }
     }
@@ -262,7 +283,13 @@ class CalcBoxViewModel : ViewModel() {
             return
         }
 
-        insertText(symbol)
+        val isDigitOrDot = symbol.all { it.isDigit() || it == '.' }
+        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
+        val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
+        
+        val applyImplicit = isDigitOrDot && isImplicitMultiplicationNeeded() && !isLastCharDigitOrDot
+        
+        insertText(symbol, applyImplicitMultiplication = applyImplicit)
         isShowingResult = false
     }
 
@@ -271,8 +298,13 @@ class CalcBoxViewModel : ViewModel() {
         val finalInsert = "$prefix$toInsert"
 
         if (displayText == "0" && !finalInsert.startsWith(" × ")) {
-            displayText = finalInsert
-            cursorIndex = finalInsert.length
+            if (finalInsert == ".") {
+                displayText = "0."
+                cursorIndex = 2
+            } else {
+                displayText = finalInsert
+                cursorIndex = finalInsert.length
+            }
         } else {
             val sb = StringBuilder(displayText)
             sb.insert(cursorIndex, finalInsert)
@@ -282,21 +314,25 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun isImplicitMultiplicationNeeded(): Boolean {
+        if (displayText == "0") return false
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e')
+        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == '%')
     }
 
     private fun handleBrackets() {
         val openBrackets = displayText.count { it == '(' }
         val closedBrackets = displayText.count { it == ')' }
 
-        val toInsert = if (openBrackets > closedBrackets && isImplicitMultiplicationNeeded()) ")" else "("
-        insertText(toInsert, applyImplicitMultiplication = true)
+        if (openBrackets > closedBrackets && isImplicitMultiplicationNeeded()) {
+            insertText(")", applyImplicitMultiplication = false)
+        } else {
+            insertText("(", applyImplicitMultiplication = true)
+        }
     }
 
     private fun handlePercentage() {
         if (displayText != "0" && displayText != "Error") {
-            displayText += "%"
+            insertText("%")
         }
     }
 

@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.navigation
+package com.xemophon.aljabr.misc
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

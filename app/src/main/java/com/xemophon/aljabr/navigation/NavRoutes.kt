@@ -12,6 +12,7 @@ import com.xemophon.aljabr.differentiate.DiffCalc
 import com.xemophon.aljabr.graphMaker.GraphMaker
 import com.xemophon.aljabr.integrate.IntegCalc
 import com.xemophon.aljabr.limits.Limits
+import com.xemophon.aljabr.misc.AboutScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -67,6 +68,6 @@ val AllCalculatorVariants = listOf(
         routeClass = AboutRoute::class,
         label = "About",
         icon = Icons.Default.Info,
-        content = { onOpenDrawer -> AboutScreen (onOpenDrawer = onOpenDrawer) }
+        content = { onOpenDrawer -> AboutScreen(onOpenDrawer = onOpenDrawer) }
     )
 )
