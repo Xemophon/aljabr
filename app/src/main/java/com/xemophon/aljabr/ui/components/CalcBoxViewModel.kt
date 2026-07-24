@@ -266,41 +266,32 @@ class CalcBoxViewModel : ViewModel() {
         isShowingResult = false
     }
 
-    private fun insertText(toInsert: String) {
-        if (displayText == "0" && !toInsert.startsWith(" × ")) {
-            displayText = toInsert
-            cursorIndex = toInsert.length
+    private fun insertText(toInsert: String, applyImplicitMultiplication: Boolean = false) {
+        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded()) " × " else ""
+        val finalInsert = "$prefix$toInsert"
+
+        if (displayText == "0" && !finalInsert.startsWith(" × ")) {
+            displayText = finalInsert
+            cursorIndex = finalInsert.length
         } else {
             val sb = StringBuilder(displayText)
-            sb.insert(cursorIndex, toInsert)
+            sb.insert(cursorIndex, finalInsert)
             displayText = sb.toString()
-            cursorIndex += toInsert.length
+            cursorIndex += finalInsert.length
         }
+    }
+
+    private fun isImplicitMultiplicationNeeded(): Boolean {
+        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
+        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e')
     }
 
     private fun handleBrackets() {
         val openBrackets = displayText.count { it == '(' }
         val closedBrackets = displayText.count { it == ')' }
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
 
-        val toInsert = when {
-            displayText == "0" -> "("
-            openBrackets > closedBrackets -> {
-                if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e' || lastChar == 'x' || lastChar == 'y')) {
-                    ")"
-                } else {
-                    "("
-                }
-            }
-
-            else -> {
-                val prefix =
-                    if (lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'π' || lastChar == 'e' || lastChar == 'x' || lastChar == 'y')) " × " else ""
-                if (displayText == "0") "(" else "${prefix}("
-            }
-        }
-
-        insertText(toInsert)
+        val toInsert = if (openBrackets > closedBrackets && isImplicitMultiplicationNeeded()) ")" else "("
+        insertText(toInsert, applyImplicitMultiplication = true)
     }
 
     private fun handlePercentage() {
@@ -310,70 +301,43 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
-        if (calculatorMode == CalculatorMode.INTEGRATE) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) {
-                lowerLimitText += action.text
-                return
-            }
-            if (currentFocus == CalculatorFocus.INTEG_UPPER) {
-                upperLimitText += action.text
-                return
-            }
+        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
+            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+            return
         }
 
         if (action.type == ScientificType.FACTORIAL) {
             if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
-                val sb = StringBuilder(displayText)
-                sb.insert(cursorIndex, "!")
-                displayText = sb.toString()
-                cursorIndex += 1
+                insertText("!")
             }
             return
         }
 
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        val isPrevDigitOrParen =
-            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e') && displayText != "0"
-        val prefix = if (isPrevDigitOrParen) " × " else ""
-
         val toInsert = when (action.type) {
-            ScientificType.SQRT -> "${prefix}√("
-            ScientificType.PI -> "${prefix}π"
-            ScientificType.E -> "${prefix}e"
-            ScientificType.ASIN -> "${prefix}asin("
-            ScientificType.ACOS -> "${prefix}acos("
-            ScientificType.ATAN -> "${prefix}atan("
-            ScientificType.LN -> "${prefix}ln("
-            ScientificType.SIN -> "${prefix}sin("
-            ScientificType.COS -> "${prefix}cos("
-            ScientificType.TAN -> "${prefix}tan("
-            ScientificType.LOG -> "${prefix}log("
-            else -> "$prefix${action.text.lowercase()}("
+            ScientificType.SQRT -> "√("
+            ScientificType.PI -> "π"
+            ScientificType.E -> "e"
+            ScientificType.ASIN -> "asin("
+            ScientificType.ACOS -> "acos("
+            ScientificType.ATAN -> "atan("
+            ScientificType.LN -> "ln("
+            ScientificType.SIN -> "sin("
+            ScientificType.COS -> "cos("
+            ScientificType.TAN -> "tan("
+            ScientificType.LOG -> "log("
+            else -> "${action.text.lowercase()}("
         }
 
-        insertText(toInsert)
+        insertText(toInsert, applyImplicitMultiplication = true)
     }
 
     private fun handleVariable(action: CalcButtonAction.Variable) {
-        if (calculatorMode == CalculatorMode.INTEGRATE) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) {
-                lowerLimitText += action.text
-                return
-            }
-            if (currentFocus == CalculatorFocus.INTEG_UPPER) {
-                upperLimitText += action.text
-                return
-            }
+        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
+            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+            return
         }
 
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        val isPrevDigitOrParen =
-            lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e') && displayText != "0"
-        val prefix = if (isPrevDigitOrParen) " × " else ""
-
-        val toInsert = "$prefix${action.text}"
-
-        insertText(toInsert)
+        insertText(action.text, applyImplicitMultiplication = true)
     }
 
     private fun updateInstantResult() {
@@ -578,6 +542,9 @@ class CalcBoxViewModel : ViewModel() {
 
         if (cursorIndex <= 0) return
 
+        val textBefore = displayText.substring(0, cursorIndex)
+        val textAfter = displayText.substring(cursorIndex)
+
         val tokens = listOf(
             " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
             " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
@@ -586,20 +553,11 @@ class CalcBoxViewModel : ViewModel() {
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )
 
-        val textBeforeCursor = displayText.substring(0, cursorIndex)
-        val matchedToken = tokens.find { textBeforeCursor.endsWith(it) }
+        val matchedToken = tokens.find { textBefore.endsWith(it) }
+        val dropCount = matchedToken?.length ?: 1
 
-        if (matchedToken != null) {
-            val newTextBefore = textBeforeCursor.removeSuffix(matchedToken)
-            val textAfter = displayText.substring(cursorIndex)
-            displayText = newTextBefore + textAfter
-            cursorIndex -= matchedToken.length
-        } else {
-            val newTextBefore = textBeforeCursor.dropLast(1)
-            val textAfter = displayText.substring(cursorIndex)
-            displayText = newTextBefore + textAfter
-            cursorIndex -= 1
-        }
+        displayText = textBefore.dropLast(dropCount) + textAfter
+        cursorIndex -= dropCount
 
         if (displayText.isEmpty()) {
             displayText = "0"

@@ -10,12 +10,10 @@ object IntegFunc {
      * This loads the internal rule sets on a background thread.
      */
     fun warmUp() {
-        Thread {
-            try {
-                SymjaUtils.evaluator.eval("1+1")
-            } catch (_: Throwable) {
-            }
-        }.start()
+        try {
+            SymjaUtils.evaluator.eval("1+1")
+        } catch (_: Throwable) {
+        }
     }
 
     fun integrate(

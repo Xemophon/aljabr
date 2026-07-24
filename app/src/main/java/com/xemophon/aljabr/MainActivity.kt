@@ -4,14 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +35,8 @@ import com.xemophon.aljabr.integrate.IntegFunc
 import com.xemophon.aljabr.navigation.AllCalculatorVariants
 import com.xemophon.aljabr.navigation.BasicCalcRoute
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -45,8 +45,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Warm up the math engines in the background to improve first-use performance
-        IntegFunc.warmUp()
-        DiffFunc.warmUp()
+        lifecycleScope.launch(Dispatchers.Default) {
+            IntegFunc.warmUp()
+            DiffFunc.warmUp()
+        }
 
         setContent {
             AlJabrTheme {
@@ -86,44 +88,24 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = BasicCalcRoute,
                         enterTransition = {
-                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
-                                    slideInHorizontally(
-                                        initialOffsetX = { it / 10 },
-                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                    ) +
+                            fadeIn(animationSpec = tween(220, easing = LinearOutSlowInEasing)) +
                                     scaleIn(
-                                        initialScale = 0.92f,
-                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                        initialScale = 0.95f,
+                                        animationSpec = tween(220, easing = LinearOutSlowInEasing)
                                     )
                         },
                         exitTransition = {
-                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
-                                    slideOutHorizontally(
-                                        targetOffsetX = { -it / 10 },
-                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
-                                    )
+                            fadeOut(animationSpec = tween(150, easing = FastOutLinearInEasing))
                         },
                         popEnterTransition = {
-                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
-                                    slideInHorizontally(
-                                        initialOffsetX = { -it / 10 },
-                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                    ) +
+                            fadeIn(animationSpec = tween(220, easing = LinearOutSlowInEasing)) +
                                     scaleIn(
-                                        initialScale = 0.92f,
-                                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                        initialScale = 0.95f,
+                                        animationSpec = tween(220, easing = LinearOutSlowInEasing)
                                     )
                         },
                         popExitTransition = {
-                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
-                                    slideOutHorizontally(
-                                        targetOffsetX = { it / 10 },
-                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
-                                    ) +
-                                    scaleOut(
-                                        targetScale = 0.92f,
-                                        animationSpec = tween(200, easing = FastOutSlowInEasing)
-                                    )
+                            fadeOut(animationSpec = tween(150, easing = FastOutLinearInEasing))
                         },
                     )
  {

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
+import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
@@ -78,8 +79,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    mode = "Integration",
-                    integType = viewModel.integType,
+                    gridMode = AdvancedGridMode.Integration(viewModel.integType),
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )

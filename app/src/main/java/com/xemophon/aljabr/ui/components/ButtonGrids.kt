@@ -136,6 +136,7 @@ fun CalcButtons(
                     }
 
                     AngleUnitSwitch(
+                        modifier = Modifier.padding(start = Dimens.SpacingSmall),
                         useRadians = useRadians,
                         onToggleAngleUnit = onToggleAngleUnit
                     )
@@ -180,25 +181,29 @@ fun CalcButtons(
     }
 }
 
+sealed class AdvancedGridMode {
+    data class Limits(val currentType: LimitType) : AdvancedGridMode()
+    data class Integration(val currentType: IntegralType) : AdvancedGridMode()
+    data class Differentiation(val currentMode: String) : AdvancedGridMode()
+}
+
 @Composable
 fun AdvancedButtonsGrid(
     modifier: Modifier = Modifier,
-    mode: String = "Limits",
+    gridMode: AdvancedGridMode,
     isInverse: Boolean = false,
-    limitType: LimitType = LimitType.FINITE,
-    integType: IntegralType = IntegralType.DEFINITE,
-    diffGridMode: String = "Single",
     onToggleInverse: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) = CalcButtonSheet(modifier) {
-    val selectedGrid = if (diffGridMode == "Single") SingleVariableGrid else MultipleVariableGrid
+    val selectedGrid = when (gridMode) {
+        is AdvancedGridMode.Differentiation -> if (gridMode.currentMode == "Single") SingleVariableGrid else MultipleVariableGrid
+        else -> SingleVariableGrid // Default for others if not specified, though Limits/Integ usually use SingleVariableGrid
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(
-            Dimens.SpacingSmall,
-            Alignment.CenterHorizontally
-        )
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
     ) {
         Button(
             onClick = onToggleInverse,
@@ -208,104 +213,60 @@ fun AdvancedButtonsGrid(
             ),
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = "Inv",
-                style = MaterialTheme.typography.labelLarge
-            )
+            Text(text = "Inv", style = MaterialTheme.typography.labelLarge)
         }
-        
+
         AnimatedContent(
-            targetState = mode,
-            transitionSpec = {
-                fadeIn() togetherWith fadeOut()
-            },
+            targetState = gridMode,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
             modifier = Modifier.weight(2f),
             label = "AdvancedModeButtons"
-        ) { targetMode ->
+        ) { mode ->
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
-                when (targetMode) {
-                    "Limits" -> {
-                        Button(
+                when (mode) {
+                    is AdvancedGridMode.Limits -> {
+                        ModeToggleButton(
+                            label = "∞",
+                            isSelected = mode.currentType == LimitType.INFINITE,
                             onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (limitType == LimitType.INFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "∞", style = MaterialTheme.typography.labelLarge)
-                        }
-                        Button(
+                        )
+                        ModeToggleButton(
+                            label = "a",
+                            isSelected = mode.currentType == LimitType.FINITE,
                             onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (limitType == LimitType.FINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "a", style = MaterialTheme.typography.labelLarge)
-                        }
+                        )
                     }
 
-                    "Integration", "Integrate" -> {
-                        Button(
-                            onClick = {
-                                onAction(
-                                    CalcButtonAction.Integrals(
-                                        "∫",
-                                        IntegralType.INDEFINITE
-                                    )
-                                )
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (integType == IntegralType.INDEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
+                    is AdvancedGridMode.Integration -> {
+                        ModeToggleButton(
+                            label = "∫",
+                            isSelected = mode.currentType == IntegralType.INDEFINITE,
+                            onClick = { onAction(CalcButtonAction.Integrals("∫", IntegralType.INDEFINITE)) },
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "∫", style = MaterialTheme.typography.labelLarge)
-                        }
-
-                        Button(
-                            onClick = {
-                                onAction(
-                                    CalcButtonAction.Integrals(
-                                        "∫ab",
-                                        IntegralType.DEFINITE
-                                    )
-                                )
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (integType == IntegralType.DEFINITE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
+                        )
+                        ModeToggleButton(
+                            label = "∫ ab",
+                            isSelected = mode.currentType == IntegralType.DEFINITE,
+                            onClick = { onAction(CalcButtonAction.Integrals("∫ab", IntegralType.DEFINITE)) },
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "∫ ab", style = MaterialTheme.typography.labelLarge)
-                        }
+                        )
                     }
 
-                    "Differentiation", "Differentiate" -> {
-                        Button(
+                    is AdvancedGridMode.Differentiation -> {
+                        ModeToggleButton(
+                            label = "d/dx",
+                            isSelected = mode.currentMode == "Single",
                             onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (diffGridMode == "Single") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "d/dx", style = MaterialTheme.typography.labelLarge)
-                        }
-                        Button(
+                        )
+                        ModeToggleButton(
+                            label = "∇f",
+                            isSelected = mode.currentMode == "Multiple",
                             onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (diffGridMode == "Multiple") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = "∇f", style = MaterialTheme.typography.labelLarge)
-                        }
+                        )
                     }
                 }
             }
@@ -318,6 +279,25 @@ fun AdvancedButtonsGrid(
         isInverse = isInverse,
         onAction = onAction
     )
+}
+
+@Composable
+private fun ModeToggleButton(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        modifier = modifier
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
+    }
 }
 
 @Composable
@@ -428,10 +408,10 @@ private fun AngleUnitSwitch(
             checked = useRadians,
             onCheckedChange = { onToggleAngleUnit() },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                checkedThumbColor = MaterialTheme.colorScheme.surfaceVariant,
+                checkedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
-                uncheckedTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                uncheckedTrackColor = MaterialTheme.colorScheme.onSecondary,
             ),
             thumbContent = {
                 Text(

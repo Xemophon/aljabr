@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
+import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
@@ -74,8 +75,7 @@ fun Limits(onOpenDrawer: () -> Unit) {
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    mode = "Limits",
-                    limitType = viewModel.limitType,
+                    gridMode = AdvancedGridMode.Limits(viewModel.limitType),
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )

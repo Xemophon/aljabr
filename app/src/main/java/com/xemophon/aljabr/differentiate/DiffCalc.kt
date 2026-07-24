@@ -33,45 +33,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
+import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import com.xemophon.aljabr.utils.SymjaUtils
-
-object DiffFunc {
-    /**
-     * Warms up the CAS engine.
-     */
-    fun warmUp() {
-        Thread {
-            try {
-                SymjaUtils.evaluator.eval("D[x, x]")
-            } catch (_: Throwable) {
-            }
-        }.start()
-    }
-
-    fun differentiate(expression: String): String {
-        return try {
-            val cleaned = SymjaUtils.prepareForSymja(expression)
-            if (cleaned.isBlank()) return ""
-
-            // Use D[...] for differentiation in Symja
-            val result = SymjaUtils.evaluator.eval("D[$cleaned, x]")
-            val resStr = result.toString()
-
-            if (resStr.contains("D", ignoreCase = true)) {
-                return "d/dx($expression)"
-            }
-
-            SymjaUtils.formatResult(resStr)
-        } catch (e: Throwable) {
-            "Error"
-        }
-    }
-}
 
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
@@ -126,8 +94,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
                 if (viewModel.analysisResult == null) {
                     AdvancedButtonsGrid(
                         isInverse = isInverse,
-                        mode = "Differentiate",
-                        diffGridMode = viewModel.diffGridMode,
+                        gridMode = AdvancedGridMode.Differentiation(viewModel.diffGridMode),
                         onToggleInverse = { isInverse = !isInverse },
                         onAction = { viewModel.handleAction(it) }
                     )
