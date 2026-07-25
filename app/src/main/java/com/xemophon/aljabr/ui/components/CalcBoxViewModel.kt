@@ -197,6 +197,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
             if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS) {
                 resultText = ""
+                isShowingResult = false
             }
         }
 
@@ -471,16 +472,14 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun runLimitCalculation() {
         if (displayText.isBlank() || targetText.isBlank()) return
         try {
-            val res = LimitsFunc.calculateLimit(displayText, "x", targetText, useRadians = useRadians)
-            val formatted = if (res.isNaN()) "DNE" else CalcFuncs.formatResult(res)
+            val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
 
             lastExpression = displayText
-            displayText = formatted
-            cursorIndex = displayText.length
-            resultText = ""
+            resultText = res
+            cursorIndex = -1
             isShowingResult = true
         } catch (e: Exception) {
-            displayText = "Error"
+            resultText = "Error"
             isShowingResult = false
         }
     }
@@ -536,9 +535,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private fun clearAll() {
         if (calculatorMode == CalculatorMode.LIMITS && isShowingResult) {
-            displayText = lastExpression
-            cursorIndex = displayText.length
+            resultText = ""
             isShowingResult = false
+            cursorIndex = displayText.length
             return
         }
 

@@ -13,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.CalcBox
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalcButtons
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
@@ -31,6 +33,29 @@ import com.xemophon.aljabr.ui.theme.AlJabrTheme
 @Composable
 fun BasicCalc(
     viewModel: CalcBoxViewModel = viewModel(),
+    onOpenDrawer: () -> Unit
+) {
+    BasicCalcContent(
+        displayText = viewModel.displayText,
+        resultText = viewModel.resultText,
+        cursorIndex = viewModel.cursorIndex,
+        useRadians = viewModel.useRadians,
+        onUpdateCursorIndex = { viewModel.updateCursorIndex(it) },
+        onToggleAngleUnit = { viewModel.toggleAngleUnit() },
+        onAction = { viewModel.handleAction(it) },
+        onOpenDrawer = onOpenDrawer
+    )
+}
+
+@Composable
+fun BasicCalcContent(
+    displayText: String,
+    resultText: String,
+    cursorIndex: Int,
+    useRadians: Boolean,
+    onUpdateCursorIndex: (Int) -> Unit,
+    onToggleAngleUnit: () -> Unit,
+    onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -54,24 +79,22 @@ fun BasicCalc(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CalcBox(
-                    expression = viewModel.displayText,
-                    result = viewModel.resultText,
-                    cursorIndex = viewModel.cursorIndex,
-                    onCursorIndexChange = { viewModel.updateCursorIndex(it) },
+                    expression = displayText,
+                    result = resultText,
+                    cursorIndex = cursorIndex,
+                    onCursorIndexChange = onUpdateCursorIndex,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 CalcButtons(
                     isExpanded = isExpanded,
                     isInverse = isInverse,
-                    useRadians = viewModel.useRadians,
+                    useRadians = useRadians,
                     onToggleExpand = { isExpanded = !isExpanded },
                     onToggleInverse = { isInverse = !isInverse },
-                    onToggleAngleUnit = { viewModel.toggleAngleUnit() },
+                    onToggleAngleUnit = onToggleAngleUnit,
                     modifier = Modifier.fillMaxWidth(),
-                    onAction = { action ->
-                        viewModel.handleAction(action)
-                    }
+                    onAction = onAction
                 )
             }
         }  
@@ -82,6 +105,33 @@ fun BasicCalc(
 @Composable
 fun BasicCalcPreview() {
     AlJabrTheme {
-        BasicCalc(onOpenDrawer = {})
+        var displayText by remember { mutableStateOf("2+2") }
+        var resultText by remember { mutableStateOf("4") }
+        var cursorIndex by remember { mutableIntStateOf(3) }
+        var useRadians by remember { mutableStateOf(false) }
+
+        BasicCalcContent(
+            displayText = displayText,
+            resultText = resultText,
+            cursorIndex = cursorIndex,
+            useRadians = useRadians,
+            onUpdateCursorIndex = { cursorIndex = it },
+            onToggleAngleUnit = { useRadians = !useRadians },
+            onAction = { action ->
+                when (action) {
+                    is CalcButtonAction.Symbol -> {
+                        displayText += action.text
+                        cursorIndex = displayText.length
+                    }
+                    is CalcButtonAction.Clear -> {
+                        displayText = "0"
+                        resultText = ""
+                        cursorIndex = 1
+                    }
+                    else -> {}
+                }
+            },
+            onOpenDrawer = {}
+        )
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,14 +35,46 @@ import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 
+import androidx.compose.runtime.mutableIntStateOf
+import com.xemophon.aljabr.ui.components.CalcButtonAction
+import com.xemophon.aljabr.ui.components.LimitType
+
 @Composable
 fun Limits(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
-    var isInverse by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.LIMITS
     }
+
+    LimitsContent(
+        displayText = viewModel.displayText,
+        targetText = viewModel.targetText,
+        resultText = viewModel.resultText,
+        currentFocus = viewModel.currentFocus,
+        limitType = viewModel.limitType,
+        cursorIndex = viewModel.cursorIndex,
+        onFocusChange = { viewModel.setFocus(it) },
+        onCursorIndexChange = { viewModel.updateCursorIndex(it) },
+        onAction = { viewModel.handleAction(it) },
+        onOpenDrawer = onOpenDrawer
+    )
+}
+
+@Composable
+fun LimitsContent(
+    displayText: String,
+    targetText: String,
+    resultText: String,
+    currentFocus: CalculatorFocus,
+    limitType: LimitType,
+    cursorIndex: Int,
+    onFocusChange: (CalculatorFocus) -> Unit,
+    onCursorIndexChange: (Int) -> Unit,
+    onAction: (CalcButtonAction) -> Unit,
+    onOpenDrawer: () -> Unit
+) {
+    var isInverse by remember { mutableStateOf(false) }
 
     CalculatorScaffold(
         title = { Text("Limits") },
@@ -64,20 +97,20 @@ fun Limits(onOpenDrawer: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     LimitDisplay(
-                        expression = viewModel.displayText,
-                        target = viewModel.targetText,
-                        result = viewModel.resultText,
-                        focus = viewModel.currentFocus,
-                        cursorIndex = viewModel.cursorIndex,
-                        onFocusChange = { viewModel.setFocus(it) },
-                        onCursorIndexChange = { viewModel.updateCursorIndex(it) }
+                        expression = displayText,
+                        target = targetText,
+                        result = resultText,
+                        focus = currentFocus,
+                        cursorIndex = cursorIndex,
+                        onFocusChange = onFocusChange,
+                        onCursorIndexChange = onCursorIndexChange
                     )
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    gridMode = AdvancedGridMode.Limits(viewModel.limitType),
+                    gridMode = AdvancedGridMode.Limits(limitType),
                     onToggleInverse = { isInverse = !isInverse },
-                    onAction = { viewModel.handleAction(it) }
+                    onAction = onAction
                 )
             }
         }
@@ -99,80 +132,83 @@ fun LimitDisplay(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.padding(16.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Limit Notation (lim x->a)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onFocusChange(CalculatorFocus.TARGET) }
+        if (result.isEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "lim",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Limit Notation (lim x->a)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onFocusChange(CalculatorFocus.TARGET) }
+                ) {
                     Text(
-                        text = "x ➔ ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 20.sp
+                        text = "lim",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = target.ifEmpty { "a" },
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (focus == CalculatorFocus.TARGET) FontWeight.Bold else FontWeight.Normal,
-                        color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 20.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            // Expression f(x)
-            Box(
-                modifier = Modifier
-                    .clickable {
-                        onFocusChange(CalculatorFocus.EXPRESSION)
-                        onCursorIndexChange(expression.length)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "x ➔ ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 20.sp
+                        )
+                        Text(
+                            text = target.ifEmpty { "a" },
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (focus == CalculatorFocus.TARGET) FontWeight.Bold else FontWeight.Normal,
+                            color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 20.sp
+                        )
                     }
-                    .padding(8.dp)
-            ) {
-                val displayText = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                    if (cursorIndex < expression.length) {
-                        StringBuilder(expression).insert(cursorIndex, "|").toString()
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                // Expression f(x)
+                Box(
+                    modifier = Modifier
+                        .clickable {
+                            onFocusChange(CalculatorFocus.EXPRESSION)
+                            onCursorIndexChange(expression.length)
+                        }
+                        .padding(8.dp)
+                ) {
+                    val displayText = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                        if (cursorIndex < expression.length) {
+                            StringBuilder(expression).insert(cursorIndex, "|").toString()
+                        } else {
+                            "$expression|"
+                        }
                     } else {
-                        "$expression|"
+                        expression.ifEmpty { "f(x)" }
                     }
-                } else {
-                    expression.ifEmpty { "f(x)" }
+
+                    val textStyle = MaterialTheme.typography.displayMedium.copy(
+                        fontSize = if (expression.length > 10) 32.sp else 48.sp
+                    )
+
+                    Text(
+                        text = displayText,
+                        style = textStyle,
+                        color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
+                    )
                 }
-
-                val textStyle = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = if (expression.length > 10) 32.sp else 48.sp
-                )
-
-                Text(
-                    text = displayText,
-                    style = textStyle,
-                    color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
-                )
             }
-
-            if (result.isNotEmpty()) {
-                val resultStyle = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = if (expression.length > 10) 32.sp else 48.sp
-                )
+        } else {
+            // Result only display
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = " = $result",
-                    style = resultStyle,
+                    text = result,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = if (result.length > 8) 48.sp else 64.sp
+                    ),
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -183,6 +219,44 @@ fun LimitDisplay(
 @Composable
 fun LimitPreview() {
     AlJabrTheme {
-        Limits(onOpenDrawer = {})
+        var displayText by remember { mutableStateOf("sin(x)/x") }
+        var targetText by remember { mutableStateOf("0") }
+        var resultText by remember { mutableStateOf("1") }
+        var currentFocus by remember { mutableStateOf(CalculatorFocus.EXPRESSION) }
+        var limitType by remember { mutableStateOf(LimitType.FINITE) }
+        var cursorIndex by remember { mutableIntStateOf(8) }
+
+        LimitsContent(
+            displayText = displayText,
+            targetText = targetText,
+            resultText = resultText,
+            currentFocus = currentFocus,
+            limitType = limitType,
+            cursorIndex = cursorIndex,
+            onFocusChange = { currentFocus = it },
+            onCursorIndexChange = { cursorIndex = it },
+            onAction = { action ->
+                when (action) {
+                    is CalcButtonAction.Symbol -> {
+                        if (currentFocus == CalculatorFocus.EXPRESSION) {
+                            displayText += action.text
+                        } else {
+                            targetText += action.text
+                        }
+                    }
+                    is CalcButtonAction.Limits -> {
+                        limitType = action.type
+                        if (action.type == LimitType.INFINITE) targetText = "∞"
+                    }
+                    is CalcButtonAction.Clear -> {
+                        displayText = ""
+                        targetText = ""
+                        resultText = ""
+                    }
+                    else -> {}
+                }
+            },
+            onOpenDrawer = {}
+        )
     }
 }

@@ -48,11 +48,13 @@ import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import com.xemophon.aljabr.utils.SymjaUtils
 
+import androidx.compose.runtime.mutableIntStateOf
+import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
+
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
-    var isInverse by remember { mutableStateOf(false) }
-
+    
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.DIFFERENTIATE
     }
@@ -60,6 +62,31 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
     BackHandler(enabled = viewModel.analysisResult != null) {
         viewModel.handleAction(CalcButtonAction.Clear)
     }
+
+    DiffCalcContent(
+        displayText = viewModel.displayText,
+        cursorIndex = viewModel.cursorIndex,
+        diffGridMode = viewModel.diffGridMode,
+        analysisResult = viewModel.analysisResult,
+        onFocusChange = { viewModel.setFocus(it) },
+        onCursorIndexChange = { viewModel.updateCursorIndex(it) },
+        onAction = { viewModel.handleAction(it) },
+        onOpenDrawer = onOpenDrawer
+    )
+}
+
+@Composable
+fun DiffCalcContent(
+    displayText: String,
+    cursorIndex: Int,
+    diffGridMode: String,
+    analysisResult: AnalysisResult?,
+    onFocusChange: (CalculatorFocus) -> Unit,
+    onCursorIndexChange: (Int) -> Unit,
+    onAction: (CalcButtonAction) -> Unit,
+    onOpenDrawer: () -> Unit
+) {
+    var isInverse by remember { mutableStateOf(false) }
 
     CalculatorScaffold(
         title = { Text("Differentiate") },
@@ -80,30 +107,30 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
                         .fillMaxWidth(),
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    if (viewModel.analysisResult == null) {
+                    if (analysisResult == null) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             DiffDisplay(
-                                expression = viewModel.displayText,
-                                diffGridMode = viewModel.diffGridMode,
-                                cursorIndex = viewModel.cursorIndex,
-                                onFocusChange = { viewModel.setFocus(it) },
-                                onCursorIndexChange = { viewModel.updateCursorIndex(it) }
+                                expression = displayText,
+                                diffGridMode = diffGridMode,
+                                cursorIndex = cursorIndex,
+                                onFocusChange = onFocusChange,
+                                onCursorIndexChange = onCursorIndexChange
                             )
                         }
                     } else {
                         AnalysisReport(
-                            result = viewModel.analysisResult!!,
-                            onClear = { viewModel.handleAction(CalcButtonAction.Clear) }
+                            result = analysisResult,
+                            onClear = { onAction(CalcButtonAction.Clear) }
                         )
                     }
                 }
                 
-                if (viewModel.analysisResult == null) {
+                if (analysisResult == null) {
                     AdvancedButtonsGrid(
                         isInverse = isInverse,
-                        gridMode = AdvancedGridMode.Differentiation(viewModel.diffGridMode),
+                        gridMode = AdvancedGridMode.Differentiation(diffGridMode),
                         onToggleInverse = { isInverse = !isInverse },
-                        onAction = { viewModel.handleAction(it) }
+                        onAction = onAction
                     )
                 }
             }
@@ -353,6 +380,33 @@ fun DiffDisplay(
 @Composable
 fun DiffPreview() {
     AlJabrTheme {
-        DiffCalc(onOpenDrawer = {})
+        var displayText by remember { mutableStateOf("x^2") }
+        var cursorIndex by remember { mutableIntStateOf(3) }
+        var diffGridMode by remember { mutableStateOf("Single") }
+
+        DiffCalcContent(
+            displayText = displayText,
+            cursorIndex = cursorIndex,
+            diffGridMode = diffGridMode,
+            analysisResult = null,
+            onFocusChange = {},
+            onCursorIndexChange = { cursorIndex = it },
+            onAction = { action ->
+                when (action) {
+                    is CalcButtonAction.Symbol -> {
+                        displayText += action.text
+                        cursorIndex = displayText.length
+                    }
+                    is CalcButtonAction.Differentiate -> diffGridMode = "Multiple"
+                    is CalcButtonAction.DifferentiateSingle -> diffGridMode = "Single"
+                    is CalcButtonAction.Clear -> {
+                        displayText = ""
+                        cursorIndex = 0
+                    }
+                    else -> {}
+                }
+            },
+            onOpenDrawer = {}
+        )
     }
 }

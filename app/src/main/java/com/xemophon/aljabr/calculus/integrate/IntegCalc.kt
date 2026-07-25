@@ -37,6 +37,7 @@ import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
@@ -44,14 +45,46 @@ import com.xemophon.aljabr.ui.components.IntegralType
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import com.xemophon.aljabr.utils.SymjaUtils
 
+import androidx.compose.runtime.mutableIntStateOf
+
 @Composable
 fun IntegCalc(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
-    var isInverse by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.INTEGRATE
     }
+
+    IntegCalcContent(
+        displayText = viewModel.displayText,
+        lowerLimitText = viewModel.lowerLimitText,
+        upperLimitText = viewModel.upperLimitText,
+        resultText = viewModel.resultText,
+        currentFocus = viewModel.currentFocus,
+        integType = viewModel.integType,
+        cursorIndex = viewModel.cursorIndex,
+        onFocusChange = { viewModel.setFocus(it) },
+        onCursorIndexChange = { viewModel.updateCursorIndex(it) },
+        onAction = { viewModel.handleAction(it) },
+        onOpenDrawer = onOpenDrawer
+    )
+}
+
+@Composable
+fun IntegCalcContent(
+    displayText: String,
+    lowerLimitText: String,
+    upperLimitText: String,
+    resultText: String,
+    currentFocus: CalculatorFocus,
+    integType: IntegralType,
+    cursorIndex: Int,
+    onFocusChange: (CalculatorFocus) -> Unit,
+    onCursorIndexChange: (Int) -> Unit,
+    onAction: (CalcButtonAction) -> Unit,
+    onOpenDrawer: () -> Unit
+) {
+    var isInverse by remember { mutableStateOf(false) }
 
     CalculatorScaffold(
         title = { Text("Integrate") },
@@ -73,22 +106,22 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     IntegDisplay(
-                        expression = viewModel.displayText,
-                        lower = viewModel.lowerLimitText,
-                        upper = viewModel.upperLimitText,
-                        result = viewModel.resultText,
-                        focus = viewModel.currentFocus,
-                        integType = viewModel.integType,
-                        cursorIndex = viewModel.cursorIndex,
-                        onFocusChange = { viewModel.setFocus(it) },
-                        onCursorIndexChange = { viewModel.updateCursorIndex(it) }
+                        expression = displayText,
+                        lower = lowerLimitText,
+                        upper = upperLimitText,
+                        result = resultText,
+                        focus = currentFocus,
+                        integType = integType,
+                        cursorIndex = cursorIndex,
+                        onFocusChange = onFocusChange,
+                        onCursorIndexChange = onCursorIndexChange
                     )
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    gridMode = AdvancedGridMode.Integration(viewModel.integType),
+                    gridMode = AdvancedGridMode.Integration(integType),
                     onToggleInverse = { isInverse = !isInverse },
-                    onAction = { viewModel.handleAction(it) }
+                    onAction = onAction
                 )
             }
         }
@@ -247,6 +280,45 @@ fun IntegDisplay(
 @Composable
 fun IntegPreview() {
     AlJabrTheme {
-        IntegCalc(onOpenDrawer = {})
+        var displayText by remember { mutableStateOf("x^2") }
+        var lowerLimitText by remember { mutableStateOf("0") }
+        var upperLimitText by remember { mutableStateOf("1") }
+        var resultText by remember { mutableStateOf("") }
+        var currentFocus by remember { mutableStateOf(CalculatorFocus.EXPRESSION) }
+        var integType by remember { mutableStateOf(IntegralType.DEFINITE) }
+        var cursorIndex by remember { mutableIntStateOf(3) }
+
+        IntegCalcContent(
+            displayText = displayText,
+            lowerLimitText = lowerLimitText,
+            upperLimitText = upperLimitText,
+            resultText = resultText,
+            currentFocus = currentFocus,
+            integType = integType,
+            cursorIndex = cursorIndex,
+            onFocusChange = { currentFocus = it },
+            onCursorIndexChange = { cursorIndex = it },
+            onAction = { action ->
+                when (action) {
+                    is CalcButtonAction.Symbol -> {
+                        when (currentFocus) {
+                            CalculatorFocus.EXPRESSION -> displayText += action.text
+                            CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
+                            CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
+                            else -> {}
+                        }
+                    }
+                    is CalcButtonAction.Integrals -> integType = action.type
+                    is CalcButtonAction.Clear -> {
+                        displayText = ""
+                        lowerLimitText = ""
+                        upperLimitText = ""
+                        resultText = ""
+                    }
+                    else -> {}
+                }
+            },
+            onOpenDrawer = {}
+        )
     }
 }
