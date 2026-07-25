@@ -14,7 +14,7 @@ data class AnalysisResult(
     val error: String? = null
 )
 
-data class NamedExpression(val name: String, val expression: String)
+data class NamedExpression(val name: String, val expression: String, val rawExpression: String = "")
 
 object AnalysisFunc {
 
@@ -27,25 +27,30 @@ object AnalysisFunc {
             
             // Get variables
             val varsExpr = eval.eval("Variables[$cleaned]")
-            val vars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            // Filter to only include simple symbols (avoiding things like "Sin(x)")
+            val vars = rawVars.filter { v -> 
+                v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+            }
 
             if (vars.size > 2) {
                 return AnalysisResult(vars, emptyList(), error = "Maximum 2 variables supported")
             }
 
-            if (vars.isEmpty() || (vars.size == 1 && vars[0] != "x" && vars[0] != "y")) {
-                 // Try to force 'x' if no vars found or constant
+            if (vars.isEmpty()) {
+                 // Constant function
                  val firstDeriv = eval.eval("D[$cleaned, x]").toString()
                  return AnalysisResult(
                      listOf("x"),
-                     listOf(NamedExpression("f'(x)", SymjaUtils.formatResult(firstDeriv)))
+                     listOf(NamedExpression("f'(x)", SymjaUtils.formatResult(firstDeriv), firstDeriv))
                  )
             }
 
             if (vars.size == 1) {
                 val v = vars[0]
-                val f1 = eval.eval("D[$cleaned, $v]").toString()
-                val f2 = eval.eval("D[$cleaned, {$v, 2}]").toString()
+                val f1Raw = eval.eval("D[$cleaned, $v]").toString()
+                val f2Raw = eval.eval("D[$cleaned, {$v, 2}]").toString()
                 
                 val statPointsRes = try {
                     eval.eval("Solve[D[$cleaned, $v] == 0, $v]").toString()
@@ -66,8 +71,8 @@ object AnalysisFunc {
                 AnalysisResult(
                     variables = vars,
                     derivatives = listOf(
-                        NamedExpression("f'($v)", SymjaUtils.formatResult(f1)),
-                        NamedExpression("f''($v)", SymjaUtils.formatResult(f2))
+                        NamedExpression("f'($v)", SymjaUtils.formatResult(f1Raw), f1Raw),
+                        NamedExpression("f''($v)", SymjaUtils.formatResult(f2Raw), f2Raw)
                     ),
                     localMaxima = maxima,
                     localMinima = minima,
@@ -79,11 +84,11 @@ object AnalysisFunc {
                 val x = vars.find { it == "x" } ?: vars[0]
                 val y = vars.find { it == "y" && it != x } ?: vars[1]
                 
-                val fx = eval.eval("D[$cleaned, $x]").toString()
-                val fy = eval.eval("D[$cleaned, $y]").toString()
-                val fxx = eval.eval("D[$cleaned, {$x, 2}]").toString()
-                val fyy = eval.eval("D[$cleaned, {$y, 2}]").toString()
-                val fxy = eval.eval("D[$cleaned, $x, $y]").toString()
+                val fxRaw = eval.eval("D[$cleaned, $x]").toString()
+                val fyRaw = eval.eval("D[$cleaned, $y]").toString()
+                val fxxRaw = eval.eval("D[$cleaned, {$x, 2}]").toString()
+                val fyyRaw = eval.eval("D[$cleaned, {$y, 2}]").toString()
+                val fxyRaw = eval.eval("D[$cleaned, $x, $y]").toString()
                 
                 val critPointsRes = try {
                     eval.eval("Solve[{D[$cleaned, $x] == 0, D[$cleaned, $y] == 0}, {$x, $y}]").toString()
@@ -94,11 +99,11 @@ object AnalysisFunc {
                 AnalysisResult(
                     variables = listOf(x, y),
                     derivatives = listOf(
-                        NamedExpression("f_$x", SymjaUtils.formatResult(fx)),
-                        NamedExpression("f_$y", SymjaUtils.formatResult(fy)),
-                        NamedExpression("f_$x$x", SymjaUtils.formatResult(fxx)),
-                        NamedExpression("f_$y$y", SymjaUtils.formatResult(fyy)),
-                        NamedExpression("f_$x$y", SymjaUtils.formatResult(fxy))
+                        NamedExpression("f_$x", SymjaUtils.formatResult(fxRaw), fxRaw),
+                        NamedExpression("f_$y", SymjaUtils.formatResult(fyRaw), fyRaw),
+                        NamedExpression("f_$x$x", SymjaUtils.formatResult(fxxRaw), fxxRaw),
+                        NamedExpression("f_$y$y", SymjaUtils.formatResult(fyyRaw), fyyRaw),
+                        NamedExpression("f_$x$y", SymjaUtils.formatResult(fxyRaw), fxyRaw)
                     ),
                     localMaxima = maxima,
                     localMinima = minima,

@@ -17,18 +17,33 @@ object SymjaUtils {
             .replace(" ", "")
             .replace("×", "*")
             .replace("÷", "/")
-            .replace("sin", "Sin", ignoreCase = true)
-            .replace("cos", "Cos", ignoreCase = true)
-            .replace("tan", "Tan", ignoreCase = true)
             .replace("asin", "ArcSin", ignoreCase = true)
             .replace("acos", "ArcCos", ignoreCase = true)
             .replace("atan", "ArcTan", ignoreCase = true)
+            .replace("sin", "Sin", ignoreCase = true)
+            .replace("cos", "Cos", ignoreCase = true)
+            .replace("tan", "Tan", ignoreCase = true)
             .replace("ln", "Log", ignoreCase = true)
             .replace("log", "Log10", ignoreCase = true)
             .replace("sqrt", "Sqrt", ignoreCase = true)
             .replace("π", "Pi")
             .replace("e", "E")
             .replace("√", "Sqrt")
+    }
+
+    /**
+     * Converts a mathematical expression string to its LaTeX representation using Symja's TeXForm.
+     */
+    fun toLaTeX(expression: String): String {
+        return try {
+            val cleaned = prepareForSymja(expression)
+            if (cleaned.isBlank()) return ""
+            // Use TeXForm to convert the expression to LaTeX
+            val result = evaluator.eval("TeXForm($cleaned)")
+            result.toString()
+        } catch (e: Throwable) {
+            expression // Fallback to raw expression on error
+        }
     }
 
     fun formatResult(resStr: String): String {
@@ -43,14 +58,14 @@ object SymjaUtils {
             .replace("Tan", "tan")
             .replace("Pi", "π")
             .replace("pi", "π")
-            .replace("*π", "π")
             .replace("E", "e")
             .replace("Sqrt", "√")
-            .replace("*x", "x")
-            .replace("*(", "(")
+            .replace("*", " × ")
+            .replace("  ", " ")
             .replace("[", "(")
             .replace("]", ")")
             .replace(",", ", ")
+            .trim()
     }
 
     /**

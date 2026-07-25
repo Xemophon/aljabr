@@ -3,6 +3,7 @@ package com.xemophon.aljabr.calculus.differentiate
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,6 +34,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hrm.latex.renderer.Latex
+import com.hrm.latex.renderer.font.MathFont
+import com.hrm.latex.renderer.model.LatexConfig
+import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
@@ -40,6 +46,7 @@ import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import com.xemophon.aljabr.utils.SymjaUtils
 
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
@@ -129,7 +136,7 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
             // Derivatives
             item { AnalysisSectionHeader("Derivatives") }
             items(result.derivatives) { deriv ->
-                AnalysisItemCard(deriv.name, deriv.expression)
+                AnalysisItemCard(deriv.name, deriv.expression, deriv.rawExpression)
             }
 
             // Maxima
@@ -198,17 +205,46 @@ fun AnalysisSectionHeader(title: String) {
 }
 
 @Composable
-fun AnalysisItemCard(label: String, value: String) {
+fun AnalysisItemCard(label: String, value: String, rawValue: String? = null) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                fontWeight = FontWeight.Medium
-            )
+            
+            val latexValue = remember(value, rawValue) {
+                val toConvert = rawValue ?: value
+                // Try converting to LaTeX if it looks like a math expression or we have a raw value
+                if (rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' }) {
+                    SymjaUtils.toLaTeX(toConvert)
+                } else {
+                    toConvert
+                }
+            }
+
+            if (latexValue != value || value.contains("^") || value.contains("/")) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Latex(
+                        latex = latexValue,
+                        config = LatexConfig(
+                            fontSize = 20.sp,
+                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
+                            mathFont = MathFont.KaTeXTTF
+                        )
+                    )
+                }
+            } else {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }

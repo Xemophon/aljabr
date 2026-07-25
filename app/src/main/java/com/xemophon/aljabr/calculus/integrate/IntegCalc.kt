@@ -1,6 +1,7 @@
 package com.xemophon.aljabr.calculus.integrate
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,6 +30,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hrm.latex.renderer.Latex
+import com.hrm.latex.renderer.font.MathFont
+import com.hrm.latex.renderer.model.LatexConfig
+import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
@@ -36,6 +42,7 @@ import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.IntegralType
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import com.xemophon.aljabr.utils.SymjaUtils
 
 @Composable
 fun IntegCalc(onOpenDrawer: () -> Unit) {
@@ -184,19 +191,54 @@ fun IntegDisplay(
                 }
             }
         } else {
-            // Display only the result when it exists
-            Text(
-                text = result,
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = if (result.length > 15) 28.sp else 40.sp
-                ),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.clickable {
-                    // Clear result to edit again
-                    onFocusChange(CalculatorFocus.EXPRESSION)
+            // Display only the result when it exists using LaTeX if possible
+            val latexContent = remember(result) {
+                if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
+                    val expr = result.removeSuffix(" + C")
+                    // If it looks like a Symja result (contains characters), try converting to LaTeX
+                    if (expr.any { it.isLetter() }) {
+                        "${SymjaUtils.toLaTeX(expr)} + C"
+                    } else {
+                        result
+                    }
+                } else if (result.any { it.isLetter() || it == '/' || it == '^' }) {
+                    SymjaUtils.toLaTeX(result)
+                } else {
+                    result
                 }
-            )
+            }
+
+            Box(
+                modifier = Modifier
+                    .clickable {
+                        // Clear result to edit again
+                        onFocusChange(CalculatorFocus.EXPRESSION)
+                    }
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center
+            ) {
+                if (latexContent != result || result.any { it == '^' || it == '/' }) {
+                    Latex(
+                        latex = latexContent,
+                        config = LatexConfig(
+                            fontSize = if (result.length > 15) 24.sp else 32.sp,
+                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                            mathFont = MathFont.KaTeXTTF
+                        )
+                    )
+                } else {
+                    Text(
+                        text = result,
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontSize = if (result.length > 15) 28.sp else 40.sp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ material3 = "1.4.0"
 navigation = "2.9.2"
 kotlinxSerialization = "1.6.3"
 matheclipseCore = "3.2.0"
+latex = "1.4.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,9 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 matheclipse-core = { group = "org.matheclipse", name = "matheclipse-core", version.ref = "matheclipseCore" }
+latex-base = { group = "io.github.huarangmeng", name = "latex-base", version.ref = "latex" }
+latex-parser = { group = "io.github.huarangmeng", name = "latex-parser", version.ref = "latex" }
+latex-renderer = { group = "io.github.huarangmeng", name = "latex-renderer", version.ref = "latex" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
