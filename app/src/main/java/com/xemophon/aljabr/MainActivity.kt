@@ -25,16 +25,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.xemophon.aljabr.differentiate.DiffFunc
-import com.xemophon.aljabr.integrate.IntegFunc
+import com.xemophon.aljabr.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.navigation.*
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import androidx.lifecycle.lifecycleScope
+import com.xemophon.aljabr.ui.theme.HorizontalSeparator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -62,6 +63,25 @@ class MainActivity : ComponentActivity() {
                     drawerContent = {
                         ModalDrawerSheet {
                             Spacer(modifier = Modifier.height(12.dp))
+                            Misc.forEach { variant ->
+                                NavigationDrawerItem(
+                                    label = { Text(variant.label) },
+                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
+                                    onClick = {
+                                        navController.navigate(variant.route) {
+                                            if (variant.route is BasicCalcRoute) {
+                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                            } else {
+                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                            }
+                                        }
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                )
+                            }
+                            HorizontalSeparator(text = "Calculus")
                             Calculus.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
@@ -106,9 +126,13 @@ class MainActivity : ComponentActivity() {
                         popExitTransition = {
                             fadeOut(animationSpec = tween(150, easing = FastOutLinearInEasing))
                         },
-                    )
- {
+                    ) {
                         Calculus.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
+                        }
+                        Misc.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }

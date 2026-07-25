@@ -39,11 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.xemophon.aljabr.basicCalc.CalcFuncs
-import com.xemophon.aljabr.differentiate.AnalysisFunc
-import com.xemophon.aljabr.differentiate.AnalysisResult
-import com.xemophon.aljabr.differentiate.DiffFunc
-import com.xemophon.aljabr.integrate.IntegFunc
-import com.xemophon.aljabr.limits.LimitsFunc
+import com.xemophon.aljabr.calculus.differentiate.AnalysisFunc
+import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
+import com.xemophon.aljabr.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.calculus.limits.LimitsFunc
 
 @Composable
 fun CalcBox(

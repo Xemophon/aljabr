@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.graphMaker
+package com.xemophon.aljabr.calculus.graphMaker
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.utils.SymjaUtils

@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.integrate
+package com.xemophon.aljabr.calculus.integrate
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.utils.SymjaUtils

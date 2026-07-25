@@ -8,10 +8,10 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Info
 import com.xemophon.aljabr.basicCalc.BasicCalc
-import com.xemophon.aljabr.differentiate.DiffCalc
-import com.xemophon.aljabr.graphMaker.GraphMaker
-import com.xemophon.aljabr.integrate.IntegCalc
-import com.xemophon.aljabr.limits.Limits
+import com.xemophon.aljabr.calculus.differentiate.DiffCalc
+import com.xemophon.aljabr.calculus.graphMaker.GraphMaker
+import com.xemophon.aljabr.calculus.integrate.IntegCalc
+import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.misc.AboutScreen
 import kotlinx.serialization.Serializable
 
@@ -28,13 +28,7 @@ object DifferentiateRoute
 @Serializable
 object AboutRoute
 val Calculus = listOf(
-    CalculatorVariant(
-        route = BasicCalcRoute,
-        routeClass = BasicCalcRoute::class,
-        label = "Basic Calculator",
-        icon = Icons.Default.Calculate,
-        content = { onOpenDrawer -> BasicCalc(onOpenDrawer = onOpenDrawer) }
-    ),
+
     CalculatorVariant(
         route = GraphMakerRoute,
         routeClass = GraphMakerRoute::class,
@@ -62,6 +56,16 @@ val Calculus = listOf(
         label = "Differentiate",
         icon = Icons.AutoMirrored.Filled.TrendingUp,
         content = { onOpenDrawer -> DiffCalc(onOpenDrawer = onOpenDrawer) }
+    )
+)
+
+val Misc = listOf(
+    CalculatorVariant(
+        route = BasicCalcRoute,
+        routeClass = BasicCalcRoute::class,
+        label = "Basic Calculator",
+        icon = Icons.Default.Calculate,
+        content = { onOpenDrawer -> BasicCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = AboutRoute,

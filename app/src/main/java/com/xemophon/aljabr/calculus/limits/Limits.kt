@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.limits
+package com.xemophon.aljabr.calculus.limits
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

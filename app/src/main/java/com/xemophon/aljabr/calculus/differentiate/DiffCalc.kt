@@ -1,5 +1,6 @@
-package com.xemophon.aljabr.differentiate
+package com.xemophon.aljabr.calculus.differentiate
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.activity.compose.BackHandler
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,11 +35,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import com.xemophon.aljabr.utils.SymjaUtils
 
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
@@ -51,7 +51,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
     }
 
     BackHandler(enabled = viewModel.analysisResult != null) {
-        viewModel.handleAction(com.xemophon.aljabr.ui.components.CalcButtonAction.Clear)
+        viewModel.handleAction(CalcButtonAction.Clear)
     }
 
     CalculatorScaffold(
@@ -86,7 +86,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
                     } else {
                         AnalysisReport(
                             result = viewModel.analysisResult!!,
-                            onClear = { viewModel.handleAction(com.xemophon.aljabr.ui.components.CalcButtonAction.Clear) }
+                            onClear = { viewModel.handleAction(CalcButtonAction.Clear) }
                         )
                     }
                 }

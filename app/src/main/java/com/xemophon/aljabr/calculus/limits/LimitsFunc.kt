@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.limits
+package com.xemophon.aljabr.calculus.limits
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import kotlin.math.abs

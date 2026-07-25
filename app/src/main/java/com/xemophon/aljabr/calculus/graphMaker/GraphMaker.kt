@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.graphMaker
+package com.xemophon.aljabr.calculus.graphMaker
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -39,9 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -129,7 +131,7 @@ fun InteractiveGraphView(expression: String) {
     var viewportOffset by remember { mutableStateOf(Offset.Zero) }
     var viewportScale by remember { mutableFloatStateOf(1f) }
 
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val configuration = LocalConfiguration.current
     val aspectRatio = configuration.screenHeightDp.toFloat() / configuration.screenWidthDp.toFloat()
 
     val rangeX = 20f / viewportScale
@@ -321,7 +323,7 @@ fun InteractiveGraphView(expression: String) {
                     start = Offset(x, 0f),
                     end = Offset(x, height),
                     strokeWidth = 2f,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                    pathEffect = PathEffect.dashPathEffect(
                         floatArrayOf(10f, 10f), 0f
                     )
                 )
@@ -333,7 +335,7 @@ fun InteractiveGraphView(expression: String) {
                     start = Offset(0f, y),
                     end = Offset(width, y),
                     strokeWidth = 2f,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                    pathEffect = PathEffect.dashPathEffect(
                         floatArrayOf(10f, 10f), 0f
                     )
                 )

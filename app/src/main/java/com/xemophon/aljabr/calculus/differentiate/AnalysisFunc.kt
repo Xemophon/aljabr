@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.differentiate
+package com.xemophon.aljabr.calculus.differentiate
 
 import com.xemophon.aljabr.utils.SymjaUtils
 import kotlin.math.abs

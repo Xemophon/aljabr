@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.integrate
+package com.xemophon.aljabr.calculus.integrate
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
