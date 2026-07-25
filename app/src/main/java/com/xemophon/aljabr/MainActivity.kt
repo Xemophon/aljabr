@@ -20,12 +20,15 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,7 +36,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.navigation.*
+import com.xemophon.aljabr.misc.SettingsViewModel
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import com.xemophon.aljabr.ui.theme.HorizontalSeparator
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +56,16 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            AlJabrTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val appTheme by settingsViewModel.theme.collectAsState()
+            
+            val isDarkTheme = when (appTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                AppTheme.AUTO -> isSystemInDarkTheme()
+            }
+
+            AlJabrTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()

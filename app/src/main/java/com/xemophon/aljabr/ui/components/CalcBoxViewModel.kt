@@ -37,13 +37,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.calculus.differentiate.AnalysisFunc
 import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
+import com.xemophon.aljabr.data.SettingsRepository
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import android.app.Application
 
 @Composable
 fun CalcBox(
@@ -140,7 +145,18 @@ fun CalcBox(
 enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
 
-class CalcBoxViewModel : ViewModel() {
+class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
+    private val settingsRepository = SettingsRepository(application)
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.useRadiansFlow.collectLatest {
+                useRadians = it
+                updateInstantResult()
+            }
+        }
+    }
+
     var displayText by mutableStateOf("0")
         private set
 
@@ -233,8 +249,9 @@ class CalcBoxViewModel : ViewModel() {
     }
 
     fun toggleAngleUnit() {
-        useRadians = !useRadians
-        updateInstantResult()
+        viewModelScope.launch {
+            settingsRepository.setUseRadians(!useRadians)
+        }
     }
 
     fun setFocus(focus: CalculatorFocus) {
