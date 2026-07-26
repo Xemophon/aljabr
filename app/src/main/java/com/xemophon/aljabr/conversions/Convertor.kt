@@ -34,92 +34,98 @@ fun ConvertorPage(
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onModeChanged(ConversionMode.entries[pagerState.currentPage])
     }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        CalculatorScaffold(
+            title = { Text("Convertor") },
+            onOpenDrawer = onOpenDrawer
+        )
+        { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+            ) {
+                HorizontalSeparator(
+                    text = when (viewModel.mode) {
+                        ConversionMode.ANGLE -> "Angle Convertor"
+                        ConversionMode.COMPLEX_CART_POLAR -> "Complex Convertor"
+                        ConversionMode.COMPLEX_CART_EXP -> "Exponential Convertor"
+                    }
+                )
 
-    CalculatorScaffold(
-        title = { Text("Convertor") },
-        onOpenDrawer = onOpenDrawer)
-    { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            HorizontalSeparator(
-                text = when (viewModel.mode) {
-                    ConversionMode.ANGLE -> "Angle Convertor"
-                    ConversionMode.COMPLEX_CART_POLAR -> "Complex Convertor"
-                    ConversionMode.COMPLEX_CART_EXP -> "Exponential Convertor"
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(0.7f)
+                ) { page ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Dimens.PaddingNormal),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ConverterField(
+                            label = labels.first,
+                            value = viewModel.primaryValue,
+                            isFocused = viewModel.selectedField == SelectedField.PRIMARY,
+                            cursorIndex = viewModel.primaryCursor,
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.selectedField = SelectedField.PRIMARY }
+                        )
+
+                        IconButton(
+                            onClick = { viewModel.swapFields() },
+                            modifier = Modifier.padding(top = 24.dp) // Align with box centers roughly
+                        ) {
+                            Icon(Icons.Default.SyncAlt, contentDescription = "Swap")
+                        }
+
+                        ConverterField(
+                            label = labels.second,
+                            value = viewModel.secondaryValue,
+                            isFocused = viewModel.selectedField == SelectedField.SECONDARY,
+                            cursorIndex = viewModel.secondaryCursor,
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.selectedField = SelectedField.SECONDARY }
+                        )
+                    }
                 }
-            )
-            
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f)
-            ) { page ->
+
+                // Dots indicator
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(Dimens.PaddingNormal),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(bottom = Dimens.PaddingNormal),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    ConverterField(
-                        label = labels.first,
-                        value = viewModel.primaryValue,
-                        isFocused = viewModel.selectedField == SelectedField.PRIMARY,
-                        cursorIndex = viewModel.primaryCursor,
-                        modifier = Modifier.weight(1f),
-                        onClick = { viewModel.selectedField = SelectedField.PRIMARY }
-                    )
-                    
-                    IconButton(
-                        onClick = { viewModel.swapFields() },
-                        modifier = Modifier.padding(top = 24.dp) // Align with box centers roughly
-                    ) {
-                        Icon(Icons.Default.SyncAlt, contentDescription = "Swap")
+                    ConversionMode.entries.forEachIndexed { index, _ ->
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                )
+                        )
                     }
-                    
-                    ConverterField(
-                        label = labels.second,
-                        value = viewModel.secondaryValue,
-                        isFocused = viewModel.selectedField == SelectedField.SECONDARY,
-                        cursorIndex = viewModel.secondaryCursor,
-                        modifier = Modifier.weight(1f),
-                        onClick = { viewModel.selectedField = SelectedField.SECONDARY }
-                    )
                 }
-            }
-            
-            // Dots indicator
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = Dimens.PaddingNormal),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                ConversionMode.entries.forEachIndexed { index, _ ->
-                    Box(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            )
-                    )
+
+                val letterMode = if (viewModel.mode == ConversionMode.ANGLE) {
+                    CalcButtonAction.Constant("π", Constants.PI)
+                } else {
+                    CalcButtonAction.Constant("i", Constants.I)
                 }
-            }
 
-            val letterMode = if (viewModel.mode == ConversionMode.ANGLE) {
-                CalcButtonAction.Constant("φ", Constants.PHI)
-            } else {
-                CalcButtonAction.Constant("i", Constants.I)
+                ShortCalcButtons(
+                    modifier = Modifier.weight(1.3f),
+                    letterNeeded = letterMode,
+                    onAction = { viewModel.handleAction(it) }
+                )
             }
-
-            ShortCalcButtons(
-                letterNeeded = letterMode,
-                onAction = { viewModel.handleAction(it) }
-            )
         }
     }
 }

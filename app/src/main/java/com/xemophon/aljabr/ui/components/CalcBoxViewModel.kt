@@ -429,7 +429,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         try {
-            val result = CalcFuncs.calculateSymbolic(displayText)
+            val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+            val result = CalcFuncs.formatResult(numResult)
             resultText = if (result == "Error") "" else result
         } catch (_: Exception) {
             resultText = ""
@@ -474,7 +475,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             cursorIndex = displayText.length
         } else {
             try {
-                val result = CalcFuncs.calculateSymbolic(displayText)
+                val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+                val result = CalcFuncs.formatResult(numResult)
                 if (result != "Error" && result.isNotEmpty()) {
                     displayText = result
                     resultText = ""

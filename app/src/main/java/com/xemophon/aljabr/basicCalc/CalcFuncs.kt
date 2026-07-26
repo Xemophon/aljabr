@@ -269,6 +269,7 @@ object CalcFuncs {
 
         checkPiDerivation(value)?.let { return it }
         checkPhiDerivation(value)?.let { return it }
+        checkEDerivation(value)?.let { return it }
 
         if (value == floor(value) && value in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble()) {
             return value.toLong().toString()
@@ -281,6 +282,12 @@ object CalcFuncs {
     private fun checkPhiDerivation(value: Double): String? {
         if (abs(value - PHI) < 1e-10) return "φ"
         if (abs(value + PHI) < 1e-10) return "-φ"
+        return null
+    }
+
+    private fun checkEDerivation(value: Double): String? {
+        if (abs(value - E) < 1e-10) return "e"
+        if (abs(value + E) < 1e-10) return "-e"
         return null
     }
 

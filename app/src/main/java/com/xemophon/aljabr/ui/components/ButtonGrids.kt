@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -73,7 +74,7 @@ fun ShortCalcButtons(
             CalcButtonAction.Symbol("7"),
             CalcButtonAction.Symbol("8"),
             CalcButtonAction.Symbol("9"),
-            CalcButtonAction.Symbol("( )")
+            CalcButtonAction.Symbol("÷", "/")
         ),
         listOf(
             CalcButtonAction.Symbol("4"),
@@ -85,18 +86,25 @@ fun ShortCalcButtons(
             CalcButtonAction.Symbol("1"),
             CalcButtonAction.Symbol("2"),
             CalcButtonAction.Symbol("3"),
-            CalcButtonAction.Symbol("÷", "/")
+            CalcButtonAction.Symbol("-")
         ),
         listOf(
             CalcButtonAction.Symbol("0"),
             CalcButtonAction.Symbol("."),
-            CalcButtonAction.Backspace(R.drawable.backspace),
-            letterNeeded)
+            CalcButtonAction.Symbol("+"),
+            CalcButtonAction.Backspace(R.drawable.backspace)
+        ),
+        listOf(
+            letterNeeded,
+            CalcButtonAction.Symbol("( )"),
+            CalcButtonAction.Clear,
+            CalcButtonAction.Calculate
+        )
     )
-    CalcButtonSheet() {
+    CalcButtonSheet(modifier.fillMaxHeight()) {
         shortButtonGrid.forEach { row ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
             ) {
                 row.forEach { action ->
@@ -107,7 +115,8 @@ fun ShortCalcButtons(
                         containerColor = colors.containerColor,
                         contentColor = colors.contentColor,
                         modifier = Modifier
-                            .weight(1f),
+                            .weight(1f)
+                            .fillMaxHeight(),
                         onClick = { onAction(action) }
                     )
                 }

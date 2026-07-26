@@ -16,10 +16,12 @@ enum class SelectedField { PRIMARY, SECONDARY }
 class ConvertorViewModel(application: Application) : AndroidViewModel(application) {
 
     var mode by mutableStateOf(ConversionMode.ANGLE)
+    var isSwapped by mutableStateOf(false)
 
     fun onModeChanged(newMode: ConversionMode) {
         if (mode != newMode) {
             mode = newMode
+            isSwapped = false
             primaryValue = ""
             secondaryValue = ""
             primaryCursor = 0
@@ -94,11 +96,12 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun getLabels(): Pair<String, String> {
-        return when (mode) {
+        val base = when (mode) {
             ConversionMode.ANGLE -> "Deg" to "Rad"
             ConversionMode.COMPLEX_CART_POLAR -> "Cartesian" to "Polar"
             ConversionMode.COMPLEX_CART_EXP -> "Cartesian" to "Exponential"
         }
+        return if (isSwapped) base.second to base.first else base
     }
 
     private fun insertAtCursor(text: String, cursor: Int, toInsert: String): String {
@@ -106,6 +109,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun swapFields() {
+        isSwapped = !isSwapped
         val tempVal = primaryValue
         primaryValue = secondaryValue
         secondaryValue = tempVal
@@ -114,8 +118,6 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         primaryCursor = secondaryCursor
         secondaryCursor = tempCursor
         
-        // When swapping, the conversion direction effectively reverses if labels are fixed,
-        // but here the labels represent the units. So swapping just swaps the content.
         performInstantConversion()
     }
 
@@ -159,7 +161,9 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         val value = CalcFuncs.calculateExpression(input)
         if (value.isNaN()) return "Error"
         
-        val result = if (fromPrimary) {
+        val toRad = if (isSwapped) !fromPrimary else fromPrimary
+        
+        val result = if (toRad) {
             // Deg to Rad
             (value * PI) / 180.0
         } else {
@@ -170,7 +174,9 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun convertComplexCartPolar(input: String, fromPrimary: Boolean): String {
-        return if (fromPrimary) {
+        val toPolar = if (isSwapped) !fromPrimary else fromPrimary
+        
+        return if (toPolar) {
             // Cartesian to Polar
             val (real, imag) = parseCartesian(input) ?: return "Error"
             val r = sqrt(real * real + imag * imag)
@@ -189,7 +195,9 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun convertComplexCartExp(input: String, fromPrimary: Boolean): String {
-        return if (fromPrimary) {
+        val toExp = if (isSwapped) !fromPrimary else fromPrimary
+        
+        return if (toExp) {
             // Cartesian to Exponential
             val (real, imag) = parseCartesian(input) ?: return "Error"
             val r = sqrt(real * real + imag * imag)
