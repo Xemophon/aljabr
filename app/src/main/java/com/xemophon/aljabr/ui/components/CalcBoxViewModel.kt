@@ -148,21 +148,6 @@ enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
 
-    init {
-        viewModelScope.launch {
-            settingsRepository.useRadiansFlow.collectLatest {
-                useRadians = it
-                updateInstantResult()
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.precisionFlow.collectLatest {
-                precision = it
-                updateInstantResult()
-            }
-        }
-    }
-
     var displayText by mutableStateOf("0")
         private set
 
@@ -198,6 +183,21 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private var lastExpression = ""
     private var isShowingResult = false
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.useRadiansFlow.collectLatest {
+                useRadians = it
+                updateInstantResult()
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.precisionFlow.collectLatest {
+                precision = it
+                updateInstantResult()
+            }
+        }
+    }
 
     fun handleAction(action: CalcButtonAction) {
         // Clear mode-specific results when any input button is pressed
