@@ -12,11 +12,30 @@ object SymjaUtils {
         }
     }
 
-    fun prepareForSymja(expression: String): String {
-        return expression
+    fun prepareForSymja(expression: String, useRadians: Boolean = true): String {
+        var cleaned = expression
             .replace(" ", "")
             .replace("×", "*")
             .replace("÷", "/")
+            .replace("π", "Pi")
+            .replace("e", "E")
+            .replace("φ", "GoldenRatio")
+            .replace("j", "I", ignoreCase = true)
+            .replace("i", "I", ignoreCase = true)
+            .replace("√", "Sqrt")
+            .replace("sqrt", "Sqrt", ignoreCase = true)
+
+        if (!useRadians) {
+            cleaned = cleaned
+                .replace("asin(", "ArcSinDeg(", ignoreCase = true)
+                .replace("acos(", "ArcCosDeg(", ignoreCase = true)
+                .replace("atan(", "ArcTanDeg(", ignoreCase = true)
+                .replace("sin(", "SinDeg(", ignoreCase = true)
+                .replace("cos(", "CosDeg(", ignoreCase = true)
+                .replace("tan(", "TanDeg(", ignoreCase = true)
+        }
+
+        return cleaned
             .replace("asin", "ArcSin", ignoreCase = true)
             .replace("acos", "ArcCos", ignoreCase = true)
             .replace("atan", "ArcTan", ignoreCase = true)
@@ -25,12 +44,30 @@ object SymjaUtils {
             .replace("tan", "Tan", ignoreCase = true)
             .replace("ln", "Log", ignoreCase = true)
             .replace("log", "Log10", ignoreCase = true)
-            .replace("sqrt", "Sqrt", ignoreCase = true)
-            .replace("π", "Pi")
-            .replace("e", "E")
-            .replace("φ", "GoldenRatio")
-            .replace("i", "I")
-            .replace("√", "Sqrt")
+    }
+
+    /**
+     * Forces numerical evaluation using N() and handles degrees if needed.
+     */
+    fun calculateNumerical(expression: String, useRadians: Boolean): String {
+        return try {
+            if (!useRadians) {
+                evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
+                evaluator.eval("CosDeg[x_] := Cos[x * Degree]")
+                evaluator.eval("TanDeg[x_] := Tan[x * Degree]")
+                evaluator.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
+                evaluator.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
+                evaluator.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
+            }
+            
+            val cleaned = prepareForSymja(expression, useRadians)
+            if (cleaned.isBlank()) return ""
+            
+            val result = evaluator.eval("N($cleaned)")
+            formatResult(result.toString())
+        } catch (e: Throwable) {
+            "Error"
+        }
     }
 
     /**
@@ -61,7 +98,7 @@ object SymjaUtils {
             .replace("Pi", "π")
             .replace("pi", "π")
             .replace("GoldenRatio", "φ")
-            .replace("I", "i")
+            .replace("I", "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
             .replace("*", " × ")

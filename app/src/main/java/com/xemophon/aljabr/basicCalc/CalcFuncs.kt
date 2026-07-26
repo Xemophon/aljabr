@@ -26,7 +26,8 @@ object CalcFuncs {
         "√" to "sqrt",
         "π" to "pi",
         "φ" to "phi",
-        "i" to "I"
+        "j" to "j",
+        "i" to "i"
     )
 
     fun calculateExpression(
@@ -164,7 +165,7 @@ object CalcFuncs {
                 while (tempPos < expression.length && expression[tempPos] == ' ') tempPos++
                 if (tempPos >= expression.length) return false
                 val next = expression[tempPos]
-                return next == '(' || (next in 'a'..'z')
+                return next == '(' || (next in 'a'..'z') || (next in 'A'..'Z')
             }
 
             fun parseFactor(): Double {
@@ -189,14 +190,15 @@ object CalcFuncs {
                 } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                     x = expression.substring(startPos, pos).toDouble()
-                } else if (ch >= 'a'.code && ch <= 'z'.code) {
-                    while (ch >= 'a'.code && ch <= 'z'.code) nextChar()
-                    val func = expression.substring(startPos, pos)
+                } else if ((ch >= 'a'.code && ch <= 'z'.code) || (ch >= 'A'.code && ch <= 'Z'.code)) {
+                    while ((ch >= 'a'.code && ch <= 'z'.code) || (ch >= 'A'.code && ch <= 'Z'.code)) nextChar()
+                    val func = expression.substring(startPos, pos).lowercase()
                     x = when {
                         variables.containsKey(func) -> variables[func]!!
                         func == "pi" -> PI
                         func == "e" -> E
                         func == "phi" -> PHI
+                        func == "i" || func == "j" -> 0.0 // Basic calc is real-only
                         else -> handleFunction(func)
                     }
                 } else {

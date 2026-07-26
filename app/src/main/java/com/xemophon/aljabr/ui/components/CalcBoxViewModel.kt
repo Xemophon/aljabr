@@ -339,7 +339,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun isImplicitMultiplicationNeeded(): Boolean {
         if (displayText == "0") return false
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == 'φ' || lastChar == 'i' || lastChar == '%')
+        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == 'φ' || lastChar == 'j' || lastChar == 'i' || lastChar == '%')
     }
 
     private fun handleBrackets() {
@@ -398,7 +398,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             Constants.PI -> "π"
             Constants.E -> "e"
             Constants.PHI -> "φ"
-            Constants.I -> "i"
+            Constants.I -> "j"
         }
 
         insertText(toInsert, applyImplicitMultiplication = true)
@@ -429,8 +429,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         try {
-            val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-            val result = CalcFuncs.formatResult(numResult)
+            val result = if (displayText.contains("j", ignoreCase = true)) {
+                com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians)
+            } else {
+                val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+                CalcFuncs.formatResult(numResult)
+            }
             resultText = if (result == "Error") "" else result
         } catch (_: Exception) {
             resultText = ""
@@ -438,7 +442,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun shouldPerformInstantCalculation(input: String): Boolean {
-        val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'φ', 'i', 'x', 'y')
+        val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'φ', 'j', 'i', 'x', 'y')
         val hasScientific = listOf(
             "sin",
             "cos",
@@ -475,8 +479,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             cursorIndex = displayText.length
         } else {
             try {
-                val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                val result = CalcFuncs.formatResult(numResult)
+                val result = if (displayText.contains("j", ignoreCase = true)) {
+                    com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians)
+                } else {
+                    val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+                    CalcFuncs.formatResult(numResult)
+                }
                 if (result != "Error" && result.isNotEmpty()) {
                     displayText = result
                     resultText = ""
@@ -622,7 +630,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
             " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
             " × log(", "log(", " × ln(", "ln(", " × √(", "√(",
-            " × π", "π", " × e", "e", " × φ", "φ", " × i", "i",
+            " × π", "π", " × e", "e", " × φ", "φ", " × j", "j", " × i", "i",
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )
 

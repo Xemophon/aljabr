@@ -60,7 +60,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
 
         is CalcButtonAction.Constant -> {
             when (type) {
-                Constants.PI -> CalcButtonAction.Constant("i", Constants.I)
+                Constants.PI -> CalcButtonAction.Constant("j", Constants.I)
                 Constants.E -> CalcButtonAction.Scientific("ln", ScientificType.LN)
                 else -> this
             }
