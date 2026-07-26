@@ -29,45 +29,53 @@ AlJabr is a modern, feature-rich calculator and mathematical toolkit for Android
     - **Definite:** Numerical integration using Simpson's 1/3 rule for high precision.
 - **Limits:** Calculate finite, infinite ($\infty$), and one-sided (left/right) limits numerically.
 
+### 🔄 Unit Conversions
+- **Versatile Converters:** Easily convert between various units for length, weight, area, and more.
+- **Real-time Results:** View converted values instantly as you type.
+
 ### 📱 User Experience
-- **Navigation Drawer:** Easily switch between different calculator variants.
-- **Material 3 Theming:** Modern, clean UI with support for dynamic colors.
+- **Navigation Drawer:** Easily switch between different calculator variants and tools.
+- **Material 3 Theming:** Modern, clean UI with support for dynamic colors and adaptive layouts.
+- **Settings:** Customizable app experience including Light, Dark, and System theme options.
 - **Responsive Display:** Expression text scales dynamically as you type.
-- **Smart Backspace:** Deletes entire function blocks (like `asin(`) in a single tap.
+- **LaTeX Rendering:** Beautifully rendered mathematical expressions for clarity.
 
 ## 🛠️ Tech Stack
 
 - **Language:** [Kotlin](https://kotlinlang.org/)
 - **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose)
 - **Math Engines:**
-    - [Symja / Matheclipse](https://github.com/axkr/symja_android_library): Powers symbolic calculus.
-    - Custom expression evaluator for high-performance numerical tasks.
+    - [Matheclipse (Symja)](https://github.com/axkr/symja_android_library): Powers symbolic calculus and complex evaluations.
+    - [LaTeX Rendering Library](https://github.com/huarangmeng/latex-renderer): Used for high-quality mathematical typesetting.
 - **Design System:** [Material Design 3](https://m3.material.io/)
+- **Data Storage:** [Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for user settings.
 - **Architecture:** MVVM (Model-View-ViewModel)
 
 ## 📥 Getting Started
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/TUsCalc.git
+    git clone https://github.com/xemophon/AlJabr.git
     ```
 2.  **Open in Android Studio:**
-    Requires Android Studio Ladybug or newer for Compose support.
+    Requires Android Studio Ladybug or newer for the latest Compose and Kotlin support.
 3.  **Build & Run:**
-    Use the **Run** button or execute `./gradlew assembleDebug`.
+    Use the **Run** button in Android Studio or execute `./gradlew assembleDebug` from the terminal.
 
 ## 🏗️ Project Structure
 
-The project is organized into modular packages based on functionality:
+The project is organized into modular packages under `com.xemophon.aljabr`:
 
-- `com.example.tuscalc/`
-    - `basicCalc/`: Logic and UI for the standard scientific calculator.
-    - `graphMaker/`: Graphing engine and coordinate system visualization.
+- `basicCalc/`: Logic and UI for the standard scientific calculator.
+- `calculus/`:
     - `differentiate/`: Symbolic differentiation interface.
     - `integrate/`: Numerical and symbolic integration tools.
     - `limits/`: Numerical limit calculation logic.
-    - `navigation/`: Type-safe navigation using Jetpack Navigation Compose.
-    - `ui/theme/`: Material 3 theme and color definitions.
+    - `graphMaker/`: Graphing engine and coordinate system visualization.
+- `conversions/`: Unit conversion tools and tables.
+- `navigation/`: Type-safe navigation logic using Jetpack Navigation Compose.
+- `ui/theme/`: Material 3 theme, color definitions, and layout constants.
+- `misc/`: App settings, About screen, and general utility views.
 
 ## 📄 License
 

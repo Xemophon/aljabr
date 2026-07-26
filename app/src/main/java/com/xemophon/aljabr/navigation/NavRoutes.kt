@@ -6,7 +6,6 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Functions
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import com.xemophon.aljabr.basicCalc.BasicCalc
@@ -15,8 +14,6 @@ import com.xemophon.aljabr.calculus.graphMaker.GraphMaker
 import com.xemophon.aljabr.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.conversions.ConvertorPage
-import com.xemophon.aljabr.misc.AboutScreen
-import com.xemophon.aljabr.misc.SettingsPage
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,9 +27,7 @@ object IntegrateRoute
 @Serializable
 object DifferentiateRoute
 @Serializable
-object AboutRoute
-@Serializable
-object SettingsRoute
+object MiscRoute
 @Serializable
 object ConvertorRoute
 val Calculus = listOf(
@@ -76,18 +71,11 @@ val Misc = listOf(
         content = { onOpenDrawer -> BasicCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
-        route = AboutRoute,
-        routeClass = AboutRoute::class,
-        label = "About",
-        icon = Icons.Default.Info,
-        content = { onOpenDrawer -> AboutScreen(onOpenDrawer = onOpenDrawer) }
-    ),
-    CalculatorVariant(
-        route = SettingsRoute,
-        routeClass = SettingsRoute::class,
-        label = "Settings",
+        route = MiscRoute,
+        routeClass = MiscRoute::class,
+        label = "Settings & About",
         icon = Icons.Default.Settings,
-        content = { onOpenDrawer -> SettingsPage(onOpenDrawer = onOpenDrawer) }
+        content = { onOpenDrawer -> com.xemophon.aljabr.misc.MiscPage(onOpenDrawer = onOpenDrawer) }
     )
 )
 
