@@ -46,7 +46,7 @@ AlJabr is a modern, feature-rich calculator and mathematical toolkit for Android
 - **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose)
 - **Math Engines:**
     - [Matheclipse (Symja)](https://github.com/axkr/symja_android_library): Powers symbolic calculus and complex evaluations.
-    - [LaTeX Rendering Library](https://github.com/huarangmeng/latex-renderer): Used for high-quality mathematical typesetting.
+    - [LaTeX Rendering Library](https://github.com/huarangmeng/latex): Used for high-quality mathematical typesetting.
 - **Design System:** [Material Design 3](https://m3.material.io/)
 - **Data Storage:** [Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for user settings.
 - **Architecture:** MVVM (Model-View-ViewModel)
