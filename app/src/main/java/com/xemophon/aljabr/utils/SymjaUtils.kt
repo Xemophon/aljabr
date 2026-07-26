@@ -28,6 +28,8 @@ object SymjaUtils {
             .replace("sqrt", "Sqrt", ignoreCase = true)
             .replace("π", "Pi")
             .replace("e", "E")
+            .replace("φ", "GoldenRatio")
+            .replace("i", "I")
             .replace("√", "Sqrt")
     }
 
@@ -58,6 +60,8 @@ object SymjaUtils {
             .replace("Tan", "tan")
             .replace("Pi", "π")
             .replace("pi", "π")
+            .replace("GoldenRatio", "φ")
+            .replace("I", "i")
             .replace("E", "e")
             .replace("Sqrt", "√")
             .replace("*", " × ")

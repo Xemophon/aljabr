@@ -223,6 +223,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 updateInstantResult()
             }
 
+            is CalcButtonAction.Constant -> {
+                handleConstant(action)
+                updateInstantResult()
+            }
+
             is CalcButtonAction.Variable -> {
                 handleVariable(action)
                 updateInstantResult()
@@ -334,7 +339,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun isImplicitMultiplicationNeeded(): Boolean {
         if (displayText == "0") return false
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == '%')
+        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == 'φ' || lastChar == 'i' || lastChar == '%')
     }
 
     private fun handleBrackets() {
@@ -369,8 +374,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         val toInsert = when (action.type) {
             ScientificType.SQRT -> "√("
-            ScientificType.PI -> "π"
-            ScientificType.E -> "e"
             ScientificType.ASIN -> "asin("
             ScientificType.ACOS -> "acos("
             ScientificType.ATAN -> "atan("
@@ -380,6 +383,22 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             ScientificType.TAN -> "tan("
             ScientificType.LOG -> "log("
             else -> "${action.text.lowercase()}("
+        }
+
+        insertText(toInsert, applyImplicitMultiplication = true)
+    }
+
+    private fun handleConstant(action: CalcButtonAction.Constant) {
+        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
+            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+            return
+        }
+
+        val toInsert = when (action.type) {
+            Constants.PI -> "π"
+            Constants.E -> "e"
+            Constants.PHI -> "φ"
+            Constants.I -> "i"
         }
 
         insertText(toInsert, applyImplicitMultiplication = true)
@@ -410,15 +429,15 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         try {
-            val result = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-            resultText = if (result.isNaN()) "" else CalcFuncs.formatResult(result)
+            val result = CalcFuncs.calculateSymbolic(displayText)
+            resultText = if (result == "Error") "" else result
         } catch (_: Exception) {
             resultText = ""
         }
     }
 
     private fun shouldPerformInstantCalculation(input: String): Boolean {
-        val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'x', 'y')
+        val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'φ', 'i', 'x', 'y')
         val hasScientific = listOf(
             "sin",
             "cos",
@@ -455,9 +474,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             cursorIndex = displayText.length
         } else {
             try {
-                val result = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                if (!result.isNaN()) {
-                    displayText = CalcFuncs.formatResult(result)
+                val result = CalcFuncs.calculateSymbolic(displayText)
+                if (result != "Error" && result.isNotEmpty()) {
+                    displayText = result
                     resultText = ""
                     cursorIndex = displayText.length
                 }
@@ -601,7 +620,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
             " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
             " × log(", "log(", " × ln(", "ln(", " × √(", "√(",
-            " × π", "π", " × e", "e",
+            " × π", "π", " × e", "e", " × φ", "φ", " × i", "i",
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )
 

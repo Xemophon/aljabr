@@ -18,11 +18,15 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 
 object CalcFuncs {
+    private const val PHI = 1.618033988749895
+
     private val visualToMathMap = mapOf(
         "÷" to "/",
         "×" to "*",
         "√" to "sqrt",
-        "π" to "pi"
+        "π" to "pi",
+        "φ" to "phi",
+        "i" to "I"
     )
 
     fun calculateExpression(
@@ -39,6 +43,34 @@ object CalcFuncs {
             evaluate(cleanedInput, variables, useRadians)
         } catch (e: Throwable) {
             Double.NaN
+        }
+    }
+
+    fun calculateSymbolic(
+        input: String
+    ): String {
+        if (input.isBlank()) return ""
+        return try {
+            val cleaned = com.xemophon.aljabr.utils.SymjaUtils.prepareForSymja(input)
+            val eval = com.xemophon.aljabr.utils.SymjaUtils.evaluator
+            
+            val result = eval.eval(cleaned)
+            val resStr = result.toString()
+            
+            // Priority: Complex or Symbolic constants should stay formatted
+            if (resStr.contains("I") || resStr.contains("GoldenRatio") || resStr.contains("Pi") || resStr.contains("E")) {
+                 com.xemophon.aljabr.utils.SymjaUtils.formatResult(resStr)
+            } else {
+                // Try to format as a nice decimal if it's a pure real number
+                val d = resStr.toDoubleOrNull()
+                if (d != null) {
+                    formatResult(d)
+                } else {
+                    com.xemophon.aljabr.utils.SymjaUtils.formatResult(resStr)
+                }
+            }
+        } catch (e: Throwable) {
+            "Error"
         }
     }
 
@@ -164,6 +196,7 @@ object CalcFuncs {
                         variables.containsKey(func) -> variables[func]!!
                         func == "pi" -> PI
                         func == "e" -> E
+                        func == "phi" -> PHI
                         else -> handleFunction(func)
                     }
                 } else {
@@ -235,6 +268,7 @@ object CalcFuncs {
         if (value.isInfinite()) return "Infinity"
 
         checkPiDerivation(value)?.let { return it }
+        checkPhiDerivation(value)?.let { return it }
 
         if (value == floor(value) && value in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble()) {
             return value.toLong().toString()
@@ -242,6 +276,12 @@ object CalcFuncs {
         val df = DecimalFormat("0.####").apply { roundingMode = RoundingMode.HALF_UP }
         val result = df.format(value).replace(",", ".")
         return if (result == "-0") "0" else result
+    }
+
+    private fun checkPhiDerivation(value: Double): String? {
+        if (abs(value - PHI) < 1e-10) return "φ"
+        if (abs(value + PHI) < 1e-10) return "-φ"
+        return null
     }
 
     private fun checkPiDerivation(value: Double): String? {

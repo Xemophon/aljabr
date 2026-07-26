@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.sp
+import com.xemophon.aljabr.R
 import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable
@@ -58,6 +59,60 @@ private fun CalcButtonSheet(
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
             content = content
         )
+    }
+}
+
+@Composable
+fun ShortCalcButtons(
+    modifier: Modifier = Modifier,
+    letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
+    onAction: (CalcButtonAction) -> Unit,
+) {
+    val shortButtonGrid = listOf(
+        listOf(
+            CalcButtonAction.Symbol("7"),
+            CalcButtonAction.Symbol("8"),
+            CalcButtonAction.Symbol("9"),
+            CalcButtonAction.Symbol("( )")
+        ),
+        listOf(
+            CalcButtonAction.Symbol("4"),
+            CalcButtonAction.Symbol("5"),
+            CalcButtonAction.Symbol("6"),
+            CalcButtonAction.Symbol("×", "*")
+        ),
+        listOf(
+            CalcButtonAction.Symbol("1"),
+            CalcButtonAction.Symbol("2"),
+            CalcButtonAction.Symbol("3"),
+            CalcButtonAction.Symbol("÷", "/")
+        ),
+        listOf(
+            CalcButtonAction.Symbol("0"),
+            CalcButtonAction.Symbol("."),
+            CalcButtonAction.Backspace(R.drawable.backspace),
+            letterNeeded)
+    )
+    CalcButtonSheet() {
+        shortButtonGrid.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+            ) {
+                row.forEach { action ->
+                    val colors = getButtonColors(action)
+                    CalcButton(
+                        action = action,
+                        isExpanded = true,
+                        containerColor = colors.containerColor,
+                        contentColor = colors.contentColor,
+                        modifier = Modifier
+                            .weight(1f),
+                        onClick = { onAction(action) }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -472,6 +527,11 @@ private fun getButtonColors(action: CalcButtonAction): ButtonColorPalette {
         }
 
         is CalcButtonAction.Scientific -> ButtonColorPalette(
+            containerColor = colorScheme.secondaryContainer,
+            contentColor = colorScheme.onSecondaryContainer
+        )
+
+        is CalcButtonAction.Constant -> ButtonColorPalette(
             containerColor = colorScheme.secondaryContainer,
             contentColor = colorScheme.onSecondaryContainer
         )
