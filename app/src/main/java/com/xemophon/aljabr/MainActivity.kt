@@ -114,6 +114,25 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                                 )
                             }
+                            HorizontalSeparator(text = "Reference Sheets")
+                            ReferenceSheets.forEach { variant ->
+                                NavigationDrawerItem(
+                                    label = { Text(variant.label) },
+                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
+                                    onClick = {
+                                        navController.navigate(variant.route) {
+                                            if (variant.route is BasicCalcRoute) {
+                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                            } else {
+                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                            }
+                                        }
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                )
+                            }
                         }
                     }
                 ) {
@@ -147,6 +166,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Misc.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
+                        }
+                        ReferenceSheets.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }
