@@ -34,15 +34,15 @@ fun ConvertorPage(
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onModeChanged(ConversionMode.entries[pagerState.currentPage])
     }
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
         CalculatorScaffold(
             title = { Text("Convertor") },
             onOpenDrawer = onOpenDrawer
         )
         { innerPadding ->
+        Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
             Column(
                 modifier = Modifier
                     .padding(innerPadding)
