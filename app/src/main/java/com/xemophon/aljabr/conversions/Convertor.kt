@@ -29,20 +29,21 @@ fun ConvertorPage(
     viewModel: ConvertorViewModel = viewModel(),
 ) {
     val labels = viewModel.getLabels()
+    val subLabels = viewModel.getSubLabels()
     val pagerState = rememberPagerState { ConversionMode.entries.size }
 
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onModeChanged(ConversionMode.entries[pagerState.currentPage])
     }
-        CalculatorScaffold(
-            title = { Text("Convertor") },
-            onOpenDrawer = onOpenDrawer
-        )
-        { innerPadding ->
+
+    CalculatorScaffold(
+        title = { Text("Convertor") },
+        onOpenDrawer = onOpenDrawer
+    ) { innerPadding ->
         Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surfaceVariant
+        ) {
             Column(
                 modifier = Modifier
                     .padding(innerPadding)
@@ -51,44 +52,51 @@ fun ConvertorPage(
                 HorizontalSeparator(
                     text = when (viewModel.mode) {
                         ConversionMode.ANGLE -> "Angle Convertor"
-                        ConversionMode.COMPLEX_CART_POLAR -> "Complex Convertor"
-                        ConversionMode.COMPLEX_CART_EXP -> "Exponential Convertor"
+                        ConversionMode.COMPLEX -> "Complex Convertor"
                     }
                 )
 
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(0.7f)
-                ) { page ->
+                ) { _ ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(Dimens.PaddingNormal),
+                            .padding(horizontal = Dimens.PaddingNormal),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ConverterField(
+                        // Primary Side
+                        ConvertorSide(
                             label = labels.first,
-                            value = viewModel.primaryValue,
-                            isFocused = viewModel.selectedField == SelectedField.PRIMARY,
-                            cursorIndex = viewModel.primaryCursor,
-                            modifier = Modifier.weight(1f),
-                            onClick = { viewModel.selectedField = SelectedField.PRIMARY }
+                            subLabels = subLabels.first,
+                            values = viewModel.primaryValue to viewModel.primaryValue2,
+                            isSideFocused = viewModel.selectedField == SelectedField.PRIMARY,
+                            selectedSubField = viewModel.selectedSubField,
+                            cursors = viewModel.primaryCursor to viewModel.primaryCursor2,
+                            onSideClick = { viewModel.selectedField = SelectedField.PRIMARY },
+                            onSubFieldClick = { viewModel.selectedSubField = it },
+                            modifier = Modifier.weight(1f)
                         )
 
                         IconButton(
                             onClick = { viewModel.swapFields() },
-                            modifier = Modifier.padding(top = 24.dp) // Align with box centers roughly
+                            modifier = Modifier.padding(top = 24.dp)
                         ) {
                             Icon(Icons.Default.SyncAlt, contentDescription = "Swap")
                         }
 
-                        ConverterField(
+                        // Secondary Side
+                        ConvertorSide(
                             label = labels.second,
-                            value = viewModel.secondaryValue,
-                            isFocused = viewModel.selectedField == SelectedField.SECONDARY,
-                            cursorIndex = viewModel.secondaryCursor,
-                            modifier = Modifier.weight(1f),
-                            onClick = { viewModel.selectedField = SelectedField.SECONDARY }
+                            subLabels = subLabels.second,
+                            values = viewModel.secondaryValue to viewModel.secondaryValue2,
+                            isSideFocused = viewModel.selectedField == SelectedField.SECONDARY,
+                            selectedSubField = viewModel.selectedSubField,
+                            cursors = viewModel.secondaryCursor to viewModel.secondaryCursor2,
+                            onSideClick = { viewModel.selectedField = SelectedField.SECONDARY },
+                            onSubFieldClick = { viewModel.selectedSubField = it },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -115,9 +123,9 @@ fun ConvertorPage(
                 }
 
                 val letterMode = if (viewModel.mode == ConversionMode.ANGLE) {
-                    CalcButtonAction.Constant("π", Constants.PI)
+                    CalcButtonAction.Constant("e", Constants.E)
                 } else {
-                    CalcButtonAction.Constant("i", Constants.I)
+                    CalcButtonAction.Constant("j", Constants.I)
                 }
 
                 ShortCalcButtons(
@@ -126,6 +134,63 @@ fun ConvertorPage(
                     onAction = { viewModel.handleAction(it) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ConvertorSide(
+    label: String,
+    subLabels: Pair<String, String>,
+    values: Pair<String, String>,
+    isSideFocused: Boolean,
+    selectedSubField: SubField,
+    cursors: Pair<Int, Int>,
+    onSideClick: () -> Unit,
+    onSubFieldClick: (SubField) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (isSideFocused) MaterialTheme.colorScheme.primary 
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        ConverterField(
+            label = subLabels.first,
+            value = values.first,
+            isFocused = isSideFocused && selectedSubField == SubField.MAIN,
+            isReadOnly = !isSideFocused,
+            cursorIndex = cursors.first,
+            modifier = Modifier.weight(1f),
+            onClick = {
+                onSideClick()
+                onSubFieldClick(SubField.MAIN)
+            }
+        )
+
+        if (subLabels.second.isNotEmpty()) {
+            ConverterField(
+                label = subLabels.second,
+                value = values.second,
+                isFocused = isSideFocused && selectedSubField == SubField.EXTRA,
+                isReadOnly = !isSideFocused,
+                cursorIndex = cursors.second,
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    onSideClick()
+                    onSubFieldClick(SubField.EXTRA)
+                }
+            )
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

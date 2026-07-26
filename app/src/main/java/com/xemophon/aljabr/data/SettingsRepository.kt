@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,7 @@ enum class AppTheme {
 class SettingsRepository(private val context: Context) {
     private val themeKey = stringPreferencesKey("app_theme")
     private val useRadiansKey = booleanPreferencesKey("use_radians")
+    private val precisionKey = intPreferencesKey("decimal_precision")
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
         val themeName = preferences[themeKey] ?: AppTheme.AUTO.name
@@ -27,6 +29,10 @@ class SettingsRepository(private val context: Context) {
 
     val useRadiansFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[useRadiansKey] ?: false
+    }
+
+    val precisionFlow: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[precisionKey] ?: 4
     }
 
     suspend fun setTheme(theme: AppTheme) {
@@ -38,6 +44,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setUseRadians(useRadians: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[useRadiansKey] = useRadians
+        }
+    }
+
+    suspend fun setPrecision(precision: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[precisionKey] = precision
         }
     }
 }

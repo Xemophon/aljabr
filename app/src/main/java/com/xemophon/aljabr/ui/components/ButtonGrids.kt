@@ -91,14 +91,14 @@ fun ShortCalcButtons(
         listOf(
             CalcButtonAction.Symbol("0"),
             CalcButtonAction.Symbol("."),
-            CalcButtonAction.Symbol("+"),
-            CalcButtonAction.Backspace(R.drawable.backspace)
+            CalcButtonAction.Symbol("( )"),
+            CalcButtonAction.Symbol("+")
         ),
         listOf(
-            letterNeeded,
-            CalcButtonAction.Symbol("( )"),
+            CalcButtonAction.Backspace(R.drawable.backspace),
             CalcButtonAction.Clear,
-            CalcButtonAction.Calculate
+            CalcButtonAction.Constant("π", Constants.PI),
+            letterNeeded,
         )
     )
     CalcButtonSheet(modifier.fillMaxHeight()) {

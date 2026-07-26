@@ -48,7 +48,8 @@ object CalcFuncs {
     }
 
     fun calculateSymbolic(
-        input: String
+        input: String,
+        precision: Int = 4
     ): String {
         if (input.isBlank()) return ""
         return try {
@@ -65,7 +66,7 @@ object CalcFuncs {
                 // Try to format as a nice decimal if it's a pure real number
                 val d = resStr.toDoubleOrNull()
                 if (d != null) {
-                    formatResult(d)
+                    formatResult(d, precision)
                 } else {
                     com.xemophon.aljabr.utils.SymjaUtils.formatResult(resStr)
                 }
@@ -265,7 +266,7 @@ object CalcFuncs {
         }.parse()
     }
 
-    fun formatResult(value: Double): String {
+    fun formatResult(value: Double, precision: Int = 4): String {
         if (value.isNaN()) return "Error"
         if (value.isInfinite()) return "Infinity"
 
@@ -276,7 +277,9 @@ object CalcFuncs {
         if (value == floor(value) && value in Long.MIN_VALUE.toDouble()..Long.MAX_VALUE.toDouble()) {
             return value.toLong().toString()
         }
-        val df = DecimalFormat("0.####").apply { roundingMode = RoundingMode.HALF_UP }
+        
+        val pattern = if (precision <= 0) "0" else "0." + "#".repeat(precision)
+        val df = DecimalFormat(pattern).apply { roundingMode = RoundingMode.HALF_UP }
         val result = df.format(value).replace(",", ".")
         return if (result == "-0") "0" else result
     }

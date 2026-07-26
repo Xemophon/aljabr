@@ -49,7 +49,7 @@ object SymjaUtils {
     /**
      * Forces numerical evaluation using N() and handles degrees if needed.
      */
-    fun calculateNumerical(expression: String, useRadians: Boolean): String {
+    fun calculateNumerical(expression: String, useRadians: Boolean, precision: Int = 4): String {
         return try {
             if (!useRadians) {
                 evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
@@ -63,8 +63,16 @@ object SymjaUtils {
             val cleaned = prepareForSymja(expression, useRadians)
             if (cleaned.isBlank()) return ""
             
-            val result = evaluator.eval("N($cleaned)")
-            formatResult(result.toString())
+            val result = evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
+            val resStr = result.toString()
+            
+            // If it's a simple number, format it with the requested precision
+            val d = resStr.toDoubleOrNull()
+            if (d != null) {
+                com.xemophon.aljabr.basicCalc.CalcFuncs.formatResult(d, precision)
+            } else {
+                formatResult(resStr)
+            }
         } catch (e: Throwable) {
             "Error"
         }

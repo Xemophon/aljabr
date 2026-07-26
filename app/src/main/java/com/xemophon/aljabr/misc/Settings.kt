@@ -11,15 +11,20 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.data.AppTheme
@@ -33,6 +38,7 @@ fun SettingsPage(
 ) {
     val theme by viewModel.theme.collectAsState()
     val useRadians by viewModel.useRadians.collectAsState()
+    val precision by viewModel.precision.collectAsState()
 
     CalculatorScaffold(
         title = { Text("Settings") },
@@ -79,6 +85,13 @@ fun SettingsPage(
 
                 HorizontalSeparator(text = null)
 
+                Text(
+                    text = "Calculation",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -100,6 +113,35 @@ fun SettingsPage(
                     Switch(
                         checked = useRadians,
                         onCheckedChange = { viewModel.setUseRadians(it) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Decimal Precision",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = precision.toString(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Slider(
+                        value = precision.toFloat(),
+                        onValueChange = { viewModel.setPrecision(it.toInt()) },
+                        valueRange = 0f..10f,
+                        steps = 9
+                    )
+                    Text(
+                        text = "Number of decimal places displayed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

@@ -25,6 +25,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         initialValue = false
     )
 
+    val precision: StateFlow<Int> = repository.precisionFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = 4
+    )
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             repository.setTheme(theme)
@@ -34,6 +40,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setUseRadians(useRadians: Boolean) {
         viewModelScope.launch {
             repository.setUseRadians(useRadians)
+        }
+    }
+
+    fun setPrecision(precision: Int) {
+        viewModelScope.launch {
+            repository.setPrecision(precision)
         }
     }
 }

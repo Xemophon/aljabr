@@ -51,7 +51,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
                 ScientificType.SIN -> CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN)
                 ScientificType.COS -> CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS)
                 ScientificType.TAN -> CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN)
-                ScientificType.LOG -> CalcButtonAction.Symbol("10ˣ", "10^")
+                ScientificType.LOG -> CalcButtonAction.Symbol("10^", "10 ^ ")
                 ScientificType.LN -> CalcButtonAction.Constant("e", Constants.E)
                 ScientificType.SQRT -> CalcButtonAction.Scientific(text = "!", ScientificType.FACTORIAL)
                 else -> this

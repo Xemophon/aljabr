@@ -29,6 +29,7 @@ fun ConverterField(
     value: String,
     isFocused: Boolean,
     modifier: Modifier = Modifier,
+    isReadOnly: Boolean = false,
     cursorIndex: Int = -1,
     onClick: () -> Unit,
 ) {
@@ -45,12 +46,17 @@ fun ConverterField(
 
     Column(
         modifier = modifier.padding(Dimens.PaddingSmall),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.titleMedium,
+            color = when {
+                isFocused -> MaterialTheme.colorScheme.primary
+                isReadOnly -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
         )
         
         Spacer(modifier = Modifier.height(4.dp))
@@ -58,23 +64,29 @@ fun ConverterField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .heightIn(min = 48.dp, max = 80.dp)
                 .clip(RoundedCornerShape(Dimens.ButtonCornerRadiusStandard))
                 .background(
-                    if (isFocused) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    when {
+                        isFocused -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        isReadOnly -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.2f)
+                        else -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
+                    }
                 )
                 .border(
                     width = 2.dp,
-                    color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    color = when {
+                        isFocused -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.outlineVariant
+                    },
                     shape = RoundedCornerShape(Dimens.ButtonCornerRadiusStandard)
                 )
-                .clickable { onClick() }
+                .then(if (!isReadOnly) Modifier.clickable { onClick() } else Modifier)
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             val annotatedText = buildAnnotatedString {
-                if (isFocused && cursorIndex != -1 && (cursorIndex <= value.length)) {
+                if (!isReadOnly && isFocused && cursorIndex != -1 && (cursorIndex <= value.length)) {
                     append(value.substring(0, cursorIndex))
                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = cursorAlpha))) {
                         append("|")
@@ -92,7 +104,8 @@ fun ConverterField(
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isReadOnly) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }

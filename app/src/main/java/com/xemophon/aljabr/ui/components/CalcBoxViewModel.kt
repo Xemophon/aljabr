@@ -155,6 +155,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 updateInstantResult()
             }
         }
+        viewModelScope.launch {
+            settingsRepository.precisionFlow.collectLatest {
+                precision = it
+                updateInstantResult()
+            }
+        }
     }
 
     var displayText by mutableStateOf("0")
@@ -188,6 +194,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var integType by mutableStateOf(IntegralType.DEFINITE)
     var calculationEnabled by mutableStateOf(true)
     var useRadians by mutableStateOf(false)
+    var precision by mutableIntStateOf(4)
 
     private var lastExpression = ""
     private var isShowingResult = false
@@ -430,10 +437,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         try {
             val result = if (displayText.contains("j", ignoreCase = true)) {
-                com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians)
+                com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians, precision)
             } else {
                 val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                CalcFuncs.formatResult(numResult)
+                CalcFuncs.formatResult(numResult, precision)
             }
             resultText = if (result == "Error") "" else result
         } catch (_: Exception) {
@@ -480,10 +487,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         } else {
             try {
                 val result = if (displayText.contains("j", ignoreCase = true)) {
-                    com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians)
+                    com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians, precision)
                 } else {
                     val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                    CalcFuncs.formatResult(numResult)
+                    CalcFuncs.formatResult(numResult, precision)
                 }
                 if (result != "Error" && result.isNotEmpty()) {
                     displayText = result
@@ -531,7 +538,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 if (result.isNaN()) {
                     resultText = "No convergence"
                 } else {
-                    resultText = CalcFuncs.formatResult(result)
+                    resultText = CalcFuncs.formatResult(result, precision)
                 }
             } catch (e: Exception) {
                 resultText = "Definite Error"
