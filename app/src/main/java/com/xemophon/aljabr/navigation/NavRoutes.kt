@@ -8,12 +8,14 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TableChart
 import com.xemophon.aljabr.basicCalc.BasicCalc
 import com.xemophon.aljabr.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.calculus.graphMaker.GraphMaker
 import com.xemophon.aljabr.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.conversions.ConvertorPage
+import com.xemophon.aljabr.conversions.UtilitiesScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,6 +32,8 @@ object DifferentiateRoute
 object MiscRoute
 @Serializable
 object ConvertorRoute
+@Serializable
+object SheetRoute
 val Calculus = listOf(
 
     CalculatorVariant(
@@ -87,4 +91,11 @@ val ReferenceSheets = listOf(
         icon = Icons.Default.Repeat,
         content = { onOpenDrawer -> ConvertorPage(onOpenDrawer = onOpenDrawer) }
     ),
+    CalculatorVariant(
+        route = SheetRoute,
+        routeClass = SheetRoute::class,
+        label = "Reference Sheets",
+        icon = Icons.Default.TableChart,
+        content = { onOpenDrawer -> UtilitiesScreen(onOpenDrawer = onOpenDrawer)}
+    )
 )
