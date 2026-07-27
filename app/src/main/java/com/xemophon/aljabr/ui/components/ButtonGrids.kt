@@ -472,8 +472,8 @@ private fun AngleUnitSwitch(
             checked = useRadians,
             onCheckedChange = { onToggleAngleUnit() },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.surfaceVariant,
-                checkedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                checkedThumbColor = MaterialTheme.colorScheme.inversePrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.onPrimary,
                 uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
                 uncheckedTrackColor = MaterialTheme.colorScheme.onSecondary,
             ),
