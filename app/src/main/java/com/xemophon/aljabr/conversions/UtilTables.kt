@@ -200,18 +200,6 @@ fun ExampleSheet(
 ) {
     val listState = rememberLazyListState()
     
-    // Slider value state
-    var sliderValue by remember { mutableFloatStateOf(0f) }
-    
-    // Sync slider with scroll position
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        if (content.isNotEmpty()) {
-            val totalItems = content.size
-            val visibleIndex = listState.firstVisibleItemIndex
-            sliderValue = visibleIndex.toFloat() / (totalItems - 1).coerceAtLeast(1)
-        }
-    }
-
     Column(modifier = modifier) {
         LazyColumn(
             state = listState,
@@ -228,7 +216,7 @@ fun ExampleSheet(
                             formula.length <= 40 -> 16.sp
                             else -> 12.sp
                         },
-                        theme = LatexTheme.auto(),
+                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
                         mathFont = MathFont.KaTeXTTF
                     ),
                     modifier = Modifier
@@ -238,8 +226,8 @@ fun ExampleSheet(
                 if (index < content.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 32.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        thickness = 2.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
             }

@@ -35,64 +35,142 @@ private val LightColorScheme = lightColorScheme(
 // Blue Color Schemes
 private val BlueLightColorScheme = lightColorScheme(
     primary = BluePrimaryLight,
+    onPrimary = BlueOnPrimaryLight,
+    primaryContainer = BluePrimaryContainerLight, // Overridden for calc buttons
+    onPrimaryContainer = BlueOnPrimaryContainerLight,
     secondary = BlueSecondaryLight,
+    onSecondary = BlueOnSecondaryLight,
+    secondaryContainer = BlueSecondaryContainerLight, // Overridden for calc buttons
+    onSecondaryContainer = BlueOnSecondaryContainerLight,
     tertiary = BlueTertiaryLight,
-    primaryContainer = CalcButtonStandardLight,
-    secondaryContainer = CalcButtonOperationLight,
-    tertiaryContainer = CalcButtonEqualLight,
-    surfaceVariant = CalcContainerBackgroundLight
+    onTertiary = BlueOnTertiaryLight,
+    tertiaryContainer = BlueTertiaryContainerLight, // Overridden for calc buttons
+    onTertiaryContainer = BlueOnTertiaryContainerLight,
+    surface = BlueSurfaceLight,
+    onSurface = BlueOnSurfaceLight,
+    surfaceVariant = BlueSurfaceVariantLight, // Overridden for calc background
+    onSurfaceVariant = BlueOnSurfaceVariantLight,
+    outline = BlueOutlineLight,
+    inversePrimary = BlueInversePrimaryLight,
+    inverseSurface = BlueInverseSurfaceLight,
+    inverseOnSurface = BlueInverseOnSurfaceLight
 )
 
 private val BlueDarkColorScheme = darkColorScheme(
     primary = BluePrimaryDark,
+    onPrimary = BlueOnPrimaryDark,
+    primaryContainer = BluePrimaryContainerDark, // Overridden for calc buttons
+    onPrimaryContainer = BlueOnPrimaryContainerDark,
     secondary = BlueSecondaryDark,
+    onSecondary = BlueOnSecondaryDark,
+    secondaryContainer = BlueSecondaryContainerDark, // Overridden for calc buttons
+    onSecondaryContainer = BlueOnSecondaryContainerDark,
     tertiary = BlueTertiaryDark,
-    primaryContainer = CalcButtonStandardDark,
-    secondaryContainer = CalcButtonOperationDark,
-    tertiaryContainer = CalcButtonEqualDark,
-    surfaceVariant = CalcContainerBackgroundDark
+    onTertiary = BlueOnTertiaryDark,
+    tertiaryContainer = BlueTertiaryContainerDark, // Overridden for calc buttons
+    onTertiaryContainer = BlueOnTertiaryContainerDark,
+    surface = BlueSurfaceDark,
+    onSurface = BlueOnSurfaceDark,
+    surfaceVariant = BlueSurfaceVariantDark, // Overridden for calc background
+    onSurfaceVariant = BlueOnSurfaceVariantDark,
+    outline = BlueOutlineDark,
+    inversePrimary = BlueInversePrimaryDark,
+    inverseSurface = BlueInverseSurfaceDark,
+    inverseOnSurface = BlueInverseOnSurfaceDark
 )
 
 // Green Color Schemes
 private val GreenLightColorScheme = lightColorScheme(
     primary = GreenPrimaryLight,
+    onPrimary = GreenOnPrimaryLight,
+    primaryContainer = GreenPrimaryContainerLight,
+    onPrimaryContainer = GreenOnPrimaryContainerLight,
     secondary = GreenSecondaryLight,
+    onSecondary = GreenOnSecondaryLight,
+    secondaryContainer = GreenSecondaryContainerLight,
+    onSecondaryContainer = GreenOnSecondaryContainerLight,
     tertiary = GreenTertiaryLight,
-    primaryContainer = CalcButtonStandardLight,
-    secondaryContainer = CalcButtonOperationLight,
-    tertiaryContainer = CalcButtonEqualLight,
-    surfaceVariant = CalcContainerBackgroundLight
+    onTertiary = GreenOnTertiaryLight,
+    tertiaryContainer = GreenTertiaryContainerLight,
+    onTertiaryContainer = GreenOnTertiaryContainerLight,
+    surface = GreenSurfaceLight,
+    onSurface = GreenOnSurfaceLight,
+    surfaceVariant = GreenSurfaceVariantLight,
+    onSurfaceVariant = GreenOnSurfaceVariantLight,
+    outline = GreenOutlineLight,
+    inversePrimary = GreenInversePrimaryLight,
+    inverseSurface = GreenInverseSurfaceLight,
+    inverseOnSurface = GreenInverseOnSurfaceLight
 )
 
 private val GreenDarkColorScheme = darkColorScheme(
     primary = GreenPrimaryDark,
+    onPrimary = GreenOnPrimaryDark,
+    primaryContainer = GreenPrimaryContainerDark,
+    onPrimaryContainer = GreenOnPrimaryContainerDark,
     secondary = GreenSecondaryDark,
+    onSecondary = GreenOnSecondaryDark,
+    secondaryContainer = GreenSecondaryContainerDark,
+    onSecondaryContainer = GreenOnSecondaryContainerDark,
     tertiary = GreenTertiaryDark,
-    primaryContainer = CalcButtonStandardDark,
-    secondaryContainer = CalcButtonOperationDark,
-    tertiaryContainer = CalcButtonEqualDark,
-    surfaceVariant = CalcContainerBackgroundDark
+    onTertiary = GreenOnTertiaryDark,
+    tertiaryContainer = GreenTertiaryContainerDark,
+    onTertiaryContainer = GreenOnTertiaryContainerDark,
+    surface = GreenSurfaceDark,
+    onSurface = GreenOnSurfaceDark,
+    surfaceVariant = GreenSurfaceVariantDark,
+    onSurfaceVariant = GreenOnSurfaceVariantDark,
+    outline = GreenOutlineDark,
+    inversePrimary = GreenInversePrimaryDark,
+    inverseSurface = GreenInverseSurfaceDark,
+    inverseOnSurface = GreenInverseOnSurfaceDark
 )
 
 // Red Color Schemes
 private val RedLightColorScheme = lightColorScheme(
     primary = RedPrimaryLight,
+    onPrimary = RedOnPrimaryLight,
+    primaryContainer = RedPrimaryContainerLight,
+    onPrimaryContainer = RedOnPrimaryContainerLight,
     secondary = RedSecondaryLight,
+    onSecondary = RedOnSecondaryLight,
+    secondaryContainer = RedSecondaryContainerLight,
+    onSecondaryContainer = RedOnSecondaryContainerLight,
     tertiary = RedTertiaryLight,
-    primaryContainer = CalcButtonStandardLight,
-    secondaryContainer = CalcButtonOperationLight,
-    tertiaryContainer = CalcButtonEqualLight,
-    surfaceVariant = CalcContainerBackgroundLight
+    onTertiary = RedOnTertiaryLight,
+    tertiaryContainer = RedTertiaryContainerLight,
+    onTertiaryContainer = RedOnTertiaryContainerLight,
+    surface = RedSurfaceLight,
+    onSurface = RedOnSurfaceLight,
+    surfaceVariant = RedSurfaceVariantLight,
+    onSurfaceVariant = RedOnSurfaceVariantLight,
+    outline = RedOutlineLight,
+    inversePrimary = RedInversePrimaryLight,
+    inverseSurface = RedInverseSurfaceLight,
+    inverseOnSurface = RedInverseOnSurfaceLight
 )
 
 private val RedDarkColorScheme = darkColorScheme(
     primary = RedPrimaryDark,
+    onPrimary = RedOnPrimaryDark,
+    primaryContainer = RedPrimaryContainerDark,
+    onPrimaryContainer = RedOnPrimaryContainerDark,
     secondary = RedSecondaryDark,
+    onSecondary = RedOnSecondaryDark,
+    secondaryContainer = RedSecondaryContainerDark,
+    onSecondaryContainer = RedOnSecondaryContainerDark,
     tertiary = RedTertiaryDark,
-    primaryContainer = CalcButtonStandardDark,
-    secondaryContainer = CalcButtonOperationDark,
-    tertiaryContainer = CalcButtonEqualDark,
-    surfaceVariant = CalcContainerBackgroundDark
+    onTertiary = RedOnTertiaryDark,
+    tertiaryContainer = RedTertiaryContainerDark,
+    onTertiaryContainer = RedOnTertiaryContainerDark,
+    surface = RedSurfaceDark,
+    onSurface = RedOnSurfaceDark,
+    surfaceVariant = RedSurfaceVariantDark,
+    onSurfaceVariant = RedOnSurfaceVariantDark,
+    outline = RedOutlineDark,
+    inversePrimary = RedInversePrimaryDark,
+    inverseSurface = RedInverseSurfaceDark,
+    inverseOnSurface = RedInverseOnSurfaceDark
 )
 
 @Composable

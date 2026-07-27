@@ -260,7 +260,7 @@ fun AnalysisItemCard(label: String, value: String, rawValue: String? = null) {
                         latex = latexValue,
                         config = LatexConfig(
                             fontSize = 20.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
+                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
                             mathFont = MathFont.KaTeXTTF
                         )
                     )
