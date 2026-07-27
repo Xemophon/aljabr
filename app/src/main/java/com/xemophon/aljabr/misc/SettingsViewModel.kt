@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.data.AppTheme
+import com.xemophon.aljabr.data.ColorSchemeType
 import com.xemophon.aljabr.data.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AppTheme.AUTO
+    )
+
+    val dynamicColor: StateFlow<Boolean> = repository.dynamicColorFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
+    val colorScheme: StateFlow<ColorSchemeType> = repository.colorSchemeFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ColorSchemeType.DEFAULT
     )
 
     val useRadians: StateFlow<Boolean> = repository.useRadiansFlow.stateIn(
@@ -34,6 +47,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             repository.setTheme(theme)
+        }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setDynamicColor(enabled)
+        }
+    }
+
+    fun setColorScheme(scheme: ColorSchemeType) {
+        viewModelScope.launch {
+            repository.setColorScheme(scheme)
         }
     }
 

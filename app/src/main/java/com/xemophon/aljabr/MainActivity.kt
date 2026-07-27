@@ -58,6 +58,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val appTheme by settingsViewModel.theme.collectAsState()
+            val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
+            val colorSchemeType by settingsViewModel.colorScheme.collectAsState()
             
             val isDarkTheme = when (appTheme) {
                 AppTheme.LIGHT -> false
@@ -65,7 +67,11 @@ class MainActivity : ComponentActivity() {
                 AppTheme.AUTO -> isSystemInDarkTheme()
             }
 
-            AlJabrTheme(darkTheme = isDarkTheme) {
+            AlJabrTheme(
+                darkTheme = isDarkTheme,
+                dynamicColor = dynamicColor,
+                colorSchemeType = colorSchemeType
+            ) {
                 val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()

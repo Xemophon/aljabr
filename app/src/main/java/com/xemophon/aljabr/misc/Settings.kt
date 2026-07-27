@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -39,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.data.AppTheme
+import com.xemophon.aljabr.data.ColorSchemeType
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.Dimens
 import com.xemophon.aljabr.ui.theme.HorizontalSeparator
@@ -49,6 +49,8 @@ fun SettingsContent(
     viewModel: SettingsViewModel = viewModel()
 ){
     val theme by viewModel.theme.collectAsState()
+    val dynamicColor by viewModel.dynamicColor.collectAsState()
+    val colorSchemeType by viewModel.colorScheme.collectAsState()
     val useRadians by viewModel.useRadians.collectAsState()
     val precision by viewModel.precision.collectAsState()
 
@@ -57,29 +59,91 @@ fun SettingsContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Theme",
+                text = "Appearance",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            Column(modifier = Modifier.selectableGroup()) {
-                AppTheme.entries.forEach { option ->
+            // Theme (Auto, Light, Dark)
+            AppTheme.entries.forEach { option ->
+                val label = option.name.lowercase().replaceFirstChar { it.uppercase() }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .selectable(
+                            selected = (option == theme),
+                            onClick = { viewModel.setTheme(option) },
+                            role = Role.RadioButton
+                        )
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = (option == theme),
+                        onClick = null
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+            }
+
+            HorizontalSeparator(text = "Colors")
+
+            // Dynamic Color (Always supported since minSdk 33)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Dynamic Color",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Use system colors (Material You)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = dynamicColor,
+                    onCheckedChange = { viewModel.setDynamicColor(it) }
+                )
+            }
+
+            // Static Color Schemes (Visible if dynamic is off)
+            if (!dynamicColor) {
+                Text(
+                    text = "Color Theme",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                ColorSchemeType.entries.forEach { option ->
                     val label = option.name.lowercase().replaceFirstChar { it.uppercase() }
                     Row(
                         Modifier
                             .fillMaxWidth()
                             .height(56.dp)
                             .selectable(
-                                selected = (option == theme),
-                                onClick = { viewModel.setTheme(option) },
+                                selected = (option == colorSchemeType),
+                                onClick = { viewModel.setColorScheme(option) },
                                 role = Role.RadioButton
                             )
                             .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = (option == theme),
+                            selected = (option == colorSchemeType),
                             onClick = null
                         )
                         Text(
@@ -91,14 +155,7 @@ fun SettingsContent(
                 }
             }
 
-            HorizontalSeparator(text = null)
-
-            Text(
-                text = "Calculation",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            HorizontalSeparator(text = "Calculation")
 
             Row(
                 modifier = Modifier

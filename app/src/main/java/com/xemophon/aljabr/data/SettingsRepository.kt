@@ -17,14 +17,29 @@ enum class AppTheme {
     AUTO, LIGHT, DARK
 }
 
+enum class ColorSchemeType {
+    DEFAULT, BLUE, GREEN, RED
+}
+
 class SettingsRepository(private val context: Context) {
     private val themeKey = stringPreferencesKey("app_theme")
+    private val dynamicColorKey = booleanPreferencesKey("use_dynamic_color")
+    private val colorSchemeKey = stringPreferencesKey("color_scheme")
     private val useRadiansKey = booleanPreferencesKey("use_radians")
     private val precisionKey = intPreferencesKey("decimal_precision")
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
         val themeName = preferences[themeKey] ?: AppTheme.AUTO.name
         AppTheme.valueOf(themeName)
+    }
+
+    val dynamicColorFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[dynamicColorKey] ?: true
+    }
+
+    val colorSchemeFlow: Flow<ColorSchemeType> = context.dataStore.data.map { preferences ->
+        val schemeName = preferences[colorSchemeKey] ?: ColorSchemeType.DEFAULT.name
+        ColorSchemeType.valueOf(schemeName)
     }
 
     val useRadiansFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -38,6 +53,18 @@ class SettingsRepository(private val context: Context) {
     suspend fun setTheme(theme: AppTheme) {
         context.dataStore.edit { preferences ->
             preferences[themeKey] = theme.name
+        }
+    }
+
+    suspend fun setDynamicColor(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[dynamicColorKey] = enabled
+        }
+    }
+
+    suspend fun setColorScheme(scheme: ColorSchemeType) {
+        context.dataStore.edit { preferences ->
+            preferences[colorSchemeKey] = scheme.name
         }
     }
 

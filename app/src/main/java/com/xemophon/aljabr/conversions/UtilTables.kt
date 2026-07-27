@@ -26,7 +26,6 @@ import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.HorizontalSeparator
-import kotlinx.coroutines.launch
 
 val derivativesSheet = listOf(
     // Basic Rules & Power Rule
@@ -128,7 +127,7 @@ fun UtilitiesScreen(
     val pagerState = rememberPagerState { sheets.size }
 
     val boxModifier = Modifier
-        .fillMaxSize()
+        .padding(start = 8.dp,end = 8.dp)
         .clip(RoundedCornerShape(12.dp))
         .background(MaterialTheme.colorScheme.primaryContainer)
         .border(
@@ -200,7 +199,6 @@ fun ExampleSheet(
     content: List<String>
 ) {
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     
     // Slider value state
     var sliderValue by remember { mutableFloatStateOf(0f) }
@@ -214,7 +212,7 @@ fun ExampleSheet(
         }
     }
 
-    Column(modifier = modifier.padding(16.dp)) {
+    Column(modifier = modifier) {
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f),
@@ -226,8 +224,8 @@ fun ExampleSheet(
                     latex = formula,
                     config = LatexConfig(
                         fontSize = when {
-                            formula.length <= 20 -> 18.sp
-                            formula.length <= 40 -> 14.sp
+                            formula.length <= 20 -> 20.sp
+                            formula.length <= 40 -> 16.sp
                             else -> 12.sp
                         },
                         theme = LatexTheme.auto(),
@@ -244,40 +242,6 @@ fun ExampleSheet(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
                 }
-            }
-        }
-
-        // Navigation Slider
-        if (content.size > 1) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Scroll",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { newValue ->
-                        sliderValue = newValue
-                        scope.launch {
-                            val targetIndex = (newValue * (content.size - 1)).toInt()
-                            listState.scrollToItem(targetIndex)
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                    )
-                )
             }
         }
     }
