@@ -40,7 +40,7 @@ import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.navigation.*
 import com.xemophon.aljabr.misc.SettingsViewModel
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import com.xemophon.aljabr.ui.theme.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.HorizontalSeparator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

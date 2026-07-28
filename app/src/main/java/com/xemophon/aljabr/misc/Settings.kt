@@ -1,5 +1,8 @@
 package com.xemophon.aljabr.misc
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,11 +40,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.xemophon.aljabr.ui.theme.*
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.data.ColorSchemeType
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.Dimens
-import com.xemophon.aljabr.ui.theme.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.ThemeButton
 
 @Composable
 fun SettingsContent(
@@ -54,16 +59,17 @@ fun SettingsContent(
     val useRadians by viewModel.useRadians.collectAsState()
     val precision by viewModel.precision.collectAsState()
 
+    val isDarkTheme = when (theme) {
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+        AppTheme.AUTO -> isSystemInDarkTheme()
+    }
+
     Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Appearance",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            HorizontalSeparator(text = "Appearance")
 
             // Theme (Auto, Light, Dark)
             AppTheme.entries.forEach { option ->
@@ -92,8 +98,6 @@ fun SettingsContent(
                 }
             }
 
-            HorizontalSeparator(text = "Colors")
-
             // Dynamic Color (Always supported since minSdk 33)
             Row(
                 modifier = Modifier
@@ -120,37 +124,154 @@ fun SettingsContent(
             }
 
             // Static Color Schemes (Visible if dynamic is off)
-            if (!dynamicColor) {
-                Text(
-                    text = "Color Theme",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+            AnimatedVisibility(!dynamicColor) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Color Theme",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
 
-                ColorSchemeType.entries.forEach { option ->
-                    val label = option.name.lowercase().replaceFirstChar { it.uppercase() }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .selectable(
-                                selected = (option == colorSchemeType),
-                                onClick = { viewModel.setColorScheme(option) },
-                                role = Role.RadioButton
-                            )
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = (option == colorSchemeType),
-                            onClick = null
-                        )
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
+                    ColorSchemeType.entries.chunked(3).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            rowItems.forEach { option ->
+                                val label =
+                                    option.name.lowercase().replaceFirstChar { it.uppercase() }
+                                val (primary, secondary, tertiary) = when (option) {
+                                    ColorSchemeType.DEFAULT -> if (isDarkTheme) {
+                                        Triple(Purple40, PurpleGrey40, Pink40)
+                                    } else {
+                                        Triple(Purple80, PurpleGrey80, Pink80)
+                                    }
+
+                                    ColorSchemeType.BLUE -> if (isDarkTheme) {
+                                        Triple(
+                                            BluePrimaryLight,
+                                            BlueSecondaryLight,
+                                            BlueTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(BluePrimaryDark, BlueSecondaryDark, BlueTertiaryDark)
+                                    }
+
+                                    ColorSchemeType.GREEN -> if (isDarkTheme) {
+                                        Triple(
+                                            GreenPrimaryLight,
+                                            GreenSecondaryLight,
+                                            GreenTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(
+                                            GreenPrimaryDark,
+                                            GreenSecondaryDark,
+                                            GreenTertiaryDark
+                                        )
+                                    }
+
+                                    ColorSchemeType.RED -> if (isDarkTheme) {
+                                        Triple(RedPrimaryLight, RedSecondaryLight, RedTertiaryLight)
+                                    } else {
+                                        Triple(RedPrimaryDark, RedSecondaryDark, RedTertiaryDark)
+                                    }
+
+                                    ColorSchemeType.YELLOW -> if (isDarkTheme) {
+                                        Triple(
+                                            YellowPrimaryLight,
+                                            YellowSecondaryLight,
+                                            YellowTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(
+                                            YellowPrimaryDark,
+                                            YellowSecondaryDark,
+                                            YellowTertiaryDark
+                                        )
+                                    }
+
+                                    ColorSchemeType.ORANGE -> if (isDarkTheme) {
+                                        Triple(
+                                            OrangePrimaryLight,
+                                            OrangeSecondaryLight,
+                                            OrangeTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(
+                                            OrangePrimaryDark,
+                                            OrangeSecondaryDark,
+                                            OrangeTertiaryDark
+                                        )
+                                    }
+
+                                    ColorSchemeType.TEAL -> if (isDarkTheme) {
+                                        Triple(
+                                            TealPrimaryLight,
+                                            TealSecondaryLight,
+                                            TealTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(TealPrimaryDark, TealSecondaryDark, TealTertiaryDark)
+                                    }
+
+                                    ColorSchemeType.PINK -> if (isDarkTheme) {
+                                        Triple(
+                                            PinkPrimaryLight,
+                                            PinkSecondaryLight,
+                                            PinkTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(PinkPrimaryDark, PinkSecondaryDark, PinkTertiaryDark)
+                                    }
+
+                                    ColorSchemeType.BROWN -> if (isDarkTheme) {
+                                        Triple(
+                                            BrownPrimaryLight,
+                                            BrownSecondaryLight,
+                                            BrownTertiaryLight
+                                        )
+                                    } else {
+                                        Triple(
+                                            BrownPrimaryDark,
+                                            BrownSecondaryDark,
+                                            BrownTertiaryDark
+                                        )
+                                    }
+                                }
+
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .selectable(
+                                            selected = (option == colorSchemeType),
+                                            onClick = { viewModel.setColorScheme(option) },
+                                            role = Role.RadioButton
+                                        ),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    ThemeButton(
+                                        primaryColor = primary,
+                                        secondaryColor = secondary,
+                                        tertiaryColor = tertiary,
+                                        selected = (option == colorSchemeType)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                            // Fill empty space if row has less than 3 items
+                            repeat(3 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
@@ -336,7 +457,7 @@ fun MiscPage(
                     )
                 }
             }
-            
+
             when (MiscTab.entries[selectedTabIndex]) {
                 MiscTab.SETTINGS -> SettingsContent(viewModel = viewModel)
                 MiscTab.ABOUT -> AboutContent()

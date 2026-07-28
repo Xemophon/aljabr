@@ -21,7 +21,7 @@ import com.xemophon.aljabr.ui.components.Constants
 import com.xemophon.aljabr.ui.components.ConverterField
 import com.xemophon.aljabr.ui.components.ShortCalcButtons
 import com.xemophon.aljabr.ui.theme.Dimens
-import com.xemophon.aljabr.ui.theme.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.HorizontalSeparator
 
 @Composable
 fun ConvertorPage(

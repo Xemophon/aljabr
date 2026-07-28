@@ -25,7 +25,7 @@ import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.theme.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.HorizontalSeparator
 
 val derivativesSheet = listOf(
     // Basic Rules & Power Rule
