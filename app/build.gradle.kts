@@ -22,19 +22,34 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            // Read environment variables (used by CI/CD like GitHub Actions)
+            val keystoreFile = System.getenv("KEYSTORE_FILE")
+
+            if (!keystoreFile.isNullOrEmpty() && File(keystoreFile).exists()) {
+                storeFile = File(keystoreFile)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
+            isMinifyEnabled = true // R8 code shrinking and optimization
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            optimization {
-                enable = false
-            }
+            // Apply release signing config if available
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

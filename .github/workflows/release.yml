@@ -1,0 +1,58 @@
+name: Build & Publish Release APK
+
+# 1. TRIGGER CONDITION
+# Tells GitHub to only run this workflow when you push a Git tag starting with "v" (e.g. v1.0.0)
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    # Runs on a clean Ubuntu virtual machine managed by GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Downloads a copy of your app's source code into the runner container
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Installs Java 17 (required for modern Gradle & Android Studio builds)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle' # Caches dependencies to make future builds much faster
+
+      # Step 3: Sets up Gradle execution permissions and environment
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # Step 4: Converts your Base64 text secret BACK into the original binary .jks file on the runner
+      - name: Decode Keystore File
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.jks
+
+      # Step 5: Executes Gradle release build while injecting secrets as Environment Variables
+      - name: Build Signed Release APK
+        env:
+          KEYSTORE_FILE: "release.jks"
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      # Step 6: Security Cleanup — Deletes the decoded .jks file from the runner disk even if the build fails
+      - name: Clean Up Keystore
+        if: always()
+        run: rm -f app/release.jks
+
+      # Step 7: Creates a GitHub Release entry and automatically uploads the generated APK file
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true # Auto-generates changelog from commit messages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in GitHub token, no setup needed
