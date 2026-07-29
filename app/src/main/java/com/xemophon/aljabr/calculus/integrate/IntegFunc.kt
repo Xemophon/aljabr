@@ -66,11 +66,17 @@ object IntegFunc {
             // Use the shared evaluator with relaxed syntax
             // We use Integrate[...] square brackets to be explicit for the CAS engine
             val result = SymjaUtils.evaluator.eval("Integrate[$cleaned, x]")
-            val resStr = result.toString()
+            var resStr = result.toString()
 
             // If Symja couldn't solve it, it returns the input string Integrate(...)
             if (resStr.contains("Integrate", ignoreCase = true)) {
                 return "∫($expression)dx"
+            }
+
+            // Replace Log[x] with Log[Abs[x]] for standard calculus notation ln|x|
+            // This is a common preference for indefinite integrals in many curricula
+            if (resStr.contains("Log[")) {
+                resStr = resStr.replace(Regex("Log\\[([^]]+)]"), "Log[Abs[$1]]")
             }
 
             // Debug check: If input was NOT zero but result IS zero, something is likely wrong

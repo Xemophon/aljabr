@@ -26,6 +26,10 @@ object SymjaUtils {
             .replace("√", "Sqrt")
             .replace("sqrt", "Sqrt", ignoreCase = true)
 
+        // Convert |x| to Abs(x)
+        val absRegex = Regex("\\|([^|]+)\\|")
+        cleaned = cleaned.replace(absRegex, "Abs($1)")
+
         if (!useRadians) {
             cleaned = cleaned
                 .replace("asin(", "ArcSinDeg(", ignoreCase = true)
@@ -43,8 +47,8 @@ object SymjaUtils {
             .replace("sin", "Sin", ignoreCase = true)
             .replace("cos", "Cos", ignoreCase = true)
             .replace("tan", "Tan", ignoreCase = true)
-            .replace("ln", "Log", ignoreCase = true)
             .replace("log", "Log10", ignoreCase = true)
+            .replace("ln", "Log", ignoreCase = true)
     }
 
     /**
@@ -102,6 +106,7 @@ object SymjaUtils {
                     .replace("\\operatorname{arcsinh}", "\\operatorname{asinh}")
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
+                    .replace("\\log", "\\ln")
 
             } catch (e: Throwable) {
                 expression // Fallback to raw expression on error
@@ -128,6 +133,8 @@ object SymjaUtils {
             .replace("i", "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
+            .replace(Regex("Abs\\[([^]]+)]"), "|$1|")
+            .replace(Regex("Abs\\(([^)]+)\\)"), "|$1|")
             .replace("*", " × ")
             .replace("  ", " ")
             .replace("[", "(")
