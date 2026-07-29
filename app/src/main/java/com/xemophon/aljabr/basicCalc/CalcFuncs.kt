@@ -1,5 +1,6 @@
 package com.xemophon.aljabr.basicCalc
 
+import com.xemophon.aljabr.data.SymjaUtils
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.math.E
@@ -53,22 +54,22 @@ object CalcFuncs {
     ): String {
         if (input.isBlank()) return ""
         return try {
-            val cleaned = com.xemophon.aljabr.utils.SymjaUtils.prepareForSymja(input)
-            val eval = com.xemophon.aljabr.utils.SymjaUtils.evaluator
+            val cleaned = SymjaUtils.prepareForSymja(input)
+            val eval = SymjaUtils.evaluator
             
             val result = eval.eval(cleaned)
             val resStr = result.toString()
             
             // Priority: Complex or Symbolic constants should stay formatted
             if (resStr.contains("I") || resStr.contains("GoldenRatio") || resStr.contains("Pi") || resStr.contains("E")) {
-                 com.xemophon.aljabr.utils.SymjaUtils.formatResult(resStr)
+                 SymjaUtils.formatResult(resStr)
             } else {
                 // Try to format as a nice decimal if it's a pure real number
                 val d = resStr.toDoubleOrNull()
                 if (d != null) {
                     formatResult(d, precision)
                 } else {
-                    com.xemophon.aljabr.utils.SymjaUtils.formatResult(resStr)
+                    SymjaUtils.formatResult(resStr)
                 }
             }
         } catch (e: Throwable) {

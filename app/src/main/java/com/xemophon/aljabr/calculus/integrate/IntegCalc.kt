@@ -20,7 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,6 +36,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
+import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
@@ -43,9 +46,8 @@ import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.IntegralType
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import com.xemophon.aljabr.utils.SymjaUtils
-
-import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun IntegCalc(onOpenDrawer: () -> Unit) {
@@ -225,21 +227,29 @@ fun IntegDisplay(
             }
         } else {
             // Display only the result when it exists using LaTeX if possible
-            val latexContent = remember(result) {
+            val latexState = produceState<String?>(initialValue = null, result) {
                 if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
                     val expr = result.removeSuffix(" + C")
                     // If it looks like a Symja result (contains characters), try converting to LaTeX
                     if (expr.any { it.isLetter() }) {
-                        "${SymjaUtils.toLaTeX(expr)} + C"
+                        val res = withContext(Dispatchers.Default) {
+                            SymjaUtils.toLaTeX(expr)
+                        }
+                        value = "$res + C"
                     } else {
-                        result
+                        value = result
                     }
                 } else if (result.any { it.isLetter() || it == '/' || it == '^' }) {
-                    SymjaUtils.toLaTeX(result)
+                    val res = withContext(Dispatchers.Default) {
+                        SymjaUtils.toLaTeX(result)
+                    }
+                    value = res
                 } else {
-                    result
+                    value = result
                 }
             }
+
+            val latexContent = latexState.value
 
             Box(
                 modifier = Modifier
@@ -252,7 +262,7 @@ fun IntegDisplay(
                     .horizontalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center
             ) {
-                if (latexContent != result || result.any { it == '^' || it == '/' }) {
+                if (latexContent != null && (latexContent != result || result.any { it == '^' || it == '/' })) {
                     Latex(
                         latex = latexContent,
                         config = LatexConfig(

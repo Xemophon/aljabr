@@ -24,7 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,6 +40,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
+import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
@@ -46,10 +49,9 @@ import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import com.xemophon.aljabr.utils.SymjaUtils
-
-import androidx.compose.runtime.mutableIntStateOf
-import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun DiffCalc(onOpenDrawer: () -> Unit) {
@@ -232,24 +234,29 @@ fun AnalysisSectionHeader(title: String) {
 }
 
 @Composable
-fun AnalysisItemCard(label: String, value: String, rawValue: String? = null) {
+fun AnalysisItemCard(label: String, displayText: String, rawValue: String? = null) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             
-            val latexValue = remember(value, rawValue) {
-                val toConvert = rawValue ?: value
+            val latexState = produceState<String?>(initialValue = null, displayText, rawValue) {
+                val toConvert = rawValue ?: displayText
                 // Try converting to LaTeX if it looks like a math expression or we have a raw value
                 if (rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' }) {
-                    SymjaUtils.toLaTeX(toConvert)
+                    val result = withContext(Dispatchers.Default) {
+                        SymjaUtils.toLaTeX(toConvert)
+                    }
+                    value = result
                 } else {
-                    toConvert
+                    value = toConvert
                 }
             }
 
-            if (latexValue != value || value.contains("^") || value.contains("/")) {
+            val latexValue = latexState.value
+
+            if (latexValue != null && (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
                 Box(
                     modifier = Modifier
                         .padding(top = 4.dp)
@@ -267,7 +274,7 @@ fun AnalysisItemCard(label: String, value: String, rawValue: String? = null) {
                 }
             } else {
                 Text(
-                    text = value,
+                    text = displayText,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
                     fontWeight = FontWeight.Medium
                 )

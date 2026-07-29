@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.calculus.differentiate
 
-import com.xemophon.aljabr.utils.SymjaUtils
+import com.xemophon.aljabr.data.SymjaUtils
 
 object DiffFunc {
     /**

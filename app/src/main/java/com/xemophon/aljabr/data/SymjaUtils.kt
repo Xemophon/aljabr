@@ -1,5 +1,6 @@
-package com.xemophon.aljabr.utils
+package com.xemophon.aljabr.data
 
+import com.xemophon.aljabr.basicCalc.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
 
 object SymjaUtils {
@@ -50,31 +51,33 @@ object SymjaUtils {
      * Forces numerical evaluation using N() and handles degrees if needed.
      */
     fun calculateNumerical(expression: String, useRadians: Boolean, precision: Int = 4): String {
-        return try {
-            if (!useRadians) {
-                evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
-                evaluator.eval("CosDeg[x_] := Cos[x * Degree]")
-                evaluator.eval("TanDeg[x_] := Tan[x * Degree]")
-                evaluator.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
-                evaluator.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
-                evaluator.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
+        return synchronized(evaluator) {
+            try {
+                if (!useRadians) {
+                    evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
+                    evaluator.eval("CosDeg[x_] := Cos[x * Degree]")
+                    evaluator.eval("TanDeg[x_] := Tan[x * Degree]")
+                    evaluator.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
+                    evaluator.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
+                    evaluator.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
+                }
+
+                val cleaned = prepareForSymja(expression, useRadians)
+                if (cleaned.isBlank()) return ""
+
+                val result = evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
+                val resStr = result.toString()
+
+                // If it's a simple number, format it with the requested precision
+                val d = resStr.toDoubleOrNull()
+                if (d != null) {
+                    CalcFuncs.formatResult(d, precision)
+                } else {
+                    formatResult(resStr)
+                }
+            } catch (e: Throwable) {
+                "Error"
             }
-            
-            val cleaned = prepareForSymja(expression, useRadians)
-            if (cleaned.isBlank()) return ""
-            
-            val result = evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
-            val resStr = result.toString()
-            
-            // If it's a simple number, format it with the requested precision
-            val d = resStr.toDoubleOrNull()
-            if (d != null) {
-                com.xemophon.aljabr.basicCalc.CalcFuncs.formatResult(d, precision)
-            } else {
-                formatResult(resStr)
-            }
-        } catch (e: Throwable) {
-            "Error"
         }
     }
 
@@ -82,14 +85,27 @@ object SymjaUtils {
      * Converts a mathematical expression string to its LaTeX representation using Symja's TeXForm.
      */
     fun toLaTeX(expression: String): String {
-        return try {
-            val cleaned = prepareForSymja(expression)
-            if (cleaned.isBlank()) return ""
-            // Use TeXForm to convert the expression to LaTeX
-            val result = evaluator.eval("TeXForm($cleaned)")
-            result.toString()
-        } catch (e: Throwable) {
-            expression // Fallback to raw expression on error
+        return synchronized(evaluator) {
+            try {
+                val cleaned = prepareForSymja(expression)
+                if (cleaned.isBlank()) return ""
+                // Use TeXForm to convert the expression to LaTeX
+                val result = evaluator.eval("TeXForm($cleaned)").toString()
+
+                // Fix standard LaTeX math functions that Symja might output in raw form
+                result.replace("\\arcsinh", "\\operatorname{asinh}")
+                    .replace("\\arccosh", "\\operatorname{acosh}")
+                    .replace("\\arctanh", "\\operatorname{atanh}")
+                    .replace("\\arcsech", "\\operatorname{asech}")
+                    .replace("\\arccsch", "\\operatorname{acsch}")
+                    .replace("\\arccoth", "\\operatorname{acoth}")
+                    .replace("\\operatorname{arcsinh}", "\\operatorname{asinh}")
+                    .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
+                    .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
+
+            } catch (e: Throwable) {
+                expression // Fallback to raw expression on error
+            }
         }
     }
 

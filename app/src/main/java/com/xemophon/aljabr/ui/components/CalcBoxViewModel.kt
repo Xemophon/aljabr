@@ -49,6 +49,7 @@ import com.xemophon.aljabr.data.SettingsRepository
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.app.Application
+import com.xemophon.aljabr.data.SymjaUtils
 
 @Composable
 fun CalcBox(
@@ -437,7 +438,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         try {
             val result = if (displayText.contains("j", ignoreCase = true)) {
-                com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+                SymjaUtils.calculateNumerical(displayText, useRadians, precision)
             } else {
                 val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
                 CalcFuncs.formatResult(numResult, precision)
@@ -487,7 +488,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         } else {
             try {
                 val result = if (displayText.contains("j", ignoreCase = true)) {
-                    com.xemophon.aljabr.utils.SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+                    SymjaUtils.calculateNumerical(displayText, useRadians, precision)
                 } else {
                     val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
                     CalcFuncs.formatResult(numResult, precision)
