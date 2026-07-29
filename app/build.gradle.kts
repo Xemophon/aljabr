@@ -42,10 +42,16 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "src/main/keepRules/rules.keep"
             )
-            // Apply release signing config if available
-            signingConfig = signingConfigs.getByName("release")
+            // Apply release signing config if available (e.g. on CI)
+            // Otherwise, fall back to debug signing so it can be installed locally
+            val releaseSigningConfig = signingConfigs.getByName("release")
+            if (releaseSigningConfig.storeFile != null) {
+                signingConfig = releaseSigningConfig
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 

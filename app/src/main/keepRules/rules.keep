@@ -4,9 +4,75 @@
 # For more details, see
 #   https://d.android.com/r/tools/r8/keep-rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ----------------------------------------------------
+# MathEclipse / Symja Engine Rules
+# ----------------------------------------------------
+# Keep all MathEclipse core classes and interfaces.
+# Symja relies on reflection to map text inputs to mathematical functions.
+-keep class org.matheclipse.core.** { *; }
+-keep interface org.matheclipse.core.** { *; }
+
+# Symja uses reflection to find function implementations in these packages
+-keep class org.matheclipse.core.builtin.** { *; }
+-keep class org.matheclipse.core.reflection.** { *; }
+
+# If Symja uses JSR305 annotations, prevent warnings during build
+-dontwarn javax.annotation.**
+-dontwarn org.matheclipse.**
+
+# Symja might use service loading for its core components
+-keepnames class org.matheclipse.** { *; }
+-keep interface org.matheclipse.** { *; }
+
+# --- Symja Dependencies ---
+
+# Java Algebra System (JAS) - Symja relies on this for polynomial math
+-keep class edu.jas.** { *; }
+-keep interface edu.jas.** { *; }
+
+# Apfloat - Used for high-precision arithmetic
+-keep class org.apfloat.** { *; }
+-keep interface org.apfloat.** { *; }
+
+# Hipparchus - Math library used by Symja
+-keep class org.hipparchus.** { *; }
+-keep interface org.hipparchus.** { *; }
+
+# --- Desktop Java API Warnings ---
+# Symja/JAS/Apfloat reference desktop APIs not available on Android
+-dontwarn java.awt.**
+-dontwarn javax.servlet.**
+-dontwarn javax.swing.**
+-dontwarn java.beans.**
+-dontwarn java.rmi.**
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.commons.logging.**
+
+# ----------------------------------------------------
+# Compose Latex (HRM) Rules
+# ----------------------------------------------------
+# Corrected package prefix from huarangmeng to com.hrm
+-keep class com.hrm.latex.** { *; }
+-keepclassmembers class com.hrm.latex.** { *; }
+
+# Keep data classes intact so the AST parser doesn't break
+-keepclassmembers class com.hrm.latex.** {
+    <fields>;
+    <init>(...);
+    <methods>;
+}
+-dontwarn com.hrm.latex.**
+
+# ----------------------------------------------------
+# Transitive Dependency Fixes
+# ----------------------------------------------------
+# Apfloat (Symja dependency) references java.lang.management which is missing on Android
+-dontwarn java.lang.management.**
+
+# JavaPoet (transitive) references javax.lang.model which is missing on Android
+-dontwarn javax.lang.model.**
+
+# Log4j references OSGi which is missing on Android
+-dontwarn org.osgi.framework.**
+-dontwarn org.apache.logging.log4j.util.**
+
