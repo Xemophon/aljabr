@@ -75,8 +75,13 @@ object IntegFunc {
 
             // Replace Log[x] with Log[Abs[x]] for standard calculus notation ln|x|
             // This is a common preference for indefinite integrals in many curricula
-            if (resStr.contains("Log[")) {
-                resStr = resStr.replace(Regex("Log\\[([^]]+)]"), "Log[Abs[$1]]")
+            // Handles both Log[...] and Log(...) notation
+            val logRegex = Regex("Log([\\[(])([^)\\]]+)([])])", RegexOption.IGNORE_CASE)
+            resStr = resStr.replace(logRegex) { match ->
+                val open = match.groupValues[1]
+                val content = match.groupValues[2]
+                val close = match.groupValues[3]
+                "Log${open}Abs${open}${content}${close}${close}"
             }
 
             // Debug check: If input was NOT zero but result IS zero, something is likely wrong

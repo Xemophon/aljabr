@@ -28,7 +28,7 @@ object SymjaUtils {
 
         // Convert |x| to Abs(x)
         val absRegex = Regex("\\|([^|]+)\\|")
-        cleaned = cleaned.replace(absRegex, "Abs($1)")
+        cleaned = cleaned.replace(absRegex, "(Abs($1))")
 
         if (!useRadians) {
             cleaned = cleaned
@@ -85,19 +85,16 @@ object SymjaUtils {
         }
     }
 
-    /**
-     * Converts a mathematical expression string to its LaTeX representation using Symja's TeXForm.
-     */
     fun toLaTeX(expression: String): String {
         return synchronized(evaluator) {
             try {
                 val cleaned = prepareForSymja(expression)
                 if (cleaned.isBlank()) return ""
                 // Use TeXForm to convert the expression to LaTeX
-                val result = evaluator.eval("TeXForm($cleaned)").toString()
+                var result = evaluator.eval("TeXForm($cleaned)").toString()
 
                 // Fix standard LaTeX math functions that Symja might output in raw form
-                result.replace("\\arcsinh", "\\operatorname{asinh}")
+                result = result.replace("\\arcsinh", "\\operatorname{asinh}")
                     .replace("\\arccosh", "\\operatorname{acosh}")
                     .replace("\\arctanh", "\\operatorname{atanh}")
                     .replace("\\arcsech", "\\operatorname{asech}")
@@ -107,7 +104,10 @@ object SymjaUtils {
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
                     .replace("\\log", "\\ln")
+                    .replace("\\ln (\\left|", "\\ln \\left|")
+                    .replace("\\right|)", "\\right|")
 
+                return result
             } catch (e: Throwable) {
                 expression // Fallback to raw expression on error
             }
@@ -115,7 +115,7 @@ object SymjaUtils {
     }
 
     fun formatResult(resStr: String): String {
-        return resStr
+        var result = resStr
             .replace("ComplexInfinity", "∞")
             .replace("Infinity", "∞")
             .replace("Log10", "log")
@@ -133,14 +133,22 @@ object SymjaUtils {
             .replace("i", "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
-            .replace(Regex("Abs\\[([^]]+)]"), "|$1|")
-            .replace(Regex("Abs\\(([^)]+)\\)"), "|$1|")
+
+        // First handle brackets
+        result = result.replace("[", "(")
+            .replace("]", ")")
+
+        // Then handle Abs with pipe notation
+        result = result.replace(Regex("Abs\\(([^)]+)\\)"), "|$1|")
+            .replace("ln(|", "ln|")
+            .replace("log(|", "log|")
+            .replace("|)", "|")
             .replace("*", " × ")
             .replace("  ", " ")
-            .replace("[", "(")
-            .replace("]", ")")
             .replace(",", ", ")
             .trim()
+
+        return result
     }
 
     /**
