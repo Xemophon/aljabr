@@ -118,7 +118,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         val toInsert = when (action.type) {
             Constants.PI -> "π"
             Constants.E -> "e"
-            Constants.I -> "i"
+            Constants.I -> "j"
             Constants.PHI -> "φ"
         }
         handleSymbol(toInsert)

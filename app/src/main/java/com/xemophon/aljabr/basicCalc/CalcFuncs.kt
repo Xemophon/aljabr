@@ -268,7 +268,7 @@ object CalcFuncs {
 
     fun formatResult(value: Double, precision: Int = 4): String {
         if (value.isNaN()) return "Error"
-        if (value.isInfinite()) return "Infinity"
+        if (value.isInfinite()) return "∞"
 
         checkPiDerivation(value)?.let { return it }
         checkPhiDerivation(value)?.let { return it }

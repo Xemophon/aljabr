@@ -95,6 +95,8 @@ object SymjaUtils {
 
     fun formatResult(resStr: String): String {
         return resStr
+            .replace("ComplexInfinity", "∞")
+            .replace("Infinity", "∞")
             .replace("Log10", "log")
             .replace("Log", "ln")
             .replace("ArcSin", "asin")
@@ -107,6 +109,7 @@ object SymjaUtils {
             .replace("pi", "π")
             .replace("GoldenRatio", "φ")
             .replace("I", "j")
+            .replace("i", "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
             .replace("*", " × ")
