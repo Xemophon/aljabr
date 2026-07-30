@@ -45,11 +45,12 @@ android {
                 "src/main/keepRules/rules.keep"
             )
             // Apply release signing config if available (e.g. on CI)
-            // Otherwise, fall back to debug signing so it can be installed locally
+            // Otherwise, fall back to debug signing ONLY locally
+            val isCI = System.getenv("CI") == "true"
             val releaseSigningConfig = signingConfigs.getByName("release")
             if (releaseSigningConfig.storeFile != null) {
                 signingConfig = releaseSigningConfig
-            } else {
+            } else if (!isCI) {
                 signingConfig = signingConfigs.getByName("debug")
             }
         }
