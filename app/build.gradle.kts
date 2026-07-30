@@ -27,8 +27,9 @@ android {
             // Read environment variables (used by CI/CD like GitHub Actions)
             val keystoreFile = System.getenv("KEYSTORE_FILE")
 
-            if (!keystoreFile.isNullOrEmpty() && File(keystoreFile).exists()) {
-                storeFile = File(keystoreFile)
+            // Removed the .exists() check and changed File() to file()
+            if (!keystoreFile.isNullOrEmpty()) {
+                storeFile = file(keystoreFile)
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
