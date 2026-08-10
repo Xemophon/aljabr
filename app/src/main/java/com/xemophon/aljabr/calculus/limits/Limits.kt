@@ -10,12 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,9 +38,10 @@ import com.xemophon.aljabr.ui.components.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.LimitType
 
@@ -54,6 +60,8 @@ fun Limits(onOpenDrawer: () -> Unit) {
         currentFocus = viewModel.currentFocus,
         limitType = viewModel.limitType,
         cursorIndex = viewModel.cursorIndex,
+        steps = viewModel.stepsList,
+        isCalculatingSteps = viewModel.isCalculatingSteps,
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
@@ -61,6 +69,7 @@ fun Limits(onOpenDrawer: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LimitsContent(
     displayText: String,
@@ -69,12 +78,25 @@ fun LimitsContent(
     currentFocus: CalculatorFocus,
     limitType: LimitType,
     cursorIndex: Int,
+    steps: List<String> = emptyList(),
+    isCalculatingSteps: Boolean = false,
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isInverse by remember { mutableStateOf(false) }
+    var showStepsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    if (showStepsSheet) {
+        StepsBottomSheet(
+            steps = steps,
+            isCalculating = isCalculatingSteps,
+            sheetState = sheetState,
+            onDismissRequest = { showStepsSheet = false }
+        )
+    }
 
     CalculatorScaffold(
         title = { Text("Limits") },
@@ -103,7 +125,9 @@ fun LimitsContent(
                         focus = currentFocus,
                         cursorIndex = cursorIndex,
                         onFocusChange = onFocusChange,
-                        onCursorIndexChange = onCursorIndexChange
+                        onCursorIndexChange = onCursorIndexChange,
+                        showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
+                        onShowStepsClick = { showStepsSheet = true }
                     )
                 }
                 AdvancedButtonsGrid(
@@ -125,13 +149,27 @@ fun LimitDisplay(
     focus: CalculatorFocus,
     cursorIndex: Int,
     onFocusChange: (CalculatorFocus) -> Unit,
-    onCursorIndexChange: (Int) -> Unit
+    onCursorIndexChange: (Int) -> Unit,
+    showStepsButton: Boolean = false,
+    onShowStepsClick: () -> Unit = {}
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.padding(16.dp)
     ) {
+        if (showStepsButton) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                IconButton(onClick = onShowStepsClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Show Steps",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
         if (result.isEmpty()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

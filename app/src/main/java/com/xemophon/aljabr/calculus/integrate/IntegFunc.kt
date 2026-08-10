@@ -59,23 +59,23 @@ object IntegFunc {
     }
 
     fun integrateIndefinite(expression: String): String {
+        return integrateIndefiniteWithSteps(expression).first
+    }
+
+    fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<String>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            if (cleaned.isBlank()) return ""
+            if (cleaned.isBlank()) return Pair("", emptyList())
 
-            // Use the shared evaluator with relaxed syntax
-            // We use Integrate[...] square brackets to be explicit for the CAS engine
-            val result = SymjaUtils.evaluator.eval("Integrate[$cleaned, x]")
-            var resStr = result.toString()
+            val (result, steps) = SymjaUtils.evalWithSteps("Integrate[$cleaned, x]")
+            var resStr = result
 
             // If Symja couldn't solve it, it returns the input string Integrate(...)
             if (resStr.contains("Integrate", ignoreCase = true)) {
-                return "∫($expression)dx"
+                return Pair("∫($expression)dx", emptyList())
             }
 
             // Replace Log[x] with Log[Abs[x]] for standard calculus notation ln|x|
-            // This is a common preference for indefinite integrals in many curricula
-            // Handles both Log[...] and Log(...) notation
             val logRegex = Regex("Log([\\[(])([^)\\]]+)([])])", RegexOption.IGNORE_CASE)
             resStr = resStr.replace(logRegex) { match ->
                 val open = match.groupValues[1]
@@ -84,16 +84,13 @@ object IntegFunc {
                 "Log${open}Abs${open}${content}${close}${close}"
             }
 
-            // Debug check: If input was NOT zero but result IS zero, something is likely wrong
-            // with how the variable or expression is being parsed on this device.
             if (resStr == "0" && cleaned != "0" && cleaned != "0.0") {
-                return "∫($expression)dx" // Fallback to symbolic notation
+                return Pair("∫($expression)dx", emptyList())
             }
 
-            formatResult(resStr)
+            Pair(formatResult(resStr), steps)
         } catch (e: Throwable) {
-            // Log the error message in the result for debugging if it fails
-            "Error: ${e.message?.take(20) ?: "unknown"}"
+            Pair("Error: ${e.message?.take(20) ?: "unknown"}", emptyList())
         }
     }
 

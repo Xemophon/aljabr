@@ -2,6 +2,9 @@ package com.xemophon.aljabr.data
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
+import org.matheclipse.core.interfaces.IAST
+import org.matheclipse.core.interfaces.IEvalStepListener
+import org.matheclipse.core.interfaces.IExpr
 
 object SymjaUtils {
     // Shared evaluator to avoid expensive re-initialization.
@@ -165,5 +168,104 @@ object SymjaUtils {
             .map { it.groupValues[1].trim() }
             .filter { it.isNotEmpty() }
             .toList()
+    }
+
+    /**
+     * Evaluates a Symja command and captures intermediate steps.
+     */
+    fun evalWithSteps(symjaCommand: String): Pair<String, List<String>> {
+        val steps = mutableListOf<String>()
+        val maxSteps = 100
+
+        return synchronized(evaluator) {
+            val engine = evaluator.evalEngine
+            val oldListener = engine.stepListener
+            val oldTrace = engine.isTraceMode
+
+            try {
+                engine.isTraceMode = true
+                engine.stepListener = object : IEvalStepListener {
+                    override fun getHint(): String? = null
+                    override fun setHint(hint: String?) {}
+                    override fun setUp(expr: IExpr?, recursionDepth: Int, stackMarker: Any?) {}
+                    override fun tearDown(result: IExpr, recursionDepth: Int, commitTraceFrame: Boolean, stackMarker: Any?) {}
+                    override fun add(inputExpr: IExpr?, resultExpr: IExpr?, recursionDepth: Int, iterationCounter: Long, listOfHints: IAST?) {
+                        if (inputExpr != null && resultExpr != null && inputExpr != resultExpr && steps.size < maxSteps) {
+                            val step = "${formatResult(inputExpr.toString())} → ${formatResult(resultExpr.toString())}"
+                            if (steps.isEmpty() || steps.last() != step) {
+                                steps.add(step)
+                            }
+                        }
+                    }
+                }
+
+                val result = evaluator.eval(symjaCommand).toString()
+                Pair(result, steps)
+            } catch (e: Throwable) {
+                Pair("Error", emptyList())
+            } finally {
+                engine.isTraceMode = oldTrace
+                engine.stepListener = oldListener
+            }
+        }
+    }
+
+    /**
+     * Forces numerical evaluation using N() and captures intermediate steps.
+     */
+    fun calculateNumericalWithSteps(expression: String, useRadians: Boolean, precision: Int = 4): Pair<String, List<String>> {
+        val steps = mutableListOf<String>()
+        val maxSteps = 100
+
+        return synchronized(evaluator) {
+            val engine = evaluator.evalEngine
+            val oldListener = engine.stepListener
+            val oldTrace = engine.isTraceMode
+
+            try {
+                if (!useRadians) {
+                    evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
+                    evaluator.eval("CosDeg[x_] := Cos[x * Degree]")
+                    evaluator.eval("TanDeg[x_] := Tan[x * Degree]")
+                    evaluator.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
+                    evaluator.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
+                    evaluator.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
+                }
+
+                val cleaned = prepareForSymja(expression, useRadians)
+                if (cleaned.isBlank()) return Pair("", emptyList())
+
+                engine.isTraceMode = true
+                engine.stepListener = object : IEvalStepListener {
+                    override fun getHint(): String? = null
+                    override fun setHint(hint: String?) {}
+                    override fun setUp(expr: IExpr?, recursionDepth: Int, stackMarker: Any?) {}
+                    override fun tearDown(result: IExpr, recursionDepth: Int, commitTraceFrame: Boolean, stackMarker: Any?) {}
+                    override fun add(inputExpr: IExpr?, resultExpr: IExpr?, recursionDepth: Int, iterationCounter: Long, listOfHints: IAST?) {
+                        if (inputExpr != null && resultExpr != null && inputExpr != resultExpr && steps.size < maxSteps) {
+                            val step = "${formatResult(inputExpr.toString())} → ${formatResult(resultExpr.toString())}"
+                            if (steps.isEmpty() || steps.last() != step) {
+                                steps.add(step)
+                            }
+                        }
+                    }
+                }
+
+                val result = evaluator.eval("N($cleaned, $precision + 2)").toString()
+                val d = result.toDoubleOrNull()
+                val resFormatted = if (d != null) {
+                    CalcFuncs.formatResult(d, precision)
+                } else {
+                    formatResult(result)
+                }
+                
+                Pair(resFormatted, steps)
+            } catch (e: Throwable) {
+                Pair("Error", emptyList())
+            } finally {
+                engine.isTraceMode = oldTrace
+                engine.stepListener = oldListener
+            }
+        }
     }
 }

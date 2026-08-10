@@ -27,6 +27,7 @@ class SettingsRepository(private val context: Context) {
     private val colorSchemeKey = stringPreferencesKey("color_scheme")
     private val useRadiansKey = booleanPreferencesKey("use_radians")
     private val precisionKey = intPreferencesKey("decimal_precision")
+    private val showStepsKey = booleanPreferencesKey("show_steps")
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
         val themeName = preferences[themeKey] ?: AppTheme.AUTO.name
@@ -48,6 +49,10 @@ class SettingsRepository(private val context: Context) {
 
     val precisionFlow: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[precisionKey] ?: 4
+    }
+
+    val showStepsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[showStepsKey] ?: false
     }
 
     suspend fun setTheme(theme: AppTheme) {
@@ -77,6 +82,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setPrecision(precision: Int) {
         context.dataStore.edit { preferences ->
             preferences[precisionKey] = precision
+        }
+    }
+
+    suspend fun setShowSteps(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[showStepsKey] = enabled
         }
     }
 }

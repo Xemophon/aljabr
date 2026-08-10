@@ -14,9 +14,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,6 +71,8 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
         currentFocus = viewModel.currentFocus,
         integType = viewModel.integType,
         cursorIndex = viewModel.cursorIndex,
+        steps = viewModel.stepsList,
+        isCalculatingSteps = viewModel.isCalculatingSteps,
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
@@ -72,6 +80,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IntegCalcContent(
     displayText: String,
@@ -81,12 +90,25 @@ fun IntegCalcContent(
     currentFocus: CalculatorFocus,
     integType: IntegralType,
     cursorIndex: Int,
+    steps: List<String> = emptyList(),
+    isCalculatingSteps: Boolean = false,
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isInverse by remember { mutableStateOf(false) }
+    var showStepsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    if (showStepsSheet) {
+        com.xemophon.aljabr.ui.components.StepsBottomSheet(
+            steps = steps,
+            isCalculating = isCalculatingSteps,
+            sheetState = sheetState,
+            onDismissRequest = { showStepsSheet = false }
+        )
+    }
 
     CalculatorScaffold(
         title = { Text("Integrate") },
@@ -116,7 +138,9 @@ fun IntegCalcContent(
                         integType = integType,
                         cursorIndex = cursorIndex,
                         onFocusChange = onFocusChange,
-                        onCursorIndexChange = onCursorIndexChange
+                        onCursorIndexChange = onCursorIndexChange,
+                        showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
+                        onShowStepsClick = { showStepsSheet = true }
                     )
                 }
                 AdvancedButtonsGrid(
@@ -140,7 +164,9 @@ fun IntegDisplay(
     integType: IntegralType,
     cursorIndex: Int,
     onFocusChange: (CalculatorFocus) -> Unit,
-    onCursorIndexChange: (Int) -> Unit
+    onCursorIndexChange: (Int) -> Unit,
+    showStepsButton: Boolean = false,
+    onShowStepsClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -148,138 +174,153 @@ fun IntegDisplay(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (result.isEmpty()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                // Integral Symbol with Limits
-                Box(
-                    modifier = Modifier.height(100.dp),
-                    contentAlignment = Alignment.CenterStart
+        Column(horizontalAlignment = Alignment.End) {
+            if (showStepsButton) {
+                IconButton(
+                    onClick = onShowStepsClick,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 ) {
-                    Text(
-                        text = "∫",
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (integType == IntegralType.DEFINITE) {
-                        // Upper limit b
-                        Text(
-                            text = upper.ifEmpty { "b" },
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .offset(x = 25.dp, y = (-8).dp)
-                                .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                            fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
-                            color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                        // Lower limit a
-                        Text(
-                            text = lower.ifEmpty { "a" },
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .offset(x = (-10).dp, y = 18.dp)
-                                .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                            fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
-                            color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Expression f(x)dx
-                Box(
-                    modifier = Modifier
-                        .clickable {
-                            onFocusChange(CalculatorFocus.EXPRESSION)
-                            onCursorIndexChange(expression.length)
-                        }
-                        .padding(8.dp)
-                ) {
-                    val base = if (expression == "0") "" else expression
-                    val textWithCursor =
-                        if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                            if (cursorIndex < base.length) {
-                                StringBuilder(base).insert(cursorIndex, "|").toString()
-                            } else {
-                                "$base|"
-                            }
-                        } else {
-                            base.ifEmpty { "f(x)" }
-                        }
-
-                    val displayText = "$textWithCursor dx"
-
-                    Text(
-                        text = displayText,
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontSize = if (expression.length > 10) 32.sp else 48.sp
-                        ),
-                        color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Show Steps",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-        } else {
-            // Display only the result when it exists using LaTeX if possible
-            val latexState = produceState<String?>(initialValue = null, result) {
-                if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
-                    val expr = result.removeSuffix(" + C")
-                    // If it looks like a Symja result (contains characters), try converting to LaTeX
-                    if (expr.any { it.isLetter() }) {
-                        val res = withContext(Dispatchers.Default) {
-                            SymjaUtils.toLaTeX(expr)
+
+            if (result.isEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    // Integral Symbol with Limits
+                    Box(
+                        modifier = Modifier.height(100.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = "∫",
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        if (integType == IntegralType.DEFINITE) {
+                            // Upper limit b
+                            Text(
+                                text = upper.ifEmpty { "b" },
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .offset(x = 25.dp, y = (-8).dp)
+                                    .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
+                                color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                            // Lower limit a
+                            Text(
+                                text = lower.ifEmpty { "a" },
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .offset(x = (-10).dp, y = 18.dp)
+                                    .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
+                                color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
-                        value = "$res + C"
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Expression f(x)dx
+                    Box(
+                        modifier = Modifier
+                            .clickable {
+                                onFocusChange(CalculatorFocus.EXPRESSION)
+                                onCursorIndexChange(expression.length)
+                            }
+                            .padding(8.dp)
+                    ) {
+                        val base = if (expression == "0") "" else expression
+                        val textWithCursor =
+                            if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                                if (cursorIndex < base.length) {
+                                    StringBuilder(base).insert(cursorIndex, "|").toString()
+                                } else {
+                                    "$base|"
+                                }
+                            } else {
+                                base.ifEmpty { "f(x)" }
+                            }
+
+                        val displayText = "$textWithCursor dx"
+
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.displayMedium.copy(
+                                fontSize = if (expression.length > 10) 32.sp else 48.sp
+                            ),
+                            color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            } else {
+                // Display only the result when it exists using LaTeX if possible
+                val latexState = produceState<String?>(initialValue = null, result) {
+                    if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
+                        val expr = result.removeSuffix(" + C")
+                        // If it looks like a Symja result (contains characters), try converting to LaTeX
+                        if (expr.any { it.isLetter() }) {
+                            val res = withContext(Dispatchers.Default) {
+                                SymjaUtils.toLaTeX(expr)
+                            }
+                            value = "$res + C"
+                        } else {
+                            value = result
+                        }
+                    } else if (result.any { it.isLetter() || it == '/' || it == '^' }) {
+                        val res = withContext(Dispatchers.Default) {
+                            SymjaUtils.toLaTeX(result)
+                        }
+                        value = res
                     } else {
                         value = result
                     }
-                } else if (result.any { it.isLetter() || it == '/' || it == '^' }) {
-                    val res = withContext(Dispatchers.Default) {
-                        SymjaUtils.toLaTeX(result)
-                    }
-                    value = res
-                } else {
-                    value = result
                 }
-            }
 
-            val latexContent = latexState.value
+                val latexContent = latexState.value
 
-            Box(
-                modifier = Modifier
-                    .clickable {
-                        // Clear result to edit again
-                        onFocusChange(CalculatorFocus.EXPRESSION)
-                    }
-                    .padding(16.dp)
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                contentAlignment = Alignment.Center
-            ) {
-                if (latexContent != null && (latexContent != result || result.any { it == '^' || it == '/' })) {
-                    Latex(
-                        latex = latexContent,
-                        config = LatexConfig(
-                            fontSize = if (result.length > 15) 24.sp else 32.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                            mathFont = MathFont.KaTeXTTF
+                Box(
+                    modifier = Modifier
+                        .clickable {
+                            // Clear result to edit again
+                            onFocusChange(CalculatorFocus.EXPRESSION)
+                        }
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (latexContent != null && (latexContent != result || result.any { it == '^' || it == '/' })) {
+                        Latex(
+                            latex = latexContent,
+                            config = LatexConfig(
+                                fontSize = if (result.length > 15) 24.sp else 32.sp,
+                                theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                                mathFont = MathFont.KaTeXTTF
+                            )
                         )
-                    )
-                } else {
-                    Text(
-                        text = result,
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontSize = if (result.length > 15) 28.sp else 40.sp
-                        ),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    } else {
+                        Text(
+                            text = result,
+                            style = MaterialTheme.typography.displayMedium.copy(
+                                fontSize = if (result.length > 15) 28.sp else 40.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
         }

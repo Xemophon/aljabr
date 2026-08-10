@@ -44,6 +44,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         initialValue = 4
     )
 
+    val showSteps: StateFlow<Boolean> = repository.showStepsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             repository.setTheme(theme)
@@ -71,6 +77,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setPrecision(precision: Int) {
         viewModelScope.launch {
             repository.setPrecision(precision)
+        }
+    }
+
+    fun setShowSteps(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setShowSteps(enabled)
         }
     }
 }

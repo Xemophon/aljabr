@@ -17,15 +17,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,7 +63,9 @@ fun CalcBox(
     result: String,
     modifier: Modifier = Modifier,
     cursorIndex: Int = -1,
-    onCursorIndexChange: (Int) -> Unit = {}
+    onCursorIndexChange: (Int) -> Unit = {},
+    showStepsButton: Boolean = false,
+    onShowStepsClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "Cursor")
     val cursorAlpha by infiniteTransition.animateFloat(
@@ -111,32 +119,52 @@ fun CalcBox(
             )
         }
 
-        AnimatedContent(
-            targetState = result,
-            transitionSpec = {
-                (slideInVertically { height -> height } + fadeIn()) togetherWith
-                        (slideOutVertically { height -> -height } + fadeOut())
-            },
-            label = "ResultAnimation"
-        ) { targetResult ->
-            if (targetResult.isNotEmpty()) {
-                val resultFontSize by animateFloatAsState(
-                    targetValue = if (targetResult.length > 8) 48f else 64f,
-                    label = "ResultFontSize"
-                )
-                Column {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = targetResult,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontSize = resultFontSize.sp,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.End
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        lineHeight = resultFontSize.sp * 1.1f
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (showStepsButton) {
+                IconButton(
+                    onClick = onShowStepsClick,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Show Steps",
+                        tint = MaterialTheme.colorScheme.primary
                     )
+                }
+            }
+
+            AnimatedContent(
+                targetState = result,
+                transitionSpec = {
+                    (slideInVertically { height -> height } + fadeIn()) togetherWith
+                            (slideOutVertically { height -> -height } + fadeOut())
+                },
+                label = "ResultAnimation",
+                modifier = Modifier.weight(1f, fill = false)
+            ) { targetResult ->
+                if (targetResult.isNotEmpty()) {
+                    val resultFontSize by animateFloatAsState(
+                        targetValue = if (targetResult.length > 8) 48f else 64f,
+                        label = "ResultFontSize"
+                    )
+                    Column {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = targetResult,
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontSize = resultFontSize.sp,
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.End
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            lineHeight = resultFontSize.sp * 1.1f
+                        )
+                    }
                 }
             }
         }
@@ -181,6 +209,13 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var calculationEnabled by mutableStateOf(true)
     var useRadians by mutableStateOf(false)
     var precision by mutableIntStateOf(4)
+    var showSteps by mutableStateOf(false)
+        private set
+
+    var isCalculatingSteps by mutableStateOf(false)
+        private set
+
+    val stepsList = mutableStateListOf<String>()
 
     private var lastExpression = ""
     private var isShowingResult = false
@@ -196,6 +231,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             settingsRepository.precisionFlow.collectLatest {
                 precision = it
                 updateInstantResult()
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.showStepsFlow.collectLatest {
+                showSteps = it
             }
         }
     }
@@ -480,49 +520,101 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
+        stepsList.clear()
+
         // Standard calculation logic
         if (resultText.isNotEmpty() && resultText != "Error") {
             displayText = resultText
             resultText = ""
             cursorIndex = displayText.length
         } else {
-            try {
-                val result = if (displayText.contains("j", ignoreCase = true)) {
-                    SymjaUtils.calculateNumerical(displayText, useRadians, precision)
-                } else {
-                    val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                    CalcFuncs.formatResult(numResult, precision)
+            if (showSteps) {
+                viewModelScope.launch {
+                    isCalculatingSteps = true
+                    try {
+                        val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                            SymjaUtils.calculateNumericalWithSteps(displayText, useRadians, precision)
+                        }
+                        if (result != "Error" && result.isNotEmpty()) {
+                            displayText = result
+                            resultText = ""
+                            cursorIndex = displayText.length
+                            stepsList.addAll(steps)
+                        }
+                    } catch (e: Exception) {
+                        displayText = "Error"
+                        resultText = ""
+                        cursorIndex = displayText.length
+                    } finally {
+                        isCalculatingSteps = false
+                    }
                 }
-                if (result != "Error" && result.isNotEmpty()) {
-                    displayText = result
+            } else {
+                try {
+                    val result = if (displayText.contains("j", ignoreCase = true)) {
+                        SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+                    } else {
+                        val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+                        CalcFuncs.formatResult(numResult, precision)
+                    }
+                    if (result != "Error" && result.isNotEmpty()) {
+                        displayText = result
+                        resultText = ""
+                        cursorIndex = displayText.length
+                    }
+                } catch (e: Exception) {
+                    displayText = "Error"
                     resultText = ""
                     cursorIndex = displayText.length
                 }
-            } catch (e: Exception) {
-                displayText = "Error"
-                resultText = ""
-                cursorIndex = displayText.length
             }
         }
     }
 
     private fun runLimitCalculation() {
         if (displayText.isBlank() || targetText.isBlank()) return
-        try {
-            val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
+        stepsList.clear()
 
-            lastExpression = displayText
-            resultText = res
-            cursorIndex = -1
-            isShowingResult = true
-        } catch (e: Exception) {
-            resultText = "Error"
-            isShowingResult = false
+        if (showSteps) {
+            viewModelScope.launch {
+                isCalculatingSteps = true
+                try {
+                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        LimitsFunc.calculateLimitWithSteps(displayText, "x", targetText)
+                    }
+                    if (result.isNotEmpty()) {
+                        resultText = result
+                        stepsList.addAll(steps)
+                    }
+                    lastExpression = displayText
+                    cursorIndex = -1
+                    isShowingResult = true
+                } catch (e: Exception) {
+                    resultText = "Error"
+                    isShowingResult = false
+                } finally {
+                    isCalculatingSteps = false
+                }
+            }
+        } else {
+            try {
+                val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
+
+                lastExpression = displayText
+                resultText = res
+                cursorIndex = -1
+                isShowingResult = true
+            } catch (e: Exception) {
+                resultText = "Error"
+                isShowingResult = false
+            }
         }
     }
 
     private fun runIntegrationCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
+
+        stepsList.clear()
 
         if (integType == IntegralType.DEFINITE) {
             try {
@@ -545,28 +637,70 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 resultText = "Definite Error"
             }
         } else {
-            try {
-                val res = IntegFunc.integrateIndefinite(displayText)
-                if (res.isNotEmpty()) {
-                    resultText = res
+            if (showSteps) {
+                viewModelScope.launch {
+                    isCalculatingSteps = true
+                    try {
+                        val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                            IntegFunc.integrateIndefiniteWithSteps(displayText)
+                        }
+                        if (result.isNotEmpty()) {
+                            resultText = result
+                            stepsList.addAll(steps)
+                        }
+                    } catch (e: Exception) {
+                        resultText = "Indefinite Error"
+                    } finally {
+                        isCalculatingSteps = false
+                    }
                 }
-            } catch (e: Exception) {
-                resultText = "Indefinite Error"
+            } else {
+                try {
+                    val res = IntegFunc.integrateIndefinite(displayText)
+                    if (res.isNotEmpty()) {
+                        resultText = res
+                    }
+                } catch (e: Exception) {
+                    resultText = "Indefinite Error"
+                }
             }
         }
     }
 
     private fun runDifferentiateCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
-        try {
-            analysisResult = AnalysisFunc.fullAnalysis(displayText)
-            // Still set resultText for basic compatibility if needed
-            val res = DiffFunc.differentiate(displayText)
-            if (res.isNotEmpty()) {
-                resultText = res
+        stepsList.clear()
+        
+        if (showSteps) {
+            viewModelScope.launch {
+                isCalculatingSteps = true
+                try {
+                    analysisResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        AnalysisFunc.fullAnalysis(displayText)
+                    }
+                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        DiffFunc.differentiateWithSteps(displayText)
+                    }
+                    if (result.isNotEmpty()) {
+                        resultText = result
+                        stepsList.addAll(steps)
+                    }
+                } catch (e: Exception) {
+                    resultText = "Error"
+                } finally {
+                    isCalculatingSteps = false
+                }
             }
-        } catch (e: Exception) {
-            resultText = "Error"
+        } else {
+            try {
+                analysisResult = AnalysisFunc.fullAnalysis(displayText)
+                val res = DiffFunc.differentiate(displayText)
+                if (res.isNotEmpty()) {
+                    resultText = res
+                }
+            } catch (e: Exception) {
+                resultText = "Error"
+            }
         }
     }
 

@@ -14,29 +14,32 @@ object DiffFunc {
     }
 
     fun differentiate(expression: String): String {
+        return differentiateWithSteps(expression).first
+    }
+
+    fun differentiateWithSteps(expression: String): Pair<String, List<String>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            if (cleaned.isBlank()) return ""
+            if (cleaned.isBlank()) return Pair("", emptyList())
 
             val eval = SymjaUtils.evaluator
             val varsExpr = eval.eval("Variables[$cleaned]")
             val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            val vars = rawVars.filter { v -> 
+            val vars = rawVars.filter { v ->
                 v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
             }
             val v = if (vars.size == 1) vars[0] else "x"
 
-            // Use D[...] for differentiation in Symja
-            val result = eval.eval("D[$cleaned, $v]")
-            val resStr = result.toString()
+            val (result, steps) = SymjaUtils.evalWithSteps("D[$cleaned, $v]")
+            val resStr = result
 
             if (resStr.contains("D", ignoreCase = true)) {
-                return "d/d$v($expression)"
+                return Pair("d/d$v($expression)", emptyList())
             }
 
-            SymjaUtils.formatResult(resStr)
+            Pair(SymjaUtils.formatResult(resStr), steps)
         } catch (e: Throwable) {
-            "Error"
+            Pair("Error", emptyList())
         }
     }
 }

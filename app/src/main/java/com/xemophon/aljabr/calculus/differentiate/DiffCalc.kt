@@ -17,10 +17,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +54,7 @@ import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -70,6 +77,8 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
         cursorIndex = viewModel.cursorIndex,
         diffGridMode = viewModel.diffGridMode,
         analysisResult = viewModel.analysisResult,
+        steps = viewModel.stepsList,
+        isCalculatingSteps = viewModel.isCalculatingSteps,
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
@@ -77,18 +86,32 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiffCalcContent(
     displayText: String,
     cursorIndex: Int,
     diffGridMode: String,
     analysisResult: AnalysisResult?,
+    steps: List<String> = emptyList(),
+    isCalculatingSteps: Boolean = false,
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isInverse by remember { mutableStateOf(false) }
+    var showStepsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    if (showStepsSheet) {
+        StepsBottomSheet(
+            steps = steps,
+            isCalculating = isCalculatingSteps,
+            sheetState = sheetState,
+            onDismissRequest = { showStepsSheet = false }
+        )
+    }
 
     CalculatorScaffold(
         title = { Text("Differentiate") },
@@ -116,12 +139,17 @@ fun DiffCalcContent(
                                 diffGridMode = diffGridMode,
                                 cursorIndex = cursorIndex,
                                 onFocusChange = onFocusChange,
-                                onCursorIndexChange = onCursorIndexChange
+                                onCursorIndexChange = onCursorIndexChange,
+                                showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
+                                onShowStepsClick = { showStepsSheet = true }
                             )
                         }
                     } else {
                         AnalysisReport(
                             result = analysisResult,
+                            steps = steps,
+                            isCalculatingSteps = isCalculatingSteps,
+                            onShowStepsClick = { showStepsSheet = true },
                             onClear = { onAction(CalcButtonAction.Clear) }
                         )
                     }
@@ -141,7 +169,13 @@ fun DiffCalcContent(
 }
 
 @Composable
-fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
+fun AnalysisReport(
+    result: AnalysisResult,
+    steps: List<String> = emptyList(),
+    isCalculatingSteps: Boolean = false,
+    onShowStepsClick: () -> Unit = {},
+    onClear: () -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -163,7 +197,19 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
             }
         } else {
             // Derivatives
-            item { AnalysisSectionHeader("Derivatives") }
+            item { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AnalysisSectionHeader("Derivatives", Modifier.weight(1f))
+                    if (steps.isNotEmpty() || isCalculatingSteps) {
+                         Text(
+                             text = "Steps",
+                             color = MaterialTheme.colorScheme.primary,
+                             modifier = Modifier.clickable { onShowStepsClick() }.padding(end = 8.dp),
+                             fontWeight = FontWeight.Bold
+                         )
+                    }
+                }
+            }
             items(result.derivatives) { deriv ->
                 AnalysisItemCard(deriv.name, deriv.expression, deriv.rawExpression)
             }
@@ -224,12 +270,12 @@ fun AnalysisReport(result: AnalysisResult, onClear: () -> Unit) {
 }
 
 @Composable
-fun AnalysisSectionHeader(title: String) {
+fun AnalysisSectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = modifier.padding(vertical = 4.dp)
     )
 }
 
@@ -289,7 +335,9 @@ fun DiffDisplay(
     diffGridMode: String,
     cursorIndex: Int,
     onFocusChange: (CalculatorFocus) -> Unit,
-    onCursorIndexChange: (Int) -> Unit
+    onCursorIndexChange: (Int) -> Unit,
+    showStepsButton: Boolean = false,
+    onShowStepsClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -297,87 +345,102 @@ fun DiffDisplay(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Derivative Notation
-            if (diffGridMode == "Single") {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+        Column(horizontalAlignment = Alignment.End) {
+            if (showStepsButton) {
+                IconButton(
+                    onClick = onShowStepsClick,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 ) {
-                    Text(
-                        text = "d",
-                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(2.dp)
-                            .background(MaterialTheme.colorScheme.onSurface)
-                    )
-                    Text(
-                        text = "dx",
-                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
-                        color = MaterialTheme.colorScheme.onSurface
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Show Steps",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
-            } else {
-                Text(
-                    text = "∇f",
-                    style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Expression in brackets [ f(x) ]
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable {
-                    onFocusChange(CalculatorFocus.EXPRESSION)
-                    onCursorIndexChange(expression.length)
-                }
+                horizontalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "[",
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Derivative Notation
+                if (diffGridMode == "Single") {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "d",
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(2.dp)
+                                .background(MaterialTheme.colorScheme.onSurface)
+                        )
+                        Text(
+                            text = "dx",
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "∇f",
+                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Expression in brackets [ f(x) ]
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable {
+                        onFocusChange(CalculatorFocus.EXPRESSION)
+                        onCursorIndexChange(expression.length)
+                    }
                 ) {
-                    val base = if (expression == "0") "" else expression
-                    val textWithCursor = if (cursorIndex != -1) {
-                        if (cursorIndex < base.length) {
-                            StringBuilder(base).insert(cursorIndex, "|").toString()
+                    Text(
+                        text = "[",
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        val base = if (expression == "0") "" else expression
+                        val textWithCursor = if (cursorIndex != -1) {
+                            if (cursorIndex < base.length) {
+                                StringBuilder(base).insert(cursorIndex, "|").toString()
+                            } else {
+                                "$base|"
+                            }
                         } else {
-                            "$base|"
+                            base.ifEmpty { "f(x)" }
                         }
-                    } else {
-                        base.ifEmpty { "f(x)" }
+
+                        Text(
+                            text = textWithCursor,
+                            style = MaterialTheme.typography.displayMedium.copy(
+                                fontSize = if (expression.length > 10) 32.sp else 48.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
                     Text(
-                        text = textWithCursor,
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontSize = if (expression.length > 10) 32.sp else 48.sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                        text = "]",
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-
-                Text(
-                    text = "]",
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
             }
         }
     }
