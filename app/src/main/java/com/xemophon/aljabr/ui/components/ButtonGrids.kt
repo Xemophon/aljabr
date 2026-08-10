@@ -1,7 +1,6 @@
 package com.xemophon.aljabr.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring.DampingRatioLowBouncy
 import androidx.compose.animation.core.Spring.StiffnessLow
 import androidx.compose.animation.core.animateFloat
@@ -12,14 +11,18 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +42,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.R
 import com.xemophon.aljabr.ui.theme.Dimens
+import org.apfloat.spi.AdditionBuilder
 
 @Composable
 private fun CalcButtonSheet(
@@ -66,43 +70,13 @@ private fun CalcButtonSheet(
 @Composable
 fun ShortCalcButtons(
     modifier: Modifier = Modifier,
+    buttonGrid: MutableList<MutableList<CalcButtonAction>> = ShortButtonGrid,
     letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
     onAction: (CalcButtonAction) -> Unit,
 ) {
-    val shortButtonGrid = listOf(
-        listOf(
-            CalcButtonAction.Symbol("7"),
-            CalcButtonAction.Symbol("8"),
-            CalcButtonAction.Symbol("9"),
-            CalcButtonAction.Symbol("÷", "/")
-        ),
-        listOf(
-            CalcButtonAction.Symbol("4"),
-            CalcButtonAction.Symbol("5"),
-            CalcButtonAction.Symbol("6"),
-            CalcButtonAction.Symbol("×", "*")
-        ),
-        listOf(
-            CalcButtonAction.Symbol("1"),
-            CalcButtonAction.Symbol("2"),
-            CalcButtonAction.Symbol("3"),
-            CalcButtonAction.Symbol("-")
-        ),
-        listOf(
-            CalcButtonAction.Symbol("0"),
-            CalcButtonAction.Symbol("."),
-            CalcButtonAction.Symbol("( )"),
-            CalcButtonAction.Symbol("+")
-        ),
-        listOf(
-            CalcButtonAction.Backspace(R.drawable.backspace),
-            CalcButtonAction.Clear,
-            CalcButtonAction.Constant("π", Constants.PI),
-            letterNeeded,
-        )
-    )
+    buttonGrid[4].add(letterNeeded)
     CalcButtonSheet(modifier.fillMaxHeight()) {
-        shortButtonGrid.forEach { row ->
+        buttonGrid.forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
@@ -120,6 +94,42 @@ fun ShortCalcButtons(
                         onClick = { onAction(action) }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdditionalButtons(
+    buttons: List<@Composable () -> Unit>,
+    modifier: Modifier = Modifier
+) {
+    if (buttons.isEmpty()) return
+
+    val pageCount = (buttons.size + 2) / 3
+    val pagerState = rememberPagerState(pageCount = { pageCount })
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) { page ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+        ) {
+            val startIndex = page * 3
+            val endIndex = minOf(startIndex + 3, buttons.size)
+            for (i in startIndex until endIndex) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    buttons[i]()
+                }
+            }
+            repeat(3 - (endIndex - startIndex)) {
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
@@ -151,62 +161,58 @@ fun CalcButtons(
         if (state) 1f else 0f
     }
 
-    CalcButtonSheet(modifier) {
-        Row(
+    val buttons = mutableListOf<@Composable () -> Unit>()
+    buttons.add {
+        Button(
+            onClick = onToggleExpand,
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(
-                Dimens.SpacingSmall,
-                Alignment.CenterHorizontally
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
             )
         ) {
-            Button(
-                onClick = onToggleExpand,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            AnimatedContent(
+                targetState = if (isExpanded) "Standard" else "Scientific",
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "ToggleButtonText"
+            ) { targetText ->
+                Text(
+                    text = targetText,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontSize = 24.sp
                 )
-            ) {
-                AnimatedContent(
-                    targetState = if (isExpanded) "Standard" else "Scientific",
-                    transitionSpec = {
-                        fadeIn() togetherWith fadeOut()
-                    },
-                    label = "ToggleButtonText"
-                ) { targetText ->
-                    Text(
-                        text = targetText,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontSize = 24.sp
-                    )
-                }
-            }
-            AnimatedVisibility(visible = isExpanded) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-                ) {
-                    Button(
-                        onClick = onToggleInverse,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Text(
-                            text = "Inverse",
-                            color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    AngleUnitSwitch(
-                        modifier = Modifier.padding(start = Dimens.SpacingSmall),
-                        useRadians = useRadians,
-                        onToggleAngleUnit = onToggleAngleUnit
-                    )
-                }
             }
         }
+    }
+
+    if (isExpanded) {
+        buttons.add {
+            Button(
+                onClick = onToggleInverse,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Text(
+                    text = "Inverse",
+                    color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        buttons.add {
+            AngleUnitSwitch(
+                useRadians = useRadians,
+                onToggleAngleUnit = onToggleAngleUnit
+            )
+        }
+    }
+
+    CalcButtonSheet(modifier) {
+        AdditionalButtons(buttons = buttons)
 
         if (expandFraction > 0f) {
             Layout(
@@ -261,81 +267,83 @@ fun AdvancedButtonsGrid(
 ) = CalcButtonSheet(modifier) {
     val selectedGrid = when (gridMode) {
         is AdvancedGridMode.Differentiation -> if (gridMode.currentMode == "Single") SingleVariableGrid else MultipleVariableGrid
-        else -> SingleVariableGrid // Default for others if not specified, though Limits/Integ usually use SingleVariableGrid
+        else -> SingleVariableGrid
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterHorizontally)
-    ) {
+    val buttons = mutableListOf<@Composable () -> Unit>()
+    buttons.add {
         Button(
             onClick = onToggleInverse,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "Inv", style = MaterialTheme.typography.labelLarge)
         }
+    }
 
-        AnimatedContent(
-            targetState = gridMode,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            modifier = Modifier.weight(2f),
-            label = "AdvancedModeButtons"
-        ) { mode ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
-                when (mode) {
-                    is AdvancedGridMode.Limits -> {
-                        ModeToggleButton(
-                            label = "∞",
-                            isSelected = mode.currentType == LimitType.INFINITE,
-                            onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ModeToggleButton(
-                            label = "a",
-                            isSelected = mode.currentType == LimitType.FINITE,
-                            onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+    when (gridMode) {
+        is AdvancedGridMode.Limits -> {
+            buttons.add {
+                ModeToggleButton(
+                    label = "x→∞",
+                    isSelected = gridMode.currentType == LimitType.INFINITE,
+                    onClick = { onAction(CalcButtonAction.Limits("x → ∞", LimitType.INFINITE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "x→a",
+                    isSelected = gridMode.currentType == LimitType.FINITE,
+                    onClick = { onAction(CalcButtonAction.Limits("x → a", LimitType.FINITE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
 
-                    is AdvancedGridMode.Integration -> {
-                        ModeToggleButton(
-                            label = "∫",
-                            isSelected = mode.currentType == IntegralType.INDEFINITE,
-                            onClick = { onAction(CalcButtonAction.Integrals("∫", IntegralType.INDEFINITE)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ModeToggleButton(
-                            label = "∫ ab",
-                            isSelected = mode.currentType == IntegralType.DEFINITE,
-                            onClick = { onAction(CalcButtonAction.Integrals("∫ab", IntegralType.DEFINITE)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+        is AdvancedGridMode.Integration -> {
+            buttons.add {
+                ModeToggleButton(
+                    label = "∫",
+                    isSelected = gridMode.currentType == IntegralType.INDEFINITE,
+                    onClick = { onAction(CalcButtonAction.Integrals("∫", IntegralType.INDEFINITE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∫ ab",
+                    isSelected = gridMode.currentType == IntegralType.DEFINITE,
+                    onClick = { onAction(CalcButtonAction.Integrals("∫ab", IntegralType.DEFINITE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
 
-                    is AdvancedGridMode.Differentiation -> {
-                        ModeToggleButton(
-                            label = "d/dx",
-                            isSelected = mode.currentMode == "Single",
-                            onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ModeToggleButton(
-                            label = "∇f",
-                            isSelected = mode.currentMode == "Multiple",
-                            onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+        is AdvancedGridMode.Differentiation -> {
+            buttons.add {
+                ModeToggleButton(
+                    label = "d/dx",
+                    isSelected = gridMode.currentMode == "Single",
+                    onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∇f",
+                    isSelected = gridMode.currentMode == "Multiple",
+                    onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
+
+    AdditionalButtons(buttons = buttons)
     ButtonGrid(
         gridData = selectedGrid,
         buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,
@@ -372,50 +380,49 @@ fun CalcButtonsGraph(
     onVisualize: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) = CalcButtonSheet(modifier) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(
-            Dimens.SpacingSmall,
-            Alignment.CenterHorizontally
-        )
-    ) {
-        Button(
-            onClick = onToggleInverse,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = "Inv",
-                style = MaterialTheme.typography.labelLarge
-            )
+    val buttons = listOf<@Composable () -> Unit>(
+        {
+            Button(
+                onClick = onToggleInverse,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Inv",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        },
+        {
+            Button(
+                onClick = onVisualize,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Graph", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        {
+            Button(
+                onClick = { onAction(CalcButtonAction.Clear) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
+            }
         }
+    )
 
-        Button(
-            onClick = onVisualize,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(text = "Graph", style = MaterialTheme.typography.labelLarge)
-        }
-
-        Button(
-            onClick = { onAction(CalcButtonAction.Clear) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-            ),
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
-        }
-    }
+    AdditionalButtons(buttons = buttons)
     ButtonGrid(
         gridData = GraphButtonsGrid,
         buttonAspectRatio = Dimens.ButtonAspectRatioExpanded,

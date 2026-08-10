@@ -84,6 +84,37 @@ enum class Variables { X, Y }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE }
 
+val ShortButtonGrid : MutableList<MutableList<CalcButtonAction>> = mutableListOf(
+    mutableListOf(
+        CalcButtonAction.Symbol("7"),
+        CalcButtonAction.Symbol("8"),
+        CalcButtonAction.Symbol("9"),
+        CalcButtonAction.Symbol("÷", "/")
+    ),
+    mutableListOf(
+        CalcButtonAction.Symbol("4"),
+        CalcButtonAction.Symbol("5"),
+        CalcButtonAction.Symbol("6"),
+        CalcButtonAction.Symbol("×", "*")
+    ),
+    mutableListOf(
+        CalcButtonAction.Symbol("1"),
+        CalcButtonAction.Symbol("2"),
+        CalcButtonAction.Symbol("3"),
+        CalcButtonAction.Symbol("-")
+    ),
+    mutableListOf(
+        CalcButtonAction.Symbol("0"),
+        CalcButtonAction.Symbol("."),
+        CalcButtonAction.Symbol("( )"),
+        CalcButtonAction.Symbol("+")
+    ),
+    mutableListOf(
+        CalcButtonAction.Backspace(R.drawable.backspace),
+        CalcButtonAction.Clear,
+        CalcButtonAction.Constant("π", Constants.PI),
+    )
+)
 val StandardButtonsGrid = listOf(
     listOf(
         CalcButtonAction.Clear,
