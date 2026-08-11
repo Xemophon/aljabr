@@ -30,7 +30,8 @@ object DiffFunc {
             }
             val v = if (vars.size == 1) vars[0] else "x"
 
-            val (result, steps) = SymjaUtils.evalWithSteps("Simplify[D[$cleaned, $v]]")
+            val (rawResult, steps) = SymjaUtils.evalWithSteps("D[$cleaned, $v]")
+            val result = eval.eval("Simplify[$rawResult]").toString()
             val resStr = result
 
             if (resStr.contains("D", ignoreCase = true)) {

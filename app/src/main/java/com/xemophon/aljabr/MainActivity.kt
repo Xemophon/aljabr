@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,7 +21,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,10 +37,13 @@ import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.data.AppTheme
-import com.xemophon.aljabr.navigation.*
 import com.xemophon.aljabr.misc.SettingsViewModel
-import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import com.xemophon.aljabr.navigation.BasicCalcRoute
+import com.xemophon.aljabr.navigation.Calculus
+import com.xemophon.aljabr.navigation.Misc
+import com.xemophon.aljabr.navigation.ReferenceSheets
 import com.xemophon.aljabr.ui.components.HorizontalSeparator
+import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

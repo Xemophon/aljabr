@@ -55,12 +55,22 @@ import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IntegCalc(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.INTEGRATE
+    }
+
+    if (viewModel.showStepsSheet) {
+        com.xemophon.aljabr.ui.components.StepsBottomSheet(
+            steps = viewModel.stepsList,
+            isCalculating = viewModel.isCalculatingSteps,
+            sheetState = rememberModalBottomSheetState(),
+            onDismissRequest = { viewModel.showStepsSheet = false }
+        )
     }
 
     IntegCalcContent(
@@ -74,6 +84,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
         cursorIndex = viewModel.cursorIndex,
         steps = viewModel.stepsList,
         isCalculatingSteps = viewModel.isCalculatingSteps,
+        onShowStepsClick = { viewModel.showStepsSheet = true },
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
@@ -81,7 +92,6 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IntegCalcContent(
     displayText: String,
@@ -94,23 +104,13 @@ fun IntegCalcContent(
     cursorIndex: Int,
     steps: List<String> = emptyList(),
     isCalculatingSteps: Boolean = false,
+    onShowStepsClick: () -> Unit = {},
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isInverse by remember { mutableStateOf(false) }
-    var showStepsSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
-
-    if (showStepsSheet) {
-        com.xemophon.aljabr.ui.components.StepsBottomSheet(
-            steps = steps,
-            isCalculating = isCalculatingSteps,
-            sheetState = sheetState,
-            onDismissRequest = { showStepsSheet = false }
-        )
-    }
 
     CalculatorScaffold(
         title = { Text("Integrate") },
@@ -142,7 +142,7 @@ fun IntegCalcContent(
                         onFocusChange = onFocusChange,
                         onCursorIndexChange = onCursorIndexChange,
                         showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
-                        onShowStepsClick = { showStepsSheet = true }
+                        onShowStepsClick = onShowStepsClick
                     )
                 }
                 AdvancedButtonsGrid(

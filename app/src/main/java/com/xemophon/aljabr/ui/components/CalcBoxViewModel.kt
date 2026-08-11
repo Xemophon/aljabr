@@ -1,5 +1,6 @@
 package com.xemophon.aljabr.ui.components
 
+import android.app.Application
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -52,10 +53,9 @@ import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.data.SettingsRepository
+import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import android.app.Application
-import com.xemophon.aljabr.data.SymjaUtils
 
 @Composable
 fun CalcBox(
@@ -211,6 +211,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var precision by mutableIntStateOf(4)
     var showSteps by mutableStateOf(false)
         private set
+
+    var showStepsSheet by mutableStateOf(false)
 
     var integrationAxis by mutableStateOf("X") // "X" or "Y"
 
@@ -544,50 +546,49 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         stepsList.clear()
 
         // Standard calculation logic
-        if (resultText.isNotEmpty() && resultText != "Error") {
-            displayText = resultText
-            resultText = ""
-            cursorIndex = displayText.length
-        } else {
-            if (showSteps) {
-                viewModelScope.launch {
-                    isCalculatingSteps = true
-                    try {
-                        val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                            SymjaUtils.calculateNumericalWithSteps(displayText, useRadians, precision)
-                        }
-                        if (result != "Error" && result.isNotEmpty()) {
-                            displayText = result
-                            resultText = ""
-                            cursorIndex = displayText.length
-                            stepsList.addAll(steps)
-                        }
-                    } catch (e: Exception) {
-                        displayText = "Error"
-                        resultText = ""
-                        cursorIndex = displayText.length
-                    } finally {
-                        isCalculatingSteps = false
-                    }
-                }
-            } else {
+        if (showSteps) {
+            viewModelScope.launch {
+                isCalculatingSteps = true
+                showStepsSheet = true
                 try {
-                    val result = if (displayText.contains("j", ignoreCase = true)) {
-                        SymjaUtils.calculateNumerical(displayText, useRadians, precision)
-                    } else {
-                        val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                        CalcFuncs.formatResult(numResult, precision)
+                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        SymjaUtils.calculateNumericalWithSteps(displayText, useRadians, precision)
                     }
                     if (result != "Error" && result.isNotEmpty()) {
                         displayText = result
                         resultText = ""
                         cursorIndex = displayText.length
+                        stepsList.addAll(steps)
                     }
                 } catch (e: Exception) {
                     displayText = "Error"
                     resultText = ""
                     cursorIndex = displayText.length
+                } finally {
+                    isCalculatingSteps = false
                 }
+            }
+        } else if (resultText.isNotEmpty() && resultText != "Error") {
+            displayText = resultText
+            resultText = ""
+            cursorIndex = displayText.length
+        } else {
+            try {
+                val result = if (displayText.contains("j", ignoreCase = true)) {
+                    SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+                } else {
+                    val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
+                    CalcFuncs.formatResult(numResult, precision)
+                }
+                if (result != "Error" && result.isNotEmpty()) {
+                    displayText = result
+                    resultText = ""
+                    cursorIndex = displayText.length
+                }
+            } catch (e: Exception) {
+                displayText = "Error"
+                resultText = ""
+                cursorIndex = displayText.length
             }
         }
     }
@@ -599,6 +600,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (showSteps) {
             viewModelScope.launch {
                 isCalculatingSteps = true
+                showStepsSheet = true
                 try {
                     val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                         LimitsFunc.calculateLimitWithSteps(displayText, "x", targetText)
@@ -667,6 +669,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             if (showSteps) {
                 viewModelScope.launch {
                     isCalculatingSteps = true
+                    showStepsSheet = true
                     try {
                         val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                             IntegFunc.integrateIndefiniteWithSteps(displayText)
@@ -701,10 +704,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (showSteps) {
             viewModelScope.launch {
                 isCalculatingSteps = true
+                showStepsSheet = true
                 try {
-                    analysisResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        AnalysisFunc.fullAnalysis(displayText)
-                    }
                     val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                         DiffFunc.differentiateWithSteps(displayText)
                     }
@@ -712,6 +713,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                         resultText = result
                         stepsList.addAll(steps)
                     }
+                    isShowingResult = true
                 } catch (e: Exception) {
                     resultText = "Error"
                 } finally {
@@ -725,8 +727,22 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 if (res.isNotEmpty()) {
                     resultText = res
                 }
+                isShowingResult = true
             } catch (e: Exception) {
                 resultText = "Error"
+            }
+        }
+    }
+
+    fun runFullAnalysis() {
+        if (displayText.isEmpty() || displayText == "0") return
+        viewModelScope.launch {
+            try {
+                analysisResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    AnalysisFunc.fullAnalysis(displayText)
+                }
+            } catch (e: Exception) {
+                // Handle error if needed
             }
         }
     }

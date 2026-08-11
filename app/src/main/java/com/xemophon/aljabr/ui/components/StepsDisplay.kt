@@ -154,11 +154,26 @@ fun StepItem(number: Int, stepText: String) {
         )
         
         Column(modifier = Modifier.weight(1f)) {
-            val latexState = produceState<String?>(initialValue = null, stepText) {
-                // Step text is usually "input → output"
-                // We want to try rendering the whole thing or parts as LaTeX
+            val (hint, mathPart) = if (stepText.contains(": ")) {
+                val parts = stepText.split(": ", limit = 2)
+                parts[0] to parts[1]
+            } else {
+                null to stepText
+            }
+
+            if (hint != null) {
+                Text(
+                    text = hint,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            val latexState = produceState<String?>(initialValue = null, mathPart) {
                 val result = withContext(Dispatchers.Default) {
-                    SymjaUtils.toLaTeX(stepText)
+                    SymjaUtils.toLaTeX(mathPart)
                 }
                 value = result
             }
@@ -182,7 +197,7 @@ fun StepItem(number: Int, stepText: String) {
                 }
             } else {
                 Text(
-                    text = stepText,
+                    text = mathPart,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
                     color = MaterialTheme.colorScheme.onSurface
                 )

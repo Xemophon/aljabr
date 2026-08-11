@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,22 +37,30 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.LimitType
 import com.xemophon.aljabr.ui.components.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.LimitType
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Limits(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.LIMITS
+    }
+
+    if (viewModel.showStepsSheet) {
+        StepsBottomSheet(
+            steps = viewModel.stepsList,
+            isCalculating = viewModel.isCalculatingSteps,
+            sheetState = rememberModalBottomSheetState(),
+            onDismissRequest = { viewModel.showStepsSheet = false }
+        )
     }
 
     LimitsContent(
@@ -62,6 +72,7 @@ fun Limits(onOpenDrawer: () -> Unit) {
         cursorIndex = viewModel.cursorIndex,
         steps = viewModel.stepsList,
         isCalculatingSteps = viewModel.isCalculatingSteps,
+        onShowStepsClick = { viewModel.showStepsSheet = true },
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
@@ -69,7 +80,6 @@ fun Limits(onOpenDrawer: () -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LimitsContent(
     displayText: String,
@@ -80,23 +90,14 @@ fun LimitsContent(
     cursorIndex: Int,
     steps: List<String> = emptyList(),
     isCalculatingSteps: Boolean = false,
+    onShowStepsClick: () -> Unit = {},
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
     var isInverse by remember { mutableStateOf(false) }
-    var showStepsSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
 
-    if (showStepsSheet) {
-        StepsBottomSheet(
-            steps = steps,
-            isCalculating = isCalculatingSteps,
-            sheetState = sheetState,
-            onDismissRequest = { showStepsSheet = false }
-        )
-    }
 
     CalculatorScaffold(
         title = { Text("Limits") },
@@ -127,7 +128,7 @@ fun LimitsContent(
                         onFocusChange = onFocusChange,
                         onCursorIndexChange = onCursorIndexChange,
                         showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
-                        onShowStepsClick = { showStepsSheet = true }
+                        onShowStepsClick = onShowStepsClick
                     )
                 }
                 AdvancedButtonsGrid(

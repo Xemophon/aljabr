@@ -141,8 +141,8 @@ object SymjaUtils {
             .replace("Pi", "π")
             .replace("pi", "π")
             .replace("GoldenRatio", "φ")
-            .replace("I", "j")
-            .replace("i", "j")
+            .replace(Regex("(?<![a-zA-Z])I(?![a-zA-Z])"), "j")
+            .replace(Regex("(?<![a-zA-Z])i(?![a-zA-Z])"), "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
 
@@ -192,22 +192,88 @@ object SymjaUtils {
 
             try {
                 engine.isTraceMode = true
+                
+                // Try using the built-in Steps() function first for human-readable steps
+                try {
+                    // Try to get symbolic steps
+                    val stepsExpr = evaluator.eval("Steps($symjaCommand)")
+                    // In Symja, human-readable steps are usually returned as a List
+                    if (stepsExpr is IAST && stepsExpr.isList && stepsExpr.size() > 1) {
+                        for (i in 1 until stepsExpr.size()) {
+                            val step = stepsExpr.get(i)
+                            val stepStr = when {
+                                step is IAST && (step.isRule || step.head().toString() == "Rule") -> {
+                                    val hint = step.arg1().toString().removeSurrounding("\"")
+                                    val trans = formatResult(step.arg2().toString())
+                                    "$hint: $trans"
+                                }
+                                step is IAST && step.isList && step.size() >= 3 -> {
+                                    val hint = step.arg1().toString().removeSurrounding("\"")
+                                    val trans = formatResult(step.arg2().toString())
+                                    "$hint: $trans"
+                                }
+                                else -> formatResult(step.toString())
+                            }
+                            if (stepStr.isNotEmpty() && !stepStr.contains("Steps(")) {
+                                steps.add(stepStr)
+                            }
+                        }
+                        if (steps.isNotEmpty()) {
+                            val finalRes = evaluator.eval(symjaCommand).toString()
+                            return Pair(finalRes, steps)
+                        }
+                    }
+                } catch (_: Exception) {}
+
                 engine.stepListener = object : IEvalStepListener {
                     override fun getHint(): String? = null
                     override fun setHint(hint: String?) {}
                     override fun setUp(expr: IExpr?, recursionDepth: Int, stackMarker: Any?) {}
                     override fun tearDown(result: IExpr, recursionDepth: Int, commitTraceFrame: Boolean, stackMarker: Any?) {}
                     override fun add(inputExpr: IExpr?, resultExpr: IExpr?, recursionDepth: Int, iterationCounter: Long, listOfHints: IAST?) {
-                        if (inputExpr != null && resultExpr != null && inputExpr != resultExpr && steps.size < maxSteps) {
-                            val step = "${formatResult(inputExpr.toString())} → ${formatResult(resultExpr.toString())}"
-                            if (steps.isEmpty() || steps.last() != step) {
-                                steps.add(step)
+                        if (inputExpr != null && resultExpr != null && steps.size < maxSteps) {
+                            val inputStr = inputExpr.toString()
+                            val resultStr = resultExpr.toString()
+                            if (inputStr != resultStr && !inputStr.startsWith("TeXForm") && !resultStr.startsWith("TeXForm")) {
+                                val step = "${formatResult(inputStr)} → ${formatResult(resultStr)}"
+                                if (steps.isEmpty() || steps.last() != step) {
+                                    steps.add(step)
+                                }
                             }
                         }
                     }
                 }
 
                 val result = evaluator.eval(symjaCommand).toString()
+                
+                // Fallback to Trace if no steps were captured by the listener
+                if (steps.isEmpty()) {
+                    try {
+                        // Use Trace with a higher depth to ensure we see transformations
+                        val traceExpr = evaluator.eval("Trace[$symjaCommand, _ -> _, TraceInternal -> True]")
+                        if (traceExpr is IAST) {
+                            val traceSteps = mutableListOf<String>()
+                            flattenTrace(traceExpr, traceSteps)
+                            
+                            val filteredTrace = traceSteps.filter { 
+                                it != symjaCommand && it != result && !it.startsWith("Trace") 
+                            }.distinct()
+
+                            if (filteredTrace.isNotEmpty()) {
+                                var prev = symjaCommand
+                                for (current in filteredTrace) {
+                                    if (prev != current) {
+                                        steps.add("${formatResult(prev)} → ${formatResult(current)}")
+                                    }
+                                    prev = current
+                                    if (steps.size >= maxSteps) break
+                                }
+                                steps.add("${formatResult(prev)} → ${formatResult(result)}")
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
                 Pair(result, steps)
             } catch (e: Throwable) {
                 Pair("Error", emptyList())
@@ -250,16 +316,36 @@ object SymjaUtils {
                     override fun setUp(expr: IExpr?, recursionDepth: Int, stackMarker: Any?) {}
                     override fun tearDown(result: IExpr, recursionDepth: Int, commitTraceFrame: Boolean, stackMarker: Any?) {}
                     override fun add(inputExpr: IExpr?, resultExpr: IExpr?, recursionDepth: Int, iterationCounter: Long, listOfHints: IAST?) {
-                        if (inputExpr != null && resultExpr != null && inputExpr != resultExpr && steps.size < maxSteps) {
-                            val step = "${formatResult(inputExpr.toString())} → ${formatResult(resultExpr.toString())}"
-                            if (steps.isEmpty() || steps.last() != step) {
-                                steps.add(step)
+                        if (inputExpr != null && resultExpr != null && steps.size < maxSteps) {
+                            val inputStr = inputExpr.toString()
+                            val resultStr = resultExpr.toString()
+                            if (inputStr != resultStr && !inputStr.startsWith("N(") && !resultStr.startsWith("N(")) {
+                                val step = "${formatResult(inputStr)} → ${formatResult(resultStr)}"
+                                if (steps.isEmpty() || steps.last() != step) {
+                                    steps.add(step)
+                                }
                             }
                         }
                     }
                 }
 
                 val result = evaluator.eval("N($cleaned, $precision + 2)").toString()
+                
+                if (steps.isEmpty()) {
+                    try {
+                        val traceExpr = evaluator.eval("Trace[N[$cleaned, $precision + 2]]")
+                        if (traceExpr is IAST) {
+                            val traceSteps = mutableListOf<String>()
+                            flattenTrace(traceExpr, traceSteps)
+                            val uniqueSteps = traceSteps.distinct()
+                            for (i in 0 until uniqueSteps.size - 1) {
+                                steps.add("${formatResult(uniqueSteps[i])} → ${formatResult(uniqueSteps[i+1])}")
+                                if (steps.size >= maxSteps) break
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
                 val d = result.toDoubleOrNull()
                 val resFormatted = if (d != null) {
                     CalcFuncs.formatResult(d, precision)
@@ -273,6 +359,44 @@ object SymjaUtils {
             } finally {
                 engine.isTraceMode = oldTrace
                 engine.stepListener = oldListener
+            }
+        }
+    }
+
+    private fun flattenTrace(expr: IExpr, steps: MutableList<String>) {
+        if (expr is IAST) {
+            // Symja Trace returns a list where some elements are sub-lists (nested traces)
+            // and others are the expressions themselves.
+            for (i in 1 until expr.size()) {
+                val arg = expr.get(i)
+                if (arg is IAST && arg.isList) {
+                    flattenTrace(arg, steps)
+                } else {
+                    val s = arg.toString()
+                    // Filter out very noisy internal functions
+                    val noisy = listOf(
+                        "FreeQ", "MemberQ", "Type", "IAST", "Rule", "Set", "SetDelayed", 
+                        "Module", "Condition", "Rubj", "èqq", "ùumq", "LjstQ", "PolynomjalQ",
+                        "If", "SameQ", "IntegerQ", "NumberQ", "SymbolQ", "CompoundExpression",
+                        "Block", "Catch", "Throw", "Return", "Break", "Continue", "True", "False",
+                        "ReplaceAll", "Replace", "Map", "Apply", "Flatten", "Variables", "Evaluate"
+                    )
+                    // Only keep steps that look like math and aren't internal logic
+                    if (s.isNotEmpty() && !s.startsWith("Trace") && noisy.none { s.contains(it) }) {
+                        // Check if it's a structural transformation (contains operators or variables)
+                        val isMath = s.any { it in "+-*/^()[]" } || s.any { it.isLowerCase() }
+                        // Also ensure it's not just a single variable or number (too granular)
+                        if (isMath && s.length > 1) {
+                            steps.add(s)
+                        }
+                    }
+                }
+            }
+        } else {
+            val s = expr.toString()
+            val noisy = listOf("FreeQ", "MemberQ", "Rubj", "èqq", "ùumq")
+            if (s.isNotEmpty() && noisy.none { s.contains(it) } && s.length > 1) {
+                steps.add(s)
             }
         }
     }

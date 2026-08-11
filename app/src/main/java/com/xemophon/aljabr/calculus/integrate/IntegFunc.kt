@@ -92,7 +92,8 @@ object IntegFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return Pair("", emptyList())
 
-            val (result, steps) = SymjaUtils.evalWithSteps("Simplify[Integrate[$cleaned, x]]")
+            val (rawResult, steps) = SymjaUtils.evalWithSteps("Integrate[$cleaned, x]")
+            val result = SymjaUtils.evaluator.eval("Simplify[$rawResult]").toString()
             var resStr = result
 
             // If Symja couldn't solve it, it returns the input string Integrate(...)
