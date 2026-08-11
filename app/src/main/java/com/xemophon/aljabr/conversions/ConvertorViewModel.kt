@@ -120,6 +120,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             Constants.E -> "e"
             Constants.I -> "j"
             Constants.PHI -> "φ"
+            Constants.INF -> "∞"
         }
         handleSymbol(toInsert)
     }

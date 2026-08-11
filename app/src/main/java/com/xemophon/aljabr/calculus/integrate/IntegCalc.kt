@@ -70,6 +70,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
         resultText = viewModel.resultText,
         currentFocus = viewModel.currentFocus,
         integType = viewModel.integType,
+        integrationAxis = viewModel.integrationAxis,
         cursorIndex = viewModel.cursorIndex,
         steps = viewModel.stepsList,
         isCalculatingSteps = viewModel.isCalculatingSteps,
@@ -89,6 +90,7 @@ fun IntegCalcContent(
     resultText: String,
     currentFocus: CalculatorFocus,
     integType: IntegralType,
+    integrationAxis: String = "X",
     cursorIndex: Int,
     steps: List<String> = emptyList(),
     isCalculatingSteps: Boolean = false,
@@ -145,7 +147,7 @@ fun IntegCalcContent(
                 }
                 AdvancedButtonsGrid(
                     isInverse = isInverse,
-                    gridMode = AdvancedGridMode.Integration(integType),
+                    gridMode = AdvancedGridMode.Integration(integType, integrationAxis),
                     onToggleInverse = { isInverse = !isInverse },
                     onAction = onAction
                 )
@@ -204,7 +206,7 @@ fun IntegDisplay(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        if (integType == IntegralType.DEFINITE) {
+                        if (integType != IntegralType.INDEFINITE) {
                             // Upper limit b
                             Text(
                                 text = upper.ifEmpty { "b" },
@@ -253,12 +255,19 @@ fun IntegDisplay(
                                 base.ifEmpty { "f(x)" }
                             }
 
-                        val displayText = "$textWithCursor dx"
+                        val displayText = when (integType) {
+                            IntegralType.DEFINITE, IntegralType.INDEFINITE -> "$textWithCursor dx"
+                            IntegralType.ARC -> "√[1 + ($textWithCursor)']² dx"
+                            IntegralType.XVOL -> "π[$textWithCursor]² dx"
+                            IntegralType.YVOL -> "2πx|$textWithCursor| dx"
+                            IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² dx"
+                            IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² dx"
+                        }
 
                         Text(
                             text = displayText,
                             style = MaterialTheme.typography.displayMedium.copy(
-                                fontSize = if (expression.length > 10) 32.sp else 48.sp
+                                fontSize = if (displayText.length > 15) 24.sp else if (displayText.length > 10) 32.sp else 48.sp
                             ),
                             color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
@@ -346,6 +355,7 @@ fun IntegPreview() {
             resultText = resultText,
             currentFocus = currentFocus,
             integType = integType,
+            integrationAxis = "X",
             cursorIndex = cursorIndex,
             onFocusChange = { currentFocus = it },
             onCursorIndexChange = { cursorIndex = it },

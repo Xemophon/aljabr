@@ -50,7 +50,8 @@ object SymjaUtils {
             .replace("sin", "Sin", ignoreCase = true)
             .replace("cos", "Cos", ignoreCase = true)
             .replace("tan", "Tan", ignoreCase = true)
-            .replace("log", "Log10", ignoreCase = true)
+            .replace("log10", "Log10", ignoreCase = true)
+            .replace(Regex("(?<![a-zA-Z])log(?!10)", RegexOption.IGNORE_CASE), "Log10")
             .replace("ln", "Log", ignoreCase = true)
     }
 
@@ -106,9 +107,8 @@ object SymjaUtils {
                     .replace("\\operatorname{arcsinh}", "\\operatorname{asinh}")
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
-                    .replace("\\log", "\\ln")
-                    .replace("\\ln (\\left|", "\\ln \\left|")
-                    .replace("\\right|)", "\\right|")
+                    .replace(Regex("\\\\log(?!_)"), "\\ln")
+                    .replace(Regex("\\\\ln\\s*\\(\\s*\\\\left\\|\\s*(.+?)\\s*\\\\right\\|\\s*\\)"), "\\ln\\left|$1\\right|")
 
                 return result
             } catch (e: Throwable) {
@@ -121,9 +121,18 @@ object SymjaUtils {
         var result = resStr
             .replace("ComplexInfinity", "∞")
             .replace("Infinity", "∞")
-            .replace("Log10", "log")
-            .replace("Log", "ln")
-            .replace("ArcSin", "asin")
+        
+        // Handle Log(base, x) or Log(x)
+        // Log10[x] -> log(x)
+        // Log[10, x] -> log(x)
+        // Log[x] -> ln(x)
+        // Log[b, x] -> log(x, b)
+        result = result.replace(Regex("Log10\\[([^]]+)]"), "log($1)")
+            .replace(Regex("Log\\[10,\\s*([^]]+)]"), "log($1)")
+            .replace(Regex("Log\\[([^,]+)]"), "ln($1)")
+            .replace(Regex("Log\\[([^,]+),\\s*([^]]+)]"), "log($2, $1)")
+
+        result = result.replace("ArcSin", "asin")
             .replace("ArcCos", "acos")
             .replace("ArcTan", "atan")
             .replace("Sin", "sin")
@@ -141,11 +150,10 @@ object SymjaUtils {
         result = result.replace("[", "(")
             .replace("]", ")")
 
-        // Then handle Abs with pipe notation
-        result = result.replace(Regex("Abs\\(([^)]+)\\)"), "|$1|")
-            .replace("ln(|", "ln|")
-            .replace("log(|", "log|")
-            .replace("|)", "|")
+        // Safely strip brackets around absolute values to avoid unbalanced brackets
+        result = result.replace(Regex("ln\\(\\|([^|]+)\\|\\)"), "ln|$1|")
+            .replace(Regex("log\\(\\|([^|]+)\\|\\)"), "log|$1|")
+            .replace(Regex("Abs\\(([^)]+)\\)"), "|$1|")
             .replace("*", " × ")
             .replace("  ", " ")
             .replace(",", ", ")

@@ -220,7 +220,7 @@ object CalcFuncs {
                     "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
                     "cos" -> if (useRadians) cos(arg) else cos(Math.toRadians(arg))
                     "tan" -> if (useRadians) tan(arg) else tan(Math.toRadians(arg))
-                    "log" -> log10(arg)
+                    "log", "log10" -> log10(arg)
                     "asin" -> if (useRadians) asin(arg) else Math.toDegrees(asin(arg))
                     "acos" -> if (useRadians) acos(arg) else Math.toDegrees(acos(arg))
                     "atan" -> if (useRadians) atan(arg) else Math.toDegrees(atan(arg))

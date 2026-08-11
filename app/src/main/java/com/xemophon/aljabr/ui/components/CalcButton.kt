@@ -9,8 +9,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -79,10 +85,10 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
 
 enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL }
 
-enum class Constants { PI, I, PHI, E }
+enum class Constants { PI, I, PHI, E, INF}
 enum class Variables { X, Y }
 enum class LimitType { FINITE, INFINITE }
-enum class IntegralType { DEFINITE, INDEFINITE }
+enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL}
 
 val ShortButtonGrid : MutableList<MutableList<CalcButtonAction>> = mutableListOf(
     mutableListOf(
@@ -453,6 +459,43 @@ fun CalcButton(
                     style = textStyle,
                     color = animatedContentColor
                 )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AdditionalButtons(
+    buttons: List<@Composable () -> Unit>,
+    modifier: Modifier = Modifier
+) {
+    if (buttons.isEmpty()) return
+
+    val pageCount = (buttons.size + 2) / 3
+    val pagerState = rememberPagerState(pageCount = { pageCount })
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) { page ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+        ) {
+            val startIndex = page * 3
+            val endIndex = minOf(startIndex + 3, buttons.size)
+            for (i in startIndex until endIndex) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    buttons[i]()
+                }
+            }
+            repeat(3 - (endIndex - startIndex)) {
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

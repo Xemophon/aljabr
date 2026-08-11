@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                                 )
                             }
-                            HorizontalSeparator(text = "Reference Sheets")
+                            HorizontalSeparator(text = "Utilities")
                             ReferenceSheets.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },

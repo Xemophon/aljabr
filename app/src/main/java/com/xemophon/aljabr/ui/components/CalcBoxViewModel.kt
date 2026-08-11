@@ -212,6 +212,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var showSteps by mutableStateOf(false)
         private set
 
+    var integrationAxis by mutableStateOf("X") // "X" or "Y"
+
     var isCalculatingSteps by mutableStateOf(false)
         private set
 
@@ -286,7 +288,25 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             }
 
             is CalcButtonAction.Integrals -> {
-                switchIntegMode(action.type)
+                val isSameType = when (action.type) {
+                    IntegralType.XVOL, IntegralType.YVOL -> integType == IntegralType.XVOL || integType == IntegralType.YVOL
+                    IntegralType.XSURF, IntegralType.YSURF -> integType == IntegralType.XSURF || integType == IntegralType.YSURF
+                    else -> action.type == integType
+                }
+
+                if (isSameType && (action.type == IntegralType.XVOL || action.type == IntegralType.YVOL ||
+                            action.type == IntegralType.XSURF || action.type == IntegralType.YSURF)) {
+                    integrationAxis = if (integrationAxis == "X") "Y" else "X"
+                    integType = when (integType) {
+                        IntegralType.XVOL -> IntegralType.YVOL
+                        IntegralType.YVOL -> IntegralType.XVOL
+                        IntegralType.XSURF -> IntegralType.YSURF
+                        IntegralType.YSURF -> IntegralType.XSURF
+                        else -> integType
+                    }
+                } else {
+                    switchIntegMode(action.type)
+                }
             }
 
             is CalcButtonAction.Graph -> { /* Handled in UI */
@@ -447,6 +467,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             Constants.E -> "e"
             Constants.PHI -> "φ"
             Constants.I -> "j"
+            Constants.INF -> "∞"
         }
 
         insertText(toInsert, applyImplicitMultiplication = true)
@@ -616,7 +637,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         stepsList.clear()
 
-        if (integType == IntegralType.DEFINITE) {
+        if (integType != IntegralType.INDEFINITE) {
             try {
                 // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
                 val lower = CalcFuncs.calculateExpression(lowerLimitText)
@@ -627,14 +648,20 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     return
                 }
 
-                val result = IntegFunc.integrate(displayText, lower, upper, useRadians = useRadians)
+                val result = IntegFunc.integrate(
+                    expression = displayText,
+                    lower = lower,
+                    upper = upper,
+                    useRadians = useRadians,
+                    type = integType
+                )
                 if (result.isNaN()) {
                     resultText = "No convergence"
                 } else {
                     resultText = CalcFuncs.formatResult(result, precision)
                 }
             } catch (e: Exception) {
-                resultText = "Definite Error"
+                resultText = "Calculation Error"
             }
         } else {
             if (showSteps) {
@@ -734,7 +761,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private fun switchIntegMode(type: IntegralType) {
         integType = type
-        if (type == IntegralType.DEFINITE) {
+        if (type == IntegralType.DEFINITE || type == IntegralType.ARC || 
+            type == IntegralType.XVOL || type == IntegralType.YVOL || 
+            type == IntegralType.XSURF || type == IntegralType.YSURF) {
             currentFocus = CalculatorFocus.INTEG_LOWER
         } else {
             currentFocus = CalculatorFocus.EXPRESSION

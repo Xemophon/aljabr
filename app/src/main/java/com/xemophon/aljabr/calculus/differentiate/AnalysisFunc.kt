@@ -49,8 +49,8 @@ object AnalysisFunc {
 
             if (vars.size == 1) {
                 val v = vars[0]
-                val f1Raw = eval.eval("D[$cleaned, $v]").toString()
-                val f2Raw = eval.eval("D[$cleaned, {$v, 2}]").toString()
+                val f1Raw = eval.eval("Simplify[D[$cleaned, $v]]").toString()
+                val f2Raw = eval.eval("Simplify[D[$cleaned, {$v, 2}]]").toString()
                 
                 val statPointsRes = try {
                     eval.eval("Solve[D[$cleaned, $v] == 0, $v]").toString()
@@ -84,11 +84,11 @@ object AnalysisFunc {
                 val x = vars.find { it == "x" } ?: vars[0]
                 val y = vars.find { it == "y" && it != x } ?: vars[1]
                 
-                val fxRaw = eval.eval("D[$cleaned, $x]").toString()
-                val fyRaw = eval.eval("D[$cleaned, $y]").toString()
-                val fxxRaw = eval.eval("D[$cleaned, {$x, 2}]").toString()
-                val fyyRaw = eval.eval("D[$cleaned, {$y, 2}]").toString()
-                val fxyRaw = eval.eval("D[$cleaned, $x, $y]").toString()
+                val fxRaw = eval.eval("Simplify[D[$cleaned, $x]]").toString()
+                val fyRaw = eval.eval("Simplify[D[$cleaned, $y]]").toString()
+                val fxxRaw = eval.eval("Simplify[D[$cleaned, {$x, 2}]]").toString()
+                val fyyRaw = eval.eval("Simplify[D[$cleaned, {$y, 2}]]").toString()
+                val fxyRaw = eval.eval("Simplify[D[$cleaned, $x, $y]]").toString()
                 
                 val critPointsRes = try {
                     eval.eval("Solve[{D[$cleaned, $x] == 0, D[$cleaned, $y] == 0}, {$x, $y}]").toString()
