@@ -25,7 +25,7 @@ object LimitsFunc {
                 else -> SymjaUtils.prepareForSymja(target)
             }
 
-            val symjaCommand = "Limit($cleanedExpr, $variable -> $cleanedTarget)"
+            val symjaCommand = "Simplify[Limit($cleanedExpr, $variable -> $cleanedTarget)]"
             val (result, steps) = SymjaUtils.evalWithSteps(symjaCommand)
 
             val resStr = result

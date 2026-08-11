@@ -12,7 +12,8 @@ object IntegFunc {
      */
     fun warmUp() {
         try {
-            SymjaUtils.evaluator.eval("1+1")
+            // Evaluating a simple integral triggers Rubi rule loading
+            SymjaUtils.evaluator.eval("Integrate[x, x]")
         } catch (_: Throwable) {
         }
     }
@@ -92,9 +93,9 @@ object IntegFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return Pair("", emptyList())
 
-            val (rawResult, steps) = SymjaUtils.evalWithSteps("Integrate[$cleaned, x]")
-            val result = SymjaUtils.evaluator.eval("Simplify[$rawResult]").toString()
-            var resStr = result
+            // Request steps for both integration and simplification in one go
+            val (rawResult, steps) = SymjaUtils.evalWithSteps("Simplify[Integrate[$cleaned, x]]")
+            var resStr = rawResult
 
             // If Symja couldn't solve it, it returns the input string Integrate(...)
             if (resStr.contains("Integrate", ignoreCase = true)) {
