@@ -1,10 +1,13 @@
 package com.xemophon.aljabr.calculus.integrate
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
+import com.xemophon.aljabr.data.CalculusEngine
+import com.xemophon.aljabr.data.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.IntegralType
 
 object IntegFunc {
+    private val calculusEngine = CalculusEngine()
 
     /**
      * Warms up the CAS engine by performing a dummy evaluation.
@@ -12,7 +15,6 @@ object IntegFunc {
      */
     fun warmUp() {
         try {
-            // Evaluating a simple integral triggers Rubi rule loading
             SymjaUtils.evaluator.eval("Integrate[x, x]")
         } catch (_: Throwable) {
         }
@@ -111,8 +113,14 @@ object IntegFunc {
         }
     }
 
-    fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<String>> {
-        return Pair(integrateIndefinite(expression), emptyList())
+    suspend fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<CalculusStep>> {
+        return try {
+            val steps = calculusEngine.integrateWithSteps(expression)
+            val finalResult = integrateIndefinite(expression)
+            Pair(finalResult, steps)
+        } catch (_: Exception) {
+            Pair(integrateIndefinite(expression), emptyList())
+        }
     }
 
     private fun formatResult(resStr: String): String {

@@ -52,6 +52,7 @@ import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
+import com.xemophon.aljabr.data.CalculusStep
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.flow.collectLatest
@@ -219,7 +220,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var isCalculatingSteps by mutableStateOf(false)
         private set
 
-    val stepsList = mutableStateListOf<String>()
+    val stepsList = mutableStateListOf<CalculusStep>()
 
     private var lastExpression = ""
     private var isShowingResult = false
@@ -545,30 +546,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         stepsList.clear()
 
-        // Standard calculation logic
-        if (showSteps) {
-            viewModelScope.launch {
-                isCalculatingSteps = true
-                showStepsSheet = true
-                try {
-                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        SymjaUtils.calculateNumericalWithSteps(displayText, useRadians, precision)
-                    }
-                    if (result != "Error" && result.isNotEmpty()) {
-                        displayText = result
-                        resultText = ""
-                        cursorIndex = displayText.length
-                        stepsList.addAll(steps)
-                    }
-                } catch (e: Exception) {
-                    displayText = "Error"
-                    resultText = ""
-                    cursorIndex = displayText.length
-                } finally {
-                    isCalculatingSteps = false
-                }
-            }
-        } else if (resultText.isNotEmpty() && resultText != "Error") {
+        // Standard calculation logic - No steps needed
+        if (resultText.isNotEmpty() && resultText != "Error") {
             displayText = resultText
             resultText = ""
             cursorIndex = displayText.length
@@ -597,40 +576,16 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (displayText.isBlank() || targetText.isBlank()) return
         stepsList.clear()
 
-        if (showSteps) {
-            viewModelScope.launch {
-                isCalculatingSteps = true
-                showStepsSheet = true
-                try {
-                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        LimitsFunc.calculateLimitWithSteps(displayText, "x", targetText)
-                    }
-                    if (result.isNotEmpty()) {
-                        resultText = result
-                        stepsList.addAll(steps)
-                    }
-                    lastExpression = displayText
-                    cursorIndex = -1
-                    isShowingResult = true
-                } catch (e: Exception) {
-                    resultText = "Error"
-                    isShowingResult = false
-                } finally {
-                    isCalculatingSteps = false
-                }
-            }
-        } else {
-            try {
-                val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
+        try {
+            val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
 
-                lastExpression = displayText
-                resultText = res
-                cursorIndex = -1
-                isShowingResult = true
-            } catch (e: Exception) {
-                resultText = "Error"
-                isShowingResult = false
-            }
+            lastExpression = displayText
+            resultText = res
+            cursorIndex = -1
+            isShowingResult = true
+        } catch (e: Exception) {
+            resultText = "Error"
+            isShowingResult = false
         }
     }
 
@@ -676,7 +631,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                         }
                         if (result.isNotEmpty()) {
                             resultText = result
-                            stepsList.addAll(steps)
+                            if (steps.isNotEmpty()) {
+                                stepsList.addAll(steps)
+                                showStepsSheet = true
+                            }
                         }
                     } catch (e: Exception) {
                         resultText = "Indefinite Error"
@@ -711,7 +669,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     }
                     if (result.isNotEmpty()) {
                         resultText = result
-                        stepsList.addAll(steps)
+                        if (steps.isNotEmpty()) {
+                            stepsList.addAll(steps)
+                            showStepsSheet = true
+                        }
                     }
                     isShowingResult = true
                 } catch (e: Exception) {

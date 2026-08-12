@@ -47,6 +47,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
+import com.xemophon.aljabr.data.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
@@ -106,7 +107,7 @@ fun DiffCalcContent(
     resultText: String = "",
     diffGridMode: String,
     analysisResult: AnalysisResult?,
-    steps: List<String> = emptyList(),
+    steps: List<CalculusStep> = emptyList(),
     isCalculatingSteps: Boolean = false,
     onShowStepsClick: () -> Unit = {},
     onFocusChange: (CalculatorFocus) -> Unit,
@@ -177,7 +178,7 @@ fun DiffCalcContent(
 @Composable
 fun AnalysisReport(
     result: AnalysisResult,
-    steps: List<String> = emptyList(),
+    steps: List<CalculusStep> = emptyList(),
     isCalculatingSteps: Boolean = false,
     onShowStepsClick: () -> Unit = {},
     onClear: () -> Unit

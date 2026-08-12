@@ -129,6 +129,12 @@ object SymjaUtils {
             .replace("ComplexInfinity", "∞")
             .replace("Infinity", "∞")
         
+        // Handle Calculus notations specifically for steps
+        try {
+            result = result.replace(Regex("""D\[(.+?),\s*(.+?)]"""), "d/d$2($1)")
+                .replace(Regex("""Integrate\[(.+?),\s*(.+?)]"""), "∫($1) d$2")
+        } catch (_: Exception) {}
+
         // Handle Log(base, x) or Log(x)
         // Log10[x] -> log(x)
         // Log[10, x] -> log(x)
@@ -149,12 +155,23 @@ object SymjaUtils {
             .replace("Sin", "sin")
             .replace("Cos", "cos")
             .replace("Tan", "tan")
+            .replace("Sec", "sec")
+            .replace("Csc", "csc")
+            .replace("Cot", "cot")
             .replace("Pi", "π")
             .replace("pi", "π")
             .replace("GoldenRatio", "φ")
             .replace(Regex("""(?<![a-zA-Z])I(?![a-zA-Z])"""), "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
+
+        // Handle structural leaking
+        result = result.replace("Plus", "")
+            .replace("Times", "")
+            .replace("Power", "")
+            .replace("Rational", "")
+            .replace("Subtract", "")
+            .replace("Divide", "")
 
         // First handle brackets
         result = result.replace("[", "(")
@@ -221,21 +238,5 @@ object SymjaUtils {
         }
         
         return results.distinct()
-    }
-
-    fun evalWithSteps(symjaCommand: String): Pair<String, List<String>> {
-        return synchronized(evaluator) {
-            try {
-                val evalResult = evaluator.eval(symjaCommand).toString()
-                Pair(evalResult, emptyList())
-            } catch (_: Throwable) {
-                Pair("Error", emptyList())
-            }
-        }
-    }
-
-    fun calculateNumericalWithSteps(expression: String, useRadians: Boolean, precision: Int = 4): Pair<String, List<String>> {
-        val result = calculateNumerical(expression, useRadians, precision)
-        return Pair(result, emptyList())
     }
 }

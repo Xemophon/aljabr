@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,7 +28,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -37,14 +37,12 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
-import com.xemophon.aljabr.data.SymjaUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.xemophon.aljabr.data.CalculusStep
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StepsBottomSheet(
-    steps: List<String>,
+    steps: List<CalculusStep>,
     isCalculating: Boolean,
     sheetState: SheetState,
     onDismissRequest: () -> Unit
@@ -119,7 +117,7 @@ fun StepsBottomSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     itemsIndexed(steps) { index, step ->
-                        StepItem(index + 1, step)
+                        CalculusStepItem(index + 1, step)
                         if (index < steps.size - 1) {
                             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 Icon(
@@ -139,11 +137,11 @@ fun StepsBottomSheet(
 }
 
 @Composable
-fun StepItem(number: Int, stepText: String) {
+fun CalculusStepItem(number: Int, step: CalculusStep) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.Top
     ) {
         Text(
@@ -154,59 +152,47 @@ fun StepItem(number: Int, stepText: String) {
         )
         
         Column(modifier = Modifier.weight(1f)) {
-            val (hint, mathPart) = if (stepText.contains(": ")) {
-                val parts = stepText.split(": ", limit = 2)
-                parts[0] to parts[1]
-            } else {
-                null to stepText
-            }
+            Text(
+                text = step.title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
 
-            if (hint != null) {
-                Text(
-                    text = hint,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 4.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LatexView(step.latexInput)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.padding(horizontal = 8.dp).size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                LatexView(step.latexOutput)
             }
-
-            val latexState = produceState<String?>(initialValue = null, mathPart) {
-                val result = withContext(Dispatchers.Default) {
-                    SymjaUtils.toLaTeX(mathPart)
-                }
-                value = result
-            }
-
-            val latexValue = latexState.value
-
-            if (latexValue != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    Latex(
-                        latex = latexValue,
-                        config = LatexConfig(
-                            fontSize = 18.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
-                            mathFont = MathFont.KaTeXTTF
-                        )
-                    )
-                }
-            } else {
-                Text(
-                    text = mathPart,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
+            
+            Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
         }
     }
+}
+
+@Composable
+fun LatexView(latex: String) {
+    Latex(
+        latex = latex,
+        config = LatexConfig(
+            fontSize = 18.sp,
+            theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
+            mathFont = MathFont.KaTeXTTF
+        )
+    )
 }

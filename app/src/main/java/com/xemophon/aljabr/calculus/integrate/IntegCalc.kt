@@ -42,6 +42,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
+import com.xemophon.aljabr.data.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
@@ -51,6 +52,7 @@ import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.IntegralType
+import com.xemophon.aljabr.ui.components.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -65,7 +67,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
     }
 
     if (viewModel.showStepsSheet) {
-        com.xemophon.aljabr.ui.components.StepsBottomSheet(
+        StepsBottomSheet(
             steps = viewModel.stepsList,
             isCalculating = viewModel.isCalculatingSteps,
             sheetState = rememberModalBottomSheetState(),
@@ -102,7 +104,7 @@ fun IntegCalcContent(
     integType: IntegralType,
     integrationAxis: String = "X",
     cursorIndex: Int,
-    steps: List<String> = emptyList(),
+    steps: List<CalculusStep> = emptyList(),
     isCalculatingSteps: Boolean = false,
     onShowStepsClick: () -> Unit = {},
     onFocusChange: (CalculatorFocus) -> Unit,
