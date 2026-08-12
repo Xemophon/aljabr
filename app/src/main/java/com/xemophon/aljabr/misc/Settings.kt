@@ -110,7 +110,6 @@ fun SettingsContent(
     val colorSchemeType by viewModel.colorScheme.collectAsState()
     val useRadians by viewModel.useRadians.collectAsState()
     val precision by viewModel.precision.collectAsState()
-    val showSteps by viewModel.showSteps.collectAsState()
 
     val isDarkTheme = when (theme) {
         AppTheme.LIGHT -> false
@@ -365,17 +364,19 @@ fun SettingsContent(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Step-by-Step Explanations",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                     Text(
-                        text = "Show intermediate calculation steps (may be slower)",
+                        text = "Coming soon: detailed logic steps",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
                 Switch(
-                    checked = showSteps,
-                    onCheckedChange = { viewModel.setShowSteps(it) }
+                    checked = false,
+                    onCheckedChange = { },
+                    enabled = false
                 )
             }
 

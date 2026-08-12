@@ -14,13 +14,9 @@ object DiffFunc {
     }
 
     fun differentiate(expression: String): String {
-        return differentiateWithSteps(expression).first
-    }
-
-    fun differentiateWithSteps(expression: String): Pair<String, List<String>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            if (cleaned.isBlank()) return Pair("", emptyList())
+            if (cleaned.isBlank()) return ""
 
             val eval = SymjaUtils.evaluator
             val varsExpr = eval.eval("Variables[$cleaned]")
@@ -30,16 +26,19 @@ object DiffFunc {
             }
             val v = if (vars.size == 1) vars[0] else "x"
 
-            val (rawResult, steps) = SymjaUtils.evalWithSteps("Simplify[D[$cleaned, $v]]")
-            val resStr = rawResult
+            val resStr = eval.eval("Simplify[D[$cleaned, $v]]").toString()
 
             if (resStr.contains("D", ignoreCase = true)) {
-                return Pair("d/d$v($expression)", emptyList())
+                return "d/d$v($expression)"
             }
 
-            Pair(SymjaUtils.formatResult(resStr), steps)
-        } catch (e: Throwable) {
-            Pair("Error", emptyList())
+            SymjaUtils.formatResult(resStr)
+        } catch (_: Throwable) {
+            "Error"
         }
+    }
+
+    fun differentiateWithSteps(expression: String): Pair<String, List<String>> {
+        return Pair(differentiate(expression), emptyList())
     }
 }

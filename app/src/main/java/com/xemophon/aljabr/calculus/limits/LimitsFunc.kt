@@ -9,14 +9,6 @@ object LimitsFunc {
         variable: String = "x",
         target: String
     ): String {
-        return calculateLimitWithSteps(expression, variable, target).first
-    }
-
-    fun calculateLimitWithSteps(
-        expression: String,
-        variable: String = "x",
-        target: String
-    ): Pair<String, List<String>> {
         return try {
             val cleanedExpr = SymjaUtils.prepareForSymja(expression)
             val cleanedTarget = when (target) {
@@ -26,16 +18,23 @@ object LimitsFunc {
             }
 
             val symjaCommand = "Simplify[Limit($cleanedExpr, $variable -> $cleanedTarget)]"
-            val (result, steps) = SymjaUtils.evalWithSteps(symjaCommand)
+            val result = SymjaUtils.evaluator.eval(symjaCommand).toString()
 
-            val resStr = result
-            if (resStr.contains("Limit") || resStr.contains("Indeterminate")) {
-                Pair("DNE", emptyList())
+            if (result.contains("Limit") || result.contains("Indeterminate")) {
+                "DNE"
             } else {
-                Pair(SymjaUtils.formatResult(resStr), steps)
+                SymjaUtils.formatResult(result)
             }
         } catch (e: Exception) {
-            Pair("Error", emptyList())
+            "Error"
         }
+    }
+
+    fun calculateLimitWithSteps(
+        expression: String,
+        variable: String = "x",
+        target: String
+    ): Pair<String, List<String>> {
+        return Pair(calculateLimit(expression, variable, target), emptyList())
     }
 }

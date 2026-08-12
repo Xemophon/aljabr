@@ -85,26 +85,15 @@ object IntegFunc {
     }
 
     fun integrateIndefinite(expression: String): String {
-        return integrateIndefiniteWithSteps(expression).first
-    }
-
-    fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<String>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            if (cleaned.isBlank()) return Pair("", emptyList())
+            var resStr = SymjaUtils.evaluator.eval("Simplify[Integrate[$cleaned, x]]").toString()
 
-            // Request steps for both integration and simplification in one go
-            val (rawResult, steps) = SymjaUtils.evalWithSteps("Simplify[Integrate[$cleaned, x]]")
-            var resStr = rawResult
-
-            // If Symja couldn't solve it, it returns the input string Integrate(...)
             if (resStr.contains("Integrate", ignoreCase = true)) {
-                return Pair("∫($expression)dx", emptyList())
+                return "∫($expression)dx"
             }
 
-            // Replace Log[x] with Log[Abs[x]] for standard calculus notation ln|x|
-            // We use [^,]+ to ensure we only match single-argument natural logs
-            val logRegex = Regex("Log([\\[(])([^,)\\]]+)([])])", RegexOption.IGNORE_CASE)
+            val logRegex = Regex("""Log([\[(])([^,\])]+)([\])])""", RegexOption.IGNORE_CASE)
             resStr = resStr.replace(logRegex) { match ->
                 val open = match.groupValues[1]
                 val content = match.groupValues[2]
@@ -113,13 +102,17 @@ object IntegFunc {
             }
 
             if (resStr == "0" && cleaned != "0" && cleaned != "0.0") {
-                return Pair("∫($expression)dx", emptyList())
+                return "∫($expression)dx"
             }
 
-            Pair(formatResult(resStr), steps)
-        } catch (e: Throwable) {
-            Pair("Error: ${e.message?.take(20) ?: "unknown"}", emptyList())
+            formatResult(resStr)
+        } catch (_: Exception) {
+            "∫($expression)dx"
         }
+    }
+
+    fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<String>> {
+        return Pair(integrateIndefinite(expression), emptyList())
     }
 
     private fun formatResult(resStr: String): String {
