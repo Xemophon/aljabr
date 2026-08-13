@@ -21,10 +21,26 @@ class CalculusEngine {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             val engine = SymjaUtils.evaluator.evalEngine
             val expr = engine.parse(cleaned)
-            val x = SymjaUtils.evaluator.eval("x") as ISymbol
+            
+            // Simple variable detection: default to x, or first variable found
+            val xSymbol = engine.parse("x") as ISymbol
+            val v = if (expr.isFree(xSymbol)) {
+                val vars = SymjaUtils.evaluator.eval("Variables[$cleaned]")
+                if (vars.isAST && vars.size() > 1) engine.parse(vars.get(1).toString()) as ISymbol else xSymbol
+            } else {
+                xSymbol
+            }
 
             val solver = EigenmathTableSolver(engine)
-            solver.solveTableIntegral(expr, x, steps)
+            val res = solver.solveTableIntegral(expr, v, steps)
+            
+            if (steps.isEmpty() && res != null) {
+                steps.add(CalculusStep(
+                    "General Integration",
+                    "\\int ${SymjaUtils.toLaTeX(cleaned)} \\, d${v.toString()}",
+                    SymjaUtils.toLaTeX(res.toString())
+                ))
+            }
         } catch (_: Exception) {
             // Silently fail and return whatever steps were collected or empty
         }

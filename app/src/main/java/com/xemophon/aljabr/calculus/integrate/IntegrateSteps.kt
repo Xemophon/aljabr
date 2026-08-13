@@ -131,42 +131,46 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
         return null // Hand off to fallback engine if not in table
     }
 
-    /**
-     * Attempts to match the expression against the provided integration tables.
-     */
     private fun matchGenericTable(
         expr: IExpr,
         variable: ISymbol,
         steps: MutableList<CalculusStep>
     ): IExpr? {
-        val allTables = listOf(
-            integral_tab_exp,
-            integral_tab_trig,
-            integral_tab_log,
-            integral_tab_power,
-            integral_tab
-        )
+        // Try direct integration via Symja's shared evaluator for robustness
+        val cleaned = SymjaUtils.prepareForSymja(expr.toString())
+        val resStr = SymjaUtils.evaluator.eval("Integrate[$cleaned, ${variable.toString()}]").toString()
+        
+        if (!resStr.contains("Integrate", ignoreCase = true)) {
+            val result = engine.parse(resStr)
+            
+            // Integration succeeded. Now find a name for the pattern if possible.
+            val exprStr = expr.toString().lowercase()
+            var stepTitle = "Standard Integration Table Lookup"
+            
+            val allTables = listOf(
+                integral_tab_power,
+                integral_tab_exp,
+                integral_tab_trig,
+                integral_tab_log,
+                integral_tab
+            )
 
-        val exprStr = expr.toString().lowercase()
-
-        for (table in allTables) {
-            for (i in table.indices step 3) {
-                if (i + 1 >= table.size) break
-                val patternStr = table[i]
-                
-                // Very basic heuristic matching to find a candidate pattern
-                if (heuristicMatch(exprStr, patternStr)) {
-                    val result = engine.evaluate(F.Integrate(expr, variable))
-                    if (!result.isFree(F.Integrate)) { // Success!
-                        steps.add(CalculusStep(
-                            "Standard Integration Table Lookup",
-                            "\\int ${expr.toLaTeX()} \\, d${variable.toLaTeX()}",
-                            result.toLaTeX()
-                        ))
-                        return result
+            outer@for (table in allTables) {
+                for (i in table.indices step 3) {
+                    val patternStr = table[i]
+                    if (heuristicMatch(exprStr, patternStr)) {
+                        stepTitle = "Integration Table: $patternStr"
+                        break@outer
                     }
                 }
             }
+
+            steps.add(CalculusStep(
+                stepTitle,
+                "\\int ${expr.toLaTeX()} \\, d${variable.toLaTeX()}",
+                result.toLaTeX()
+            ))
+            return result
         }
         return null
     }
@@ -180,6 +184,10 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
         // Power forms
         if (pLower.contains("^") && exprStr.contains("^")) return true
         
+        // Reciprocal forms
+        if (pLower.contains("/") && exprStr.contains("/")) return true
+        if (pLower.contains("1 /") && exprStr.contains("/")) return true
+
         // Exponential forms
         if ((pLower.contains("exp") || pLower.contains("e^")) && (exprStr.contains("exp") || exprStr.contains("e^"))) return true
 

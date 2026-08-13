@@ -53,11 +53,24 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
     /**
      * Port of Eigenmath's d_scalar_scalar and routing logic
      */
-    fun solveDerivative(expr: IExpr, variable: ISymbol, steps: MutableList<CalculusStep>): IExpr {
+    fun solveDerivative(
+        expr: IExpr,
+        variable: ISymbol,
+        steps: MutableList<CalculusStep>,
+        addTrivialStep: Boolean = true
+    ): IExpr {
 
         // Base Case 1: d(x, x) = 1 (Ported from 'equal(F, X)' block)
         if (expr == variable) {
-            steps.add(CalculusStep("Variable Rule", "$\\frac{d}{d${variable.toLaTeX()}}(${expr.toLaTeX()})$", "1"))
+            if (addTrivialStep) {
+                steps.add(
+                    CalculusStep(
+                        "Variable Rule",
+                        "$\\frac{d}{d${variable.toLaTeX()}}(${expr.toLaTeX()})$",
+                        "1"
+                    )
+                )
+            }
             return F.C1
         }
 
@@ -103,7 +116,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         val terms = mutableListOf<IExpr>()
         for (i in 1 until expr.size()) {
-            terms.add(solveDerivative(expr.get(i), variable, steps))
+            terms.add(solveDerivative(expr.get(i), variable, steps, false))
         }
         return engine.evaluate(F.Plus(*terms.toTypedArray()))
     }
@@ -120,7 +133,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
             val v = if (variables.size == 1) variables[0] else F.Times(*variables.toTypedArray())
 
             steps.add(CalculusStep("Constant Multiple Rule", "$\\frac{d}{d${variable.toLaTeX()}}(${expr.toLaTeX()})$", "${c.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${v.toLaTeX()})"))
-            val dv = solveDerivative(v, variable, steps)
+            val dv = solveDerivative(v, variable, steps, false)
             return engine.evaluate(F.Times(c, dv))
         }
 
@@ -130,8 +143,8 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         steps.add(CalculusStep("Product Rule", "$\\frac{d}{d${variable.toLaTeX()}}(${expr.toLaTeX()})$", "u'v + uv'"))
 
-        val du = solveDerivative(u, variable, steps)
-        val dv = solveDerivative(v, variable, steps)
+        val du = solveDerivative(u, variable, steps, false)
+        val dv = solveDerivative(v, variable, steps, false)
 
         val term1 = engine.evaluate(F.Times(du, v))
         val term2 = engine.evaluate(F.Times(u, dv))
@@ -157,7 +170,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
             // Chain rule integration
             if (u != variable) {
                 steps.add(CalculusStep("Chain Rule", outer.toLaTeX(), "${outer.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${u.toLaTeX()})"))
-                val du = solveDerivative(u, variable, steps)
+                val du = solveDerivative(u, variable, steps, false)
                 return engine.evaluate(F.Times(outer, du))
             }
             return outer
@@ -166,8 +179,8 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
         // Eigenmath generalized power rule: d/dx(u^v) = u^v * (v/u * du/dx + log(u) * dv/dx)
         steps.add(CalculusStep("Logarithmic Differentiation", "$\\frac{d}{d${variable.toLaTeX()}}(${expr.toLaTeX()})$", "${expr.toLaTeX()} \\left(\\frac{v}{u} u' + \\ln(u) v'\\right)"))
 
-        val du = solveDerivative(u, variable, steps)
-        val dv = solveDerivative(v, variable, steps)
+        val du = solveDerivative(u, variable, steps, false)
+        val dv = solveDerivative(v, variable, steps, false)
 
         val term1 = engine.evaluate(F.Times(F.Divide(v, u), du))
         val term2 = engine.evaluate(F.Times(F.Log(u), dv))
@@ -187,7 +200,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -204,7 +217,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -227,7 +240,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
                     "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"
                 )
             )
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -241,7 +254,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -256,7 +269,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -271,7 +284,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -286,7 +299,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -300,7 +313,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -314,7 +327,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -329,7 +342,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -344,7 +357,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -359,7 +372,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
@@ -374,7 +387,7 @@ class EigenmathDerivativeSolver(private val engine: EvalEngine) {
 
         if (arg != variable) {
             steps.add(CalculusStep("Chain Rule", outerDeriv.toLaTeX(), "${outerDeriv.toLaTeX()} \\cdot \\frac{d}{d${variable.toLaTeX()}}(${arg.toLaTeX()})"))
-            val innerDeriv = solveDerivative(arg, variable, steps)
+            val innerDeriv = solveDerivative(arg, variable, steps, false)
             return engine.evaluate(F.Times(outerDeriv, innerDeriv))
         }
         return outerDeriv
