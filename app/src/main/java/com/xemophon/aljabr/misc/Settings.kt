@@ -470,6 +470,7 @@ fun AboutContent(
                 "Jetpack Compose",
                 "Hilt Dependency Injection",
                 "MathEclipse",
+                "Eigenmath",
                 "Kotlin Multiplatform LaTeX Rendering Library",
                 "Kotlin Coroutines",
                 "Material 3"
