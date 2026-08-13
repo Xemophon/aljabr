@@ -37,7 +37,8 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
-import com.xemophon.aljabr.data.CalculusStep
+
+data class CalculusStep(val title: String, val latexInput: String, val latexOutput: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

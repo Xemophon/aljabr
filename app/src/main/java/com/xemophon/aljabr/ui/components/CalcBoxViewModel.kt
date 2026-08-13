@@ -52,7 +52,7 @@ import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
-import com.xemophon.aljabr.data.CalculusStep
+import com.xemophon.aljabr.ui.components.CalculusStep
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.flow.collectLatest
@@ -627,7 +627,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     showStepsSheet = true
                     try {
                         val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                            IntegFunc.integrateIndefiniteWithSteps(displayText)
+                            IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
                         }
                         if (result.isNotEmpty()) {
                             resultText = result
@@ -665,7 +665,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 showStepsSheet = true
                 try {
                     val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        DiffFunc.differentiateWithSteps(displayText)
+                        DiffFunc.differentiateWithSteps(displayText, showSteps)
                     }
                     if (result.isNotEmpty()) {
                         resultText = result

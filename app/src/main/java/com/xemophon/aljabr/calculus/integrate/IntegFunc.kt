@@ -1,8 +1,8 @@
 package com.xemophon.aljabr.calculus.integrate
 
 import com.xemophon.aljabr.basicCalc.CalcFuncs
-import com.xemophon.aljabr.data.CalculusEngine
-import com.xemophon.aljabr.data.CalculusStep
+import com.xemophon.aljabr.calculus.CalculusEngine
+import com.xemophon.aljabr.ui.components.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.IntegralType
 
@@ -113,9 +113,9 @@ object IntegFunc {
         }
     }
 
-    suspend fun integrateIndefiniteWithSteps(expression: String): Pair<String, List<CalculusStep>> {
+    suspend fun integrateIndefiniteWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>> {
         return try {
-            val steps = calculusEngine.integrateWithSteps(expression)
+            val steps = calculusEngine.integrateWithSteps(expression, useEigenmath)
             val finalResult = integrateIndefinite(expression)
             Pair(finalResult, steps)
         } catch (_: Exception) {
