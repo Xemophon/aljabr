@@ -74,18 +74,18 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
-data class IntegralPattern(
-    val id: String,
-    val name: String,
-    // Regex or AST matcher for the integrand
-    val matcher: (IExpr, ISymbol) -> PatternMatchResult?
-)
+//data class IntegralPattern(
+//    val id: String,
+//    val name: String,
+//    // Regex or AST matcher for the integrand
+//    val matcher: (IExpr, ISymbol) -> PatternMatchResult?
+//)
 
-data class PatternMatchResult(
-    val parameters: Map<String, IExpr>, // e.g., "a" -> 2, "b" -> 0
-    val stepExplanation: String,
-    val evaluatedResult: IExpr
-)
+//data class PatternMatchResult(
+//    val parameters: Map<String, IExpr>, // e.g., "a" -> 2, "b" -> 0
+//    val stepExplanation: String,
+//    val evaluatedResult: IExpr
+//)
 
 class EigenmathTableSolver(private val engine: EvalEngine) {
 
@@ -138,7 +138,7 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
     ): IExpr? {
         // Try direct integration via Symja's shared evaluator for robustness
         val cleaned = SymjaUtils.prepareForSymja(expr.toString())
-        val resStr = SymjaUtils.evaluator.eval("Integrate[$cleaned, ${variable.toString()}]").toString()
+        val resStr = SymjaUtils.evaluator.eval("Integrate[$cleaned, ${variable}]").toString()
         
         if (!resStr.contains("Integrate", ignoreCase = true)) {
             val result = engine.parse(resStr)

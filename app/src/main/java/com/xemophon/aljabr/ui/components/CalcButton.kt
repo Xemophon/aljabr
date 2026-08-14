@@ -119,6 +119,7 @@ val ShortButtonGrid : MutableList<MutableList<CalcButtonAction>> = mutableListOf
         CalcButtonAction.Backspace(R.drawable.backspace),
         CalcButtonAction.Clear,
         CalcButtonAction.Constant("π", Constants.PI),
+        CalcButtonAction.Constant("φ", Constants.PHI)
     )
 )
 val StandardButtonsGrid = listOf(

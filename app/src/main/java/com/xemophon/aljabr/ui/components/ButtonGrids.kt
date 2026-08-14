@@ -69,7 +69,7 @@ fun ShortCalcButtons(
     letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
     onAction: (CalcButtonAction) -> Unit,
 ) {
-    buttonGrid[4].add(letterNeeded)
+    buttonGrid[4][3] = letterNeeded
     CalcButtonSheet(modifier.fillMaxHeight()) {
         buttonGrid.forEach { row ->
             Row(
