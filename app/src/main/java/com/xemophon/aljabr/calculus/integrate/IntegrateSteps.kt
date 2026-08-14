@@ -12,98 +12,43 @@ import com.xemophon.aljabr.ui.components.CalculusStep
  * This file contains a Kotlin port of the mathematical algorithms originally
  * developed in C for the Eigenmath project by George Weigt.
  *
- * Copyright (c) [Year(s) from original file], George Weigt
+ * Copyright (c) 2024, George Weigt
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
-BSD 2-Clause License
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-Copyright (c) 2024, George Weigt
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-BSD 2-Clause License
-
-Copyright (c) 2024, George Weigt
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
-
-//data class IntegralPattern(
-//    val id: String,
-//    val name: String,
-//    // Regex or AST matcher for the integrand
-//    val matcher: (IExpr, ISymbol) -> PatternMatchResult?
-//)
-
-//data class PatternMatchResult(
-//    val parameters: Map<String, IExpr>, // e.g., "a" -> 2, "b" -> 0
-//    val stepExplanation: String,
-//    val evaluatedResult: IExpr
-//)
-
-class EigenmathTableSolver(private val engine: EvalEngine) {
+class HybridIntegrationSolver(private val engine: EvalEngine) {
 
     /**
-     * Executes table-driven integration inspired by Eigenmath.
+     * Entry point for step-by-step integration.
      */
-    fun solveTableIntegral(
-        expr: IExpr,
-        variable: ISymbol,
-        steps: MutableList<CalculusStep>
-    ): IExpr? {
+    fun solveIntegral(expr: IExpr, variable: ISymbol, steps: MutableList<CalculusStep>): IExpr? {
 
         // 1. Linearity: Sum Rule \int (f + g) dx
         if (expr is IAST && expr.isPlus) {
-            steps.add(CalculusStep("Sum Rule", "\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}", "Split into terms"))
+            steps.add(CalculusStep("Sum Rule", "$\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}$", "Split into terms"))
             val results = mutableListOf<IExpr>()
             for (i in 1 until expr.size()) {
-                val termRes = solveTableIntegral(expr.get(i), variable, steps)
+                val termRes = solveIntegral(expr.get(i), variable, steps)
                     ?: engine.evaluate(F.Integrate(expr.get(i), variable))
                 results.add(termRes)
             }
@@ -117,25 +62,102 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
                 val c = engine.evaluate(F.Times(*constants.toTypedArray()))
                 val v = if (variables.size == 1) variables[0] else F.Times(*variables.toTypedArray())
 
-                steps.add(CalculusStep("Factor Constant", "\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}", "${c.toLaTeX()} \\int (${v.toLaTeX()}) \\, d${variable.toLaTeX()}"))
-                val subResult = solveTableIntegral(v, variable, steps)
+                steps.add(CalculusStep("Factor Constant", "$\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}$", "${c.toLaTeX()} \\int (${v.toLaTeX()}) \\, d${variable.toLaTeX()}"))
+                val subResult = solveIntegral(v, variable, steps)
                     ?: engine.evaluate(F.Integrate(v, variable))
                 return engine.evaluate(F.Times(c, subResult))
             }
         }
 
-        // 3. Table Lookup: Generic Tables
-        val genericResult = matchGenericTable(expr, variable, steps)
-        if (genericResult != null) return genericResult
+        // 3. Algorithmic Steps: Integration by Parts (IBP)
+        if (expr is IAST && expr.isTimes && expr.size() == 3) {
+            val ibpResult = tryIntegrationByParts(expr, variable, steps)
+            if (ibpResult != null) return ibpResult
+        }
 
-        return null // Hand off to fallback engine if not in table
+        // 4. Fallback: Eigenmath Table Lookup
+        val tableResult = lookupInEigenmathTables(expr, variable, steps)
+        if (tableResult != null) return tableResult
+
+        // 5. Ultimate Fallback: Symja Black Box (No detailed steps)
+        val finalRes = engine.evaluate(F.Integrate(expr, variable))
+        if (!finalRes.isAST || finalRes.head() != F.Integrate) {
+             return finalRes
+        }
+
+        return null
     }
 
-    private fun matchGenericTable(
-        expr: IExpr,
-        variable: ISymbol,
-        steps: MutableList<CalculusStep>
-    ): IExpr? {
+    /**
+     * Executes the Integration by Parts algorithm explicitly to generate steps.
+     */
+    private fun tryIntegrationByParts(expr: IAST, variable: ISymbol, steps: MutableList<CalculusStep>): IExpr? {
+        val f1 = expr.get(1)
+        val f2 = expr.get(2)
+
+        // Select u and dv using LIATE priority (Log, InvTrig, Alg, Trig, Exp)
+        val (u, dv) = selectUAndDv(f1, f2, variable) ?: return null
+
+        // Calculate du and v algorithmically
+        val du = engine.evaluate(F.D(u, variable))
+        val v = engine.evaluate(F.Integrate(dv, variable))
+
+        if (v.isAST && (v as IAST).head() == F.Integrate) return null // Abort if dv can't be integrated
+
+        val uv = engine.evaluate(F.Times(u, v))
+        val vdu = engine.evaluate(F.Times(v, du))
+
+        // Document the intermediate step
+        val stepLatex = "${uv.toLaTeX()} - \\int (${vdu.toLaTeX()}) \\, d${variable.toLaTeX()}"
+        steps.add(
+            CalculusStep(
+                "Apply Integration by Parts: $\\int u \\, dv = uv - \\int v \\, du$",
+                "$\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}$",
+                stepLatex
+            )
+        )
+
+        // Recursively integrate the remaining \int v du term
+        val remainingInt = solveIntegral(vdu, variable, steps) ?: engine.evaluate(F.Integrate(vdu, variable))
+
+        return engine.evaluate(F.Subtract(uv, remainingInt))
+    }
+
+    /**
+     * Selects u and dv based on LIATE priority.
+     */
+    private fun selectUAndDv(f1: IExpr, f2: IExpr, variable: ISymbol): Pair<IExpr, IExpr>? {
+        val p1 = getLiatePriority(f1, variable)
+        val p2 = getLiatePriority(f2, variable)
+        
+        return if (p1 <= p2) {
+            Pair(f1, f2)
+        } else {
+            Pair(f2, f1)
+        }
+    }
+
+    private fun getLiatePriority(expr: IExpr, variable: ISymbol): Int {
+        if (expr.isFree(variable)) return 5 // Constant (Low priority for u)
+        if (expr is IAST) {
+            val head = expr.head()
+            if (head == F.Log) return 0 // Logarithmic
+            if (head == F.ArcSin || head == F.ArcCos || head == F.ArcTan) return 1 // Inverse Trig
+            if (head == F.Plus || head == F.Times || head == F.Power) {
+                // Check if it's algebraic (polynomial-like)
+                if (expr.isFree(F.Sin) && expr.isFree(F.Cos) && expr.isFree(F.Tan) && 
+                    expr.isFree(F.Exp) && expr.isFree(F.Log)) return 2 // Algebraic
+            }
+            if (head == F.Sin || head == F.Cos || head == F.Tan) return 3 // Trigonometric
+            if (head == F.Exp || (head == F.Power && expr.get(1) == F.E)) return 4 // Exponential
+        }
+        return 2 // Default Algebraic
+    }
+
+    /**
+     * Checks the ported Eigenmath arrays with robust matching.
+     */
+    private fun lookupInEigenmathTables(expr: IExpr, variable: ISymbol, steps: MutableList<CalculusStep>): IExpr? {
         // Try direct integration via Symja's shared evaluator for robustness
         val cleaned = SymjaUtils.prepareForSymja(expr.toString())
         val resStr = SymjaUtils.evaluator.eval("Integrate[$cleaned, ${variable}]").toString()
@@ -167,7 +189,7 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
 
             steps.add(CalculusStep(
                 stepTitle,
-                "\\int ${expr.toLaTeX()} \\, d${variable.toLaTeX()}",
+                "$\\int ${expr.toLaTeX()} \\, d${variable.toLaTeX()}$",
                 result.toLaTeX()
             ))
             return result
@@ -177,20 +199,11 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
 
     private fun heuristicMatch(exprStr: String, patternStr: String): Boolean {
         val pLower = patternStr.lowercase()
-        // Simple check: if pattern is "sin(a x)" and expr contains "sin", it's a candidate
         val pBase = pLower.takeWhile { it.isLetter() }
         if (pBase.isNotEmpty() && exprStr.contains(pBase)) return true
-        
-        // Power forms
         if (pLower.contains("^") && exprStr.contains("^")) return true
-        
-        // Reciprocal forms
         if (pLower.contains("/") && exprStr.contains("/")) return true
-        if (pLower.contains("1 /") && exprStr.contains("/")) return true
-
-        // Exponential forms
         if ((pLower.contains("exp") || pLower.contains("e^")) && (exprStr.contains("exp") || exprStr.contains("e^"))) return true
-
         return false
     }
 
@@ -202,6 +215,15 @@ class EigenmathTableSolver(private val engine: EvalEngine) {
             if (t.isFree(variable, true)) constants.add(t) else variables.add(t)
         }
         return Pair(constants, variables)
+    }
+
+    private fun extractLinearCoefficient(expr: IExpr, variable: ISymbol): IExpr? {
+        if (expr == variable) return F.C1
+        if (expr is IAST && expr.isTimes && expr.size() == 3) {
+            if (expr.get(2) == variable && expr.get(1).isFree(variable, true)) return expr.get(1)
+            if (expr.get(1) == variable && expr.get(2).isFree(variable, true)) return expr.get(2)
+        }
+        return null
     }
 
     private fun IExpr.toLaTeX(): String = SymjaUtils.toLaTeX(this.toString())

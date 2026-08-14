@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.calculus
 
-import com.xemophon.aljabr.calculus.integrate.EigenmathTableSolver
+import com.xemophon.aljabr.calculus.integrate.HybridIntegrationSolver
 import com.xemophon.aljabr.calculus.differentiate.EigenmathDerivativeSolver
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.CalculusStep
@@ -10,8 +10,8 @@ class CalculusEngine {
 
     /**
      * Entry point for integration steps.
-     * Uses EigenmathTableSolver for pattern-based steps.
-     * @param useEugene If true, use the table-driven solver; otherwise fall back.
+     * Uses HybridIntegrationSolver for algorithmic and pattern-based steps.
+     * @param useEugene If true, use the hybrid solver; otherwise fall back.
      */
     fun integrateWithSteps(expression: String, useEugene: Boolean = true): List<CalculusStep> {
         val steps = mutableListOf<CalculusStep>()
@@ -31,13 +31,13 @@ class CalculusEngine {
                 xSymbol
             }
 
-            val solver = EigenmathTableSolver(engine)
-            val res = solver.solveTableIntegral(expr, v, steps)
+            val solver = HybridIntegrationSolver(engine)
+            val res = solver.solveIntegral(expr, v, steps)
             
             if (steps.isEmpty() && res != null) {
                 steps.add(CalculusStep(
                     "General Integration",
-                    "\\int ${SymjaUtils.toLaTeX(cleaned)} \\, d${v.toString()}",
+                    "$\\int ${SymjaUtils.toLaTeX(cleaned)} \\, d${v.toString()}$",
                     SymjaUtils.toLaTeX(res.toString())
                 ))
             }
