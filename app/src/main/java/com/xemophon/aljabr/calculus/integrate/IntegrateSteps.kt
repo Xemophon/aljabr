@@ -69,17 +69,23 @@ class HybridIntegrationSolver(private val engine: EvalEngine) {
             }
         }
 
-        // 3. Algorithmic Steps: Integration by Parts (IBP)
+        // 3. Algorithmic Steps: U-Substitution
+        if (expr is IAST) {
+            val uSubResult = tryUSubstitution(expr, variable, steps)
+            if (uSubResult != null) return uSubResult
+        }
+
+        // 4. Algorithmic Steps: Integration by Parts (IBP)
         if (expr is IAST && expr.isTimes && expr.size() == 3) {
             val ibpResult = tryIntegrationByParts(expr, variable, steps)
             if (ibpResult != null) return ibpResult
         }
 
-        // 4. Fallback: Eigenmath Table Lookup
+        // 5. Fallback: Eigenmath Table Lookup
         val tableResult = lookupInEigenmathTables(expr, variable, steps)
         if (tableResult != null) return tableResult
 
-        // 5. Ultimate Fallback: Symja Black Box (No detailed steps)
+        // 6. Ultimate Fallback: Symja Black Box (No detailed steps)
         val finalRes = engine.evaluate(F.Integrate(expr, variable))
         if (!finalRes.isAST || finalRes.head() != F.Integrate) {
              return finalRes
@@ -165,28 +171,9 @@ class HybridIntegrationSolver(private val engine: EvalEngine) {
         if (!resStr.contains("Integrate", ignoreCase = true)) {
             val result = engine.parse(resStr)
             
-            // Integration succeeded. Now find a name for the pattern if possible.
-            val exprStr = expr.toString().lowercase()
-            var stepTitle = "Standard Integration Table Lookup"
+            // Integration succeeded. Now categorize the rule mathematically.
+            val stepTitle = "Integration Table: ${categorizeIntegral(expr, variable)}"
             
-            val allTables = listOf(
-                integral_tab_power,
-                integral_tab_exp,
-                integral_tab_trig,
-                integral_tab_log,
-                integral_tab
-            )
-
-            outer@for (table in allTables) {
-                for (i in table.indices step 3) {
-                    val patternStr = table[i]
-                    if (heuristicMatch(exprStr, patternStr)) {
-                        stepTitle = "Integration Table: $patternStr"
-                        break@outer
-                    }
-                }
-            }
-
             steps.add(CalculusStep(
                 stepTitle,
                 "$\\int ${expr.toLaTeX()} \\, d${variable.toLaTeX()}$",
@@ -197,14 +184,41 @@ class HybridIntegrationSolver(private val engine: EvalEngine) {
         return null
     }
 
-    private fun heuristicMatch(exprStr: String, patternStr: String): Boolean {
-        val pLower = patternStr.lowercase()
-        val pBase = pLower.takeWhile { it.isLetter() }
-        if (pBase.isNotEmpty() && exprStr.contains(pBase)) return true
-        if (pLower.contains("^") && exprStr.contains("^")) return true
-        if (pLower.contains("/") && exprStr.contains("/")) return true
-        if ((pLower.contains("exp") || pLower.contains("e^")) && (exprStr.contains("exp") || exprStr.contains("e^"))) return true
-        return false
+    /**
+     * Categorizes the integral based on the mathematical structure of the integrand.
+     */
+    private fun categorizeIntegral(expr: IExpr, variable: ISymbol): String {
+        if (expr.isFree(variable)) return "Constant Rule"
+        if (expr == variable) return "Power Rule"
+        
+        if (expr is IAST) {
+            val head = expr.head()
+            
+            // Handle common transcendental and algebraic forms
+            when (head) {
+                F.Power -> {
+                    val base = expr.get(1)
+                    val exponent = expr.get(2)
+                    if (base == variable && exponent.isFree(variable)) return "Power Rule"
+                    if (base == F.E || base == F.Exp) return "Exponential Rule"
+                    if (exponent.isFree(variable)) return "Power Rule"
+                    return "Exponential Rule" // e.g. a^x
+                }
+                F.Exp -> return "Exponential Rule"
+                F.Log -> return "Logarithmic Rule"
+                F.Sin, F.Cos, F.Tan, F.Sec, F.Csc, F.Cot -> return "Trigonometric Form"
+                F.ArcSin, F.ArcCos, F.ArcTan, F.ArcSec, F.ArcCsc, F.ArcCot -> return "Inverse Trigonometric Form"
+                F.Sinh, F.Cosh, F.Tanh, F.Sech, F.Csch, F.Coth -> return "Hyperbolic Form"
+                F.ArcSinh, F.ArcCosh, F.ArcTanh -> return "Inverse Hyperbolic Form"
+                
+                F.Times -> {
+                    // Check if it's a reciprocal or fractional form
+                    if (expr.args().any { it.isPower && it.get(2).isNegative }) return "Fractional Form"
+                    return "Algebraic Form"
+                }
+            }
+        }
+        return "Standard Form"
     }
 
     private fun partitionTerm(expr: IAST, variable: ISymbol): Pair<List<IExpr>, List<IExpr>> {
@@ -217,14 +231,98 @@ class HybridIntegrationSolver(private val engine: EvalEngine) {
         return Pair(constants, variables)
     }
 
-    private fun extractLinearCoefficient(expr: IExpr, variable: ISymbol): IExpr? {
-        if (expr == variable) return F.C1
-        if (expr is IAST && expr.isTimes && expr.size() == 3) {
-            if (expr.get(2) == variable && expr.get(1).isFree(variable, true)) return expr.get(1)
-            if (expr.get(1) == variable && expr.get(2).isFree(variable, true)) return expr.get(2)
+
+    /**
+     * Executes the U-Substitution algorithm.
+     */
+    private fun tryUSubstitution(expr: IAST, variable: ISymbol, steps: MutableList<CalculusStep>): IExpr? {
+        val candidates = getUSubCandidates(expr, variable)
+        val uSym = engine.parse("u") as ISymbol
+
+        for (u in candidates) {
+            val du = engine.evaluate(F.D(u, variable))
+            if (du.isZero) continue
+
+            val ratio = engine.evaluate(F.Divide(expr, du))
+            val substituted = engine.evaluate(F.ReplaceAll(ratio, F.Rule(u, uSym)))
+
+            if (substituted.isFree(variable, true)) {
+
+                // 1. Record the exact size of the steps list before proceeding
+                val initialStepsSize = steps.size
+
+                steps.add(CalculusStep(
+                    "Apply U-Substitution",
+                    "$\\int (${expr.toLaTeX()}) \\, d${variable.toLaTeX()}$",
+                    "Let $u = ${u.toLaTeX()} \\implies du = ${du.toLaTeX()} \\, d${variable.toLaTeX()}$"
+                ))
+
+                steps.add(CalculusStep(
+                    "Substitute into Integral",
+                    "$\\int (${substituted.toLaTeX()}) \\, du$",
+                    "Integrate with respect to $u$"
+                ))
+
+                // 2. Recursively solve
+                val integratedU = solveIntegral(substituted, uSym, steps)
+
+                // 3. Catch the null failure safely
+                if (integratedU == null) {
+                    // Backtrack the steps list to its exact state before this candidate
+                    while (steps.size > initialStepsSize) {
+                        steps.removeAt(steps.size - 1)
+                    }
+                    continue
+                }
+
+                // 4. Back-substitute
+                val finalResult = engine.evaluate(F.ReplaceAll(integratedU, F.Rule(uSym, u)))
+
+                steps.add(CalculusStep(
+                    "Back-Substitute $u = ${u.toLaTeX()}",
+                    "Replace $u$ in: $${integratedU.toLaTeX()}$",
+                    finalResult.toLaTeX()
+                ))
+
+                return finalResult
+            }
         }
         return null
     }
 
+    /**
+     * Extracts potential 'u' candidates by scanning the AST for inner functions.
+     */
+    private fun getUSubCandidates(expr: IAST, variable: ISymbol): List<IExpr> {
+        val candidates = mutableSetOf<IExpr>()
+
+        // Helper to avoid substituting constants or the bare variable 'x'
+        fun addCandidate(c: IExpr) {
+            if (c != variable && !c.isFree(variable, true)) {
+                candidates.add(c)
+            }
+        }
+
+        // Check if the whole expression is a composite function
+        when (expr.head()) {
+            F.Power -> addCandidate(expr.get(1))
+            F.Exp, F.Sin, F.Cos, F.Tan, F.Sec, F.Csc, F.Cot, F.Log, F.ArcSin, F.ArcCos, F.ArcTan -> addCandidate(expr.get(1))
+        }
+
+        // Check the individual factors of a product
+        if (expr.isTimes) {
+            for (i in 1 until expr.size()) {
+                val factor = expr.get(i)
+                if (factor is IAST) {
+                    when (factor.head()) {
+                        F.Power -> addCandidate(factor.get(1)) // Extracts the base
+                        F.Exp, F.Sin, F.Cos, F.Tan, F.Sec, F.Csc, F.Cot, F.Log -> addCandidate(factor.get(1)) // Extracts the argument
+                    }
+                }
+            }
+        }
+
+        return candidates.toList()
+    }
     private fun IExpr.toLaTeX(): String = SymjaUtils.toLaTeX(this.toString())
 }

@@ -1,55 +1,57 @@
 # AlJabr
 
-AlJabr is a modern, feature-rich calculator and mathematical toolkit for Android. Built using **Jetpack Compose** and **Material Design 3**, it provides a clean, responsive interface for everything from simple arithmetic to advanced calculus and graphing.
+AlJabr is a modern, high-performance mathematical toolkit for Android, designed to bring university-level mathematics to your pocket. Built with **Jetpack Compose** and **Material Design 3**, it offers a seamless experience for everything from basic arithmetic to advanced symbolic calculus and graphing.
 
 ## 🚀 Features
 
 ### 🔢 Basic & Scientific Calculator
-- **Standard Operations:** Addition, subtraction, multiplication, and division.
-- **Scientific Mode:** Access advanced functions including:
+- **Standard Operations:** Full support for addition, subtraction, multiplication, and division.
+- **Scientific Mode:** Advanced functions including:
     - Trigonometry: `sin`, `cos`, `tan` and their inverses.
-    - Logarithms: Common log (`log`) and natural log (`ln`).
+    - Logarithms: Common (`log`) and natural (`ln`) logarithms.
     - Math Constants: $\pi$ (Pi) and $e$ (Euler's number).
-    - Power functions, Square root, and Factorials (`!`).
-- **Smart Engine:** Supports nested parentheses, implicit multiplication (e.g., `2π`), and intelligent percentage handling.
+    - Power functions, roots, and factorials.
+- **Smart Engine:** Intelligent handling of nested parentheses, implicit multiplication (e.g., `2π`), and percentages.
 
-### 📈 Graph Maker
-- **Function Plotting:** Visualize functions of the form $f(x)$.
-- **Implicit Equations:** Plot complex equations like $x^2 + y^2 = 9$.
-- **Graph Analysis:** Automatically identifies and highlights:
-    - Local Maxima and Minima.
-    - Inflection Points.
-    - Vertical Asymptotes.
-- **Interactive View:** Smoothly pan and zoom to explore functions.
+### 📈 Graphing Engine
+- **Function Plotting:** High-resolution visualization of functions in the form $f(x)$.
+- **Implicit Equations:** Plot complex relations like $x^2 + y^2 = 9$.
+- **Automated Analysis:** Automatically identifies local extrema (maxima/minima), inflection points, and vertical asymptotes.
+- **Interactive Interface:** Smooth, responsive panning and zooming.
 
 ### 📐 Calculus Suite
-- **Differentiation:** Perform symbolic differentiation to find $d/dx$ of complex expressions.
+- **Symbolic Differentiation:** Find exact $d/dx$ derivatives for complex expressions.
 - **Integration:** 
-    - **Indefinite:** Symbolic integration using an embedded CAS engine.
-    - **Definite:** Numerical integration using Simpson's 1/3 rule for high precision.
-- **Limits:** Calculate finite, infinite ($\infty$), and one-sided (left/right) limits numerically.
+    - **Indefinite:** Exact symbolic integration powered by a robust CAS engine.
+    - **Definite:** Precise numerical integration using Simpson's 1/3 rule.
+- **Limits:** Calculate finite and infinite ($\infty$) limits, including left/right-sided evaluations.
 
-### 🔄 Unit Conversions
-- **Versatile Converters:** Easily convert between various units for length, weight, area, and more.
-- **Real-time Results:** View converted values instantly as you type.
+### 🧩 Algebra (Upcoming)
+- **Matrices:** Support for fundamental operations: addition, multiplication, transpose, determinant, and inverse.
+- **Polynomials:** Advanced tools for root finding, polynomial division, and simplification.
 
-### 📱 User Experience
-- **Navigation Drawer:** Easily switch between different calculator variants and tools.
-- **Material 3 Theming:** Modern, clean UI with support for dynamic colors and adaptive layouts.
-- **Settings:** Customizable app experience including Light, Dark, and System theme options.
-- **Responsive Display:** Expression text scales dynamically as you type.
-- **LaTeX Rendering:** Beautifully rendered mathematical expressions for clarity.
+### 📉 Series (Upcoming)
+- **Power Series:** Generate Taylor and Maclaurin expansions for common mathematical functions.
+- **Fourier Analysis:** Decompose periodic functions into their constituent sine and cosine components.
+
+### 🔄 Unit Conversion & Utilities
+- **Versatile Converters:** Real-time conversion for length, weight, area, and more.
+- **Reference Sheets:** Quick access to common mathematical formulas and constants.
+
+### 📱 Premium User Experience
+- **Material 3 Design:** A modern UI with dynamic color support and adaptive layouts.
+- **LaTeX Rendering:** Beautifully typeset mathematical expressions for maximum clarity.
+- **Customizable:** Deep integration with system themes (Light/Dark/Auto).
+- **Responsive Display:** Dynamically scaling text ensures your expressions are always readable.
 
 ## 🛠️ Tech Stack
 
-- **Language:** [Kotlin](https://kotlinlang.org/)
-- **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose)
+- **Language:** [Kotlin](https://kotlinlang.org/) - Modern, safe, and expressive.
+- **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose) - Declarative UI for a responsive experience.
 - **Math Engines:**
-    - [Matheclipse (Symja)](https://github.com/axkr/symja_android_library): Powers symbolic calculus and complex evaluations.
-    - [LaTeX Rendering Library](https://github.com/huarangmeng/latex): Used for high-quality mathematical typesetting.
-- **Design System:** [Material Design 3](https://m3.material.io/)
-- **Data Storage:** [Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore) for user settings.
-- **Architecture:** MVVM (Model-View-ViewModel)
+    - **[Matheclipse (Symja)](https://github.com/axkr/symja_android_library):** A powerful symbolic Computer Algebra System (CAS) for advanced mathematics.
+    - **[LaTeX Rendering](https://github.com/huarangmeng/latex):** High-quality typesetting for mathematical notation.
+- **Architecture:** Clean MVVM (Model-View-ViewModel) for scalability and testability.
 
 ## 📥 Getting Started
 
@@ -66,15 +68,17 @@ AlJabr is a modern, feature-rich calculator and mathematical toolkit for Android
 
 The project is organized into modular packages under `com.xemophon.aljabr`:
 
-- `basicCalc/`: Logic and UI for the standard scientific calculator.
+- `basicCalc/`: Core logic and UI for the scientific calculator.
 - `calculus/`:
-    - `differentiate/`: Symbolic differentiation interface.
-    - `integrate/`: Numerical and symbolic integration tools.
-    - `limits/`: Numerical limit calculation logic.
-    - `graphMaker/`: Graphing engine and coordinate system visualization.
-- `conversions/`: Unit conversion tools and tables.
-- `navigation/`: Type-safe navigation logic using Jetpack Navigation Compose.
-- `ui/theme/`: Material 3 theme, color definitions, and layout constants.
+    - `differentiate/`: Symbolic derivative computation.
+    - `integrate/`: Numerical and symbolic integration.
+    - `limits/`: Limit evaluation engine.
+    - `graphMaker/`: Interactive graphing and analysis engine.
+- `algebra/`: (In Progress) Matrix operations and polynomial math.
+- `series/`: (In Progress) Taylor, Maclaurin, and Fourier series logic.
+- `conversions/`: Comprehensive unit conversion tools.
+- `navigation/`: Type-safe navigation utilizing Jetpack Navigation Compose.
+- `ui/theme/`: Material 3 design system and theming.
 - `misc/`: App settings, About screen, and general utility views.
 
 ## 📄 License
@@ -94,4 +98,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
