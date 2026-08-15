@@ -36,7 +36,7 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
 
 ### 🔄 Unit Conversion & Utilities
 - **Versatile Converters:** Real-time conversion for length, weight, area, and more.
-- **Reference Sheets:** Quick access to common mathematical formulas and constants.
+- **Reference Sheets:** Quick access to common mathematical formulas.
 
 ### 📱 Premium User Experience
 - **Material 3 Design:** A modern UI with dynamic color support and adaptive layouts.
