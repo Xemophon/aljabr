@@ -31,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.R
 import com.xemophon.aljabr.ui.theme.Dimens
 
@@ -90,39 +89,39 @@ enum class Variables { X, Y }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL}
 
-val ShortButtonGrid : MutableList<MutableList<CalcButtonAction>> = mutableListOf(
-    mutableListOf(
+val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
+    listOf(
         CalcButtonAction.Symbol("7"),
         CalcButtonAction.Symbol("8"),
         CalcButtonAction.Symbol("9"),
         CalcButtonAction.Symbol("÷", "/")
     ),
-    mutableListOf(
+    listOf(
         CalcButtonAction.Symbol("4"),
         CalcButtonAction.Symbol("5"),
         CalcButtonAction.Symbol("6"),
         CalcButtonAction.Symbol("×", "*")
     ),
-    mutableListOf(
+    listOf(
         CalcButtonAction.Symbol("1"),
         CalcButtonAction.Symbol("2"),
         CalcButtonAction.Symbol("3"),
         CalcButtonAction.Symbol("-")
     ),
-    mutableListOf(
+    listOf(
         CalcButtonAction.Symbol("0"),
         CalcButtonAction.Symbol("."),
         CalcButtonAction.Symbol("( )"),
         CalcButtonAction.Symbol("+")
     ),
-    mutableListOf(
+    listOf(
         CalcButtonAction.Backspace(R.drawable.backspace),
         CalcButtonAction.Clear,
         CalcButtonAction.Constant("π", Constants.PI),
         CalcButtonAction.Constant("φ", Constants.PHI)
     )
 )
-val StandardButtonsGrid = listOf(
+val StandardButtonsGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Clear,
         CalcButtonAction.Symbol("( )"),
@@ -155,7 +154,7 @@ val StandardButtonsGrid = listOf(
     )
 )
 
-val ScientificButtonsGrid = listOf(
+val ScientificButtonsGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Scientific("sin", ScientificType.SIN),
         CalcButtonAction.Scientific("cos", ScientificType.COS),
@@ -170,52 +169,7 @@ val ScientificButtonsGrid = listOf(
     )
 )
 
-val GraphButtonsGrid = listOf(
-    listOf(
-        CalcButtonAction.Variable("x", Variables.X),
-        CalcButtonAction.Variable("y", Variables.Y),
-        CalcButtonAction.Symbol("("),
-        CalcButtonAction.Symbol(")")
-    ),
-    listOf(
-        CalcButtonAction.Scientific("sin", ScientificType.SIN),
-        CalcButtonAction.Scientific("cos", ScientificType.COS),
-        CalcButtonAction.Scientific("tan", ScientificType.TAN),
-        CalcButtonAction.Scientific("log", ScientificType.LOG)
-    ),
-    listOf(
-        CalcButtonAction.Constant("π", Constants.PI),
-        CalcButtonAction.Constant("e", Constants.E),
-        CalcButtonAction.Symbol("^", " ^ "),
-        CalcButtonAction.Symbol("÷", "/")
-    ),
-    listOf(
-        CalcButtonAction.Symbol("7"),
-        CalcButtonAction.Symbol("8"),
-        CalcButtonAction.Symbol("9"),
-        CalcButtonAction.Symbol("×", "*"),
-    ),
-    listOf(
-        CalcButtonAction.Symbol("4"),
-        CalcButtonAction.Symbol("5"),
-        CalcButtonAction.Symbol("6"),
-        CalcButtonAction.Symbol("+")
-    ),
-    listOf(
-        CalcButtonAction.Symbol("1"),
-        CalcButtonAction.Symbol("2"),
-        CalcButtonAction.Symbol("3"),
-        CalcButtonAction.Symbol("-")
-    ),
-    listOf(
-        CalcButtonAction.Symbol("0"),
-        CalcButtonAction.Symbol("."),
-        CalcButtonAction.Backspace(R.drawable.backspace),
-        CalcButtonAction.Symbol("=")
-    )
-)
-
-val MultipleVariableGrid = listOf(
+val MultipleVariableGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Variable("x", Variables.X),
         CalcButtonAction.Variable("y", Variables.Y),
@@ -259,7 +213,7 @@ val MultipleVariableGrid = listOf(
         CalcButtonAction.Calculate
     )
 )
-val SingleVariableGrid = listOf(
+val SingleVariableGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Variable("x", Variables.X),
         CalcButtonAction.Symbol("("),
@@ -449,7 +403,9 @@ fun CalcButton(
             CalcButtonAction.Graph -> {
                 Text(
                     text = "Graph",
-                    style = textStyle.copy(fontSize = if (isExpanded) 14.sp else 18.sp),
+                    style = textStyle.copy(
+                        fontSize = if (isExpanded) Dimens.GraphButtonTextSizeExpanded else Dimens.GraphButtonTextSizeStandard
+                    ),
                     color = animatedContentColor
                 )
             }

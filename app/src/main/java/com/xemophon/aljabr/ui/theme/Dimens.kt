@@ -1,6 +1,7 @@
 package com.xemophon.aljabr.ui.theme
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 object Dimens {
     val PaddingNormal = 16.dp
@@ -19,4 +20,9 @@ object Dimens {
     const val ButtonAspectRatioStandard = 1f
     const val ButtonAspectRatioExpanded = 1.3f
     const val ScientificButtonAspectRatio = 1.5f
+
+    val TextSizeToggle = 24.sp
+    val TextSizeSwitchLabel = 8.sp
+    val GraphButtonTextSizeExpanded = 14.sp
+    val GraphButtonTextSizeStandard = 18.sp
 }

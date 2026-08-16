@@ -50,8 +50,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.CalcBox
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
+import com.xemophon.aljabr.ui.components.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalcButtonsGraph
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
@@ -107,10 +108,11 @@ fun GraphMaker(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    CalcButtonsGraph(
+                    AdvancedButtonsGrid(
+                        gridMode = AdvancedGridMode.Graph,
                         isInverse = isInverse,
                         onToggleInverse = { isInverse = !isInverse },
-                        onVisualize = { showGraph = true },
+                        onSecondaryAction = { showGraph = true },
                         modifier = Modifier.fillMaxWidth(),
                         onAction = { action ->
                             if (action is CalcButtonAction.Graph) {
