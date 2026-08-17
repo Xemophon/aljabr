@@ -38,6 +38,7 @@ import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.misc.SettingsViewModel
+import com.xemophon.aljabr.navigation.Algebra
 import com.xemophon.aljabr.navigation.BasicCalcRoute
 import com.xemophon.aljabr.navigation.Calculus
 import com.xemophon.aljabr.navigation.Misc
@@ -123,6 +124,25 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                                 )
                             }
+                            HorizontalSeparator(text = "Algebra")
+                            Algebra.forEach { variant ->
+                                NavigationDrawerItem(
+                                    label = { Text(variant.label) },
+                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
+                                    onClick = {
+                                        navController.navigate(variant.route) {
+                                            if (variant.route is BasicCalcRoute) {
+                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                            } else {
+                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                            }
+                                        }
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                            }
                             HorizontalSeparator(text = "Utilities")
                             ReferenceSheets.forEach { variant ->
                                 NavigationDrawerItem(
@@ -170,6 +190,11 @@ class MainActivity : ComponentActivity() {
                         },
                     ) {
                         Calculus.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
+                        }
+                        Algebra.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }

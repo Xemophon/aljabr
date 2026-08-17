@@ -5,10 +5,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Difference
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TableChart
+import com.xemophon.aljabr.algebra.polynomials.PolyCalc
 import com.xemophon.aljabr.basicCalc.BasicCalc
 import com.xemophon.aljabr.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.calculus.graphMaker.GraphMaker
@@ -34,6 +36,8 @@ object MiscRoute
 object ConvertorRoute
 @Serializable
 object SheetRoute
+@Serializable
+object PolyRoute
 val Calculus = listOf(
 
     CalculatorVariant(
@@ -65,6 +69,17 @@ val Calculus = listOf(
         content = { onOpenDrawer -> DiffCalc(onOpenDrawer = onOpenDrawer) }
     )
 )
+
+val Algebra = listOf(
+    CalculatorVariant(
+        route = PolyRoute,
+        routeClass = PolyRoute::class,
+        label = "Polynomials",
+        icon = Icons.Default.Difference,
+        content = { onOpenDrawer -> PolyCalc(onOpenDrawer = onOpenDrawer) }
+    )
+)
+
 
 val Misc = listOf(
     CalculatorVariant(

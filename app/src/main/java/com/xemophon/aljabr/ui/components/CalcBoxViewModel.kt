@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xemophon.aljabr.algebra.polynomials.PolyFuncs
+import com.xemophon.aljabr.algebra.polynomials.PolynomialResult
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.calculus.differentiate.AnalysisFunc
 import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
@@ -172,7 +174,7 @@ fun CalcBox(
     }
 }
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
@@ -197,6 +199,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     var analysisResult by mutableStateOf<AnalysisResult?>(null)
+        private set
+
+    var polynomialResult by mutableStateOf<PolynomialResult?>(null)
         private set
 
     var diffGridMode by mutableStateOf("Single") // "Single" or "Multiple"
@@ -248,7 +253,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     fun handleAction(action: CalcButtonAction) {
         // Clear mode-specific results when any input button is pressed
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
-            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS) {
+            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -543,6 +548,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             runDifferentiateCalculation()
             return
         }
+        if (calculatorMode == CalculatorMode.POLYNOMIALS) {
+            runPolynomialCalculation()
+            return
+        }
 
         stepsList.clear()
 
@@ -708,10 +717,23 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun runPolynomialCalculation() {
+        if (displayText.isEmpty() || displayText == "0") return
+        viewModelScope.launch {
+            try {
+                polynomialResult = PolyFuncs.analyzePolynomial(displayText)
+                isShowingResult = true
+            } catch (e: Exception) {
+                // resultText = "Error"
+            }
+        }
+    }
+
     private fun clearAll() {
-        if (calculatorMode == CalculatorMode.LIMITS && isShowingResult) {
+        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS) && isShowingResult) {
             resultText = ""
             isShowingResult = false
+            polynomialResult = null
             cursorIndex = displayText.length
             return
         }
@@ -720,6 +742,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         cursorIndex = 1
         resultText = ""
         analysisResult = null
+        polynomialResult = null
         targetText =
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""

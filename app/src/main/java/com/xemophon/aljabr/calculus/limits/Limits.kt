@@ -36,7 +36,6 @@ import com.xemophon.aljabr.ui.components.CalculatorFocus
 import com.xemophon.aljabr.ui.components.CalculatorMode
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.LimitType
-import com.xemophon.aljabr.ui.components.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 
 @Composable

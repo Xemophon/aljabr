@@ -34,6 +34,7 @@ import com.xemophon.aljabr.ui.components.Constants
 import com.xemophon.aljabr.ui.components.ConverterField
 import com.xemophon.aljabr.ui.components.HorizontalSeparator
 import com.xemophon.aljabr.ui.components.ShortCalcButtons
+import com.xemophon.aljabr.ui.components.ShortGridMode
 import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable
@@ -143,6 +144,7 @@ fun ConvertorPage(
 
                 ShortCalcButtons(
                     modifier = Modifier.weight(1.3f),
+                    gridMode = ShortGridMode.Convertor,
                     letterNeeded = letterMode,
                     onAction = { viewModel.handleAction(it) }
                 )

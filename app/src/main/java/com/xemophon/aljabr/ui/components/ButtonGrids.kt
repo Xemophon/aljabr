@@ -63,22 +63,29 @@ private fun CalcButtonSheet(
     }
 }
 
+sealed class ShortGridMode{
+    data object Convertor : ShortGridMode()
+    data object Polynomials : ShortGridMode()
+}
+
 @Composable
 fun ShortCalcButtons(
     modifier: Modifier = Modifier,
-    buttonGrid: List<List<CalcButtonAction>> = ShortButtonGrid,
+    gridMode: ShortGridMode,
     letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
     onAction: (CalcButtonAction) -> Unit,
 ) {
     CalcButtonSheet(modifier.fillMaxHeight()) {
         ButtonGrid(
-            gridData = buttonGrid,
+            gridData = ShortButtonGrid,
             modifier = Modifier.weight(1f),
             isExpanded = true,
             onAction = onAction,
             buttonModifier = Modifier.fillMaxHeight(),
-            overrideButtonAt = { rowIndex, colIndex ->
-                if (rowIndex == 4 && colIndex == 3) letterNeeded else null
+            overrides = when(gridMode) {
+                ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
+                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Symbol("="), (4 to 2) to CalcButtonAction.Variable("x", Variables.X))
+                else -> emptyMap()
             }
         )
     }
@@ -362,6 +369,7 @@ fun AdvancedButtonsGrid(
                 )
             }
         }
+        else -> {}
     }
 
     AdditionalButtons(buttons = buttons)
@@ -371,10 +379,11 @@ fun AdvancedButtonsGrid(
         isInverse = isInverse,
         onAction = onAction,
         buttonModifier = Modifier.aspectRatio(Dimens.ButtonAspectRatioExpanded),
-        overrideButtonAt = { rowIndex, colIndex ->
-            if (gridMode is AdvancedGridMode.Graph && rowIndex == 6 && colIndex == 3) {
-                CalcButtonAction.Symbol("=")
-            } else null
+        overrides = when (gridMode) {
+            is AdvancedGridMode.Graph -> {
+                mapOf((6 to 3) to CalcButtonAction.Symbol("="))
+            }
+            else -> emptyMap()
         }
     )
 }
@@ -407,7 +416,7 @@ private fun ButtonGrid(
     isExpanded: Boolean,
     onAction: (CalcButtonAction) -> Unit,
     buttonModifier: Modifier = Modifier,
-    overrideButtonAt: ((Int, Int) -> CalcButtonAction?)? = null
+    overrides: Map<Pair<Int, Int>, CalcButtonAction> = emptyMap()
 ) {
     val colorScheme = MaterialTheme.colorScheme
     gridData.forEachIndexed { rowIndex, row ->
@@ -418,7 +427,7 @@ private fun ButtonGrid(
             horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
             row.forEachIndexed { colIndex, action ->
-                val baseAction = overrideButtonAt?.invoke(rowIndex, colIndex) ?: action
+                val baseAction = overrides[rowIndex to colIndex] ?: action
                 val displayAction = if (isInverse) baseAction.toInverse() else baseAction
                 val colors = remember(displayAction, colorScheme) { getButtonColors(displayAction, colorScheme) }
 
