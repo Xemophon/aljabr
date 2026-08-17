@@ -1,6 +1,37 @@
-package com.xemophon.aljabr.calculus.differentiate
+package com.xemophon.aljabr.ui.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.hrm.latex.renderer.Latex
+import com.hrm.latex.renderer.font.MathFont
+import com.hrm.latex.renderer.model.LatexConfig
+import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
 data class AnalysisResult(
@@ -15,6 +46,222 @@ data class AnalysisResult(
 )
 
 data class NamedExpression(val name: String, val expression: String, val rawExpression: String = "")
+
+data class PolynomialResult(
+    val expression: String,
+    val variable: String,
+    val roots: List<String>,
+    val factoredForm: String? = null,
+    val error: String? = null
+)
+
+@Composable
+fun AnalysisSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier.padding(vertical = 4.dp)
+    )
+}
+
+@Composable
+fun ResultItemCard(label: String? = null, displayText: String, rawValue: String? = null) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (label != null) {
+                Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+            }
+            
+            val latexState = produceState<String?>(initialValue = null, displayText, rawValue) {
+                val toConvert = rawValue ?: displayText
+                if (rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' }) {
+                    val result = withContext(Dispatchers.Default) {
+                        SymjaUtils.toLaTeX(toConvert)
+                    }
+                    value = result
+                } else {
+                    value = toConvert
+                }
+            }
+
+            val latexValue = latexState.value
+
+            if (latexValue != null && (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = if (label != null) 4.dp else 0.dp)
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Latex(
+                        latex = latexValue,
+                        config = LatexConfig(
+                            fontSize = 20.sp,
+                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                            mathFont = MathFont.KaTeXTTF
+                        )
+                    )
+                }
+            } else {
+                Text(
+                    text = displayText,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ReportScreen(
+    title: String,
+    error: String? = null,
+    onClear: () -> Unit,
+    content: LazyListScope.() -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        if (error != null) {
+            item {
+                Text(text = "Error: $error", color = MaterialTheme.colorScheme.error)
+            }
+        } else {
+            content()
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            ElevatedCard(
+                onClick = onClear,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(modifier = Modifier.padding(16.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(text = "Clear and Return", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AnalysisReport(
+    result: AnalysisResult,
+    steps: List<CalculusStep> = emptyList(),
+    isCalculatingSteps: Boolean = false,
+    onShowStepsClick: () -> Unit = {},
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = "Analysis Result",
+        error = result.error,
+        onClear = onClear
+    ) {
+        // Derivatives
+        item { 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AnalysisSectionHeader("Derivatives", Modifier.weight(1f))
+                if (steps.isNotEmpty() || isCalculatingSteps) {
+                     Text(
+                         text = "Steps",
+                         color = MaterialTheme.colorScheme.primary,
+                         modifier = Modifier.clickable { onShowStepsClick() }.padding(end = 8.dp),
+                         fontWeight = FontWeight.Bold
+                     )
+                }
+            }
+        }
+        items(result.derivatives) { deriv ->
+            ResultItemCard(deriv.name, deriv.expression, deriv.rawExpression)
+        }
+
+        // Maxima
+        if (result.localMaxima.isNotEmpty()) {
+            item { AnalysisSectionHeader("Local Maxima") }
+            items(result.localMaxima) { point ->
+                ResultItemCard("Maximum", point)
+            }
+        }
+
+        // Minima
+        if (result.localMinima.isNotEmpty()) {
+            item { AnalysisSectionHeader("Local Minima") }
+            items(result.localMinima) { point ->
+                ResultItemCard("Minimum", point)
+            }
+        }
+
+        // Inflection Points
+        if (result.inflectionPoints.isNotEmpty()) {
+            item { AnalysisSectionHeader("Inflection Points") }
+            items(result.inflectionPoints) { point ->
+                ResultItemCard("Inflection", point)
+            }
+        }
+
+        // Saddle Points
+        if (result.saddlePoints.isNotEmpty()) {
+            item { AnalysisSectionHeader("Saddle Points") }
+            items(result.saddlePoints) { point ->
+                ResultItemCard("Saddle", point)
+            }
+        }
+
+        // Other Stationary Points
+        if (result.stationaryPoints.isNotEmpty()) {
+            item { AnalysisSectionHeader("Stationary Points") }
+            items(result.stationaryPoints) { point ->
+                ResultItemCard("Stationary", point)
+            }
+        }
+    }
+}
+
+@Composable
+fun PolynomialReport(
+    result: PolynomialResult,
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = "Polynomial Analysis",
+        error = result.error,
+        onClear = onClear
+    ) {
+        // Roots Section
+        if (result.roots.isNotEmpty()) {
+            item { AnalysisSectionHeader("Roots (Numerical)") }
+            items(result.roots) { root ->
+                ResultItemCard(displayText = root)
+            }
+        } else {
+            item { Text(text = "No roots found", style = MaterialTheme.typography.bodyLarge) }
+        }
+
+        // Factored Form
+        result.factoredForm?.let { factored ->
+            item { AnalysisSectionHeader("Factored Form") }
+            item {
+                ResultItemCard(displayText = factored)
+            }
+        }
+    }
+}
 
 object AnalysisFunc {
 

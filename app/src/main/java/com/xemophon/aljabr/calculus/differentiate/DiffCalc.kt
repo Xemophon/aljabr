@@ -14,10 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -53,6 +50,8 @@ import com.xemophon.aljabr.ui.components.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.AdvancedGridMode
+import com.xemophon.aljabr.ui.components.AnalysisReport
+import com.xemophon.aljabr.ui.components.AnalysisResult
 import com.xemophon.aljabr.ui.components.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorFocus
@@ -174,167 +173,6 @@ fun DiffCalcContent(
                         onAction = onAction
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun AnalysisReport(
-    result: AnalysisResult,
-    steps: List<CalculusStep> = emptyList(),
-    isCalculatingSteps: Boolean = false,
-    onShowStepsClick: () -> Unit = {},
-    onClear: () -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text(
-                text = "Analysis Result",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (result.error != null) {
-            item {
-                Text(text = "Error: ${result.error}", color = MaterialTheme.colorScheme.error)
-            }
-        } else {
-            // Derivatives
-            item { 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AnalysisSectionHeader("Derivatives", Modifier.weight(1f))
-                    if (steps.isNotEmpty() || isCalculatingSteps) {
-                         Text(
-                             text = "Steps",
-                             color = MaterialTheme.colorScheme.primary,
-                             modifier = Modifier.clickable { onShowStepsClick() }.padding(end = 8.dp),
-                             fontWeight = FontWeight.Bold
-                         )
-                    }
-                }
-            }
-            items(result.derivatives) { deriv ->
-                AnalysisItemCard(deriv.name, deriv.expression, deriv.rawExpression)
-            }
-
-            // Maxima
-            if (result.localMaxima.isNotEmpty()) {
-                item { AnalysisSectionHeader("Local Maxima") }
-                items(result.localMaxima) { point ->
-                    AnalysisItemCard("Maximum", point)
-                }
-            }
-
-            // Minima
-            if (result.localMinima.isNotEmpty()) {
-                item { AnalysisSectionHeader("Local Minima") }
-                items(result.localMinima) { point ->
-                    AnalysisItemCard("Minimum", point)
-                }
-            }
-
-            // Inflection Points
-            if (result.inflectionPoints.isNotEmpty()) {
-                item { AnalysisSectionHeader("Inflection Points") }
-                items(result.inflectionPoints) { point ->
-                    AnalysisItemCard("Inflection", point)
-                }
-            }
-
-            // Saddle Points
-            if (result.saddlePoints.isNotEmpty()) {
-                item { AnalysisSectionHeader("Saddle Points") }
-                items(result.saddlePoints) { point ->
-                    AnalysisItemCard("Saddle", point)
-                }
-            }
-
-            // Other Stationary Points
-            if (result.stationaryPoints.isNotEmpty()) {
-                item { AnalysisSectionHeader("Stationary Points") }
-                items(result.stationaryPoints) { point ->
-                    AnalysisItemCard("Stationary", point)
-                }
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            ElevatedCard(
-                onClick = onClear,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(modifier = Modifier.padding(16.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text(text = "Clear and Return", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AnalysisSectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.SemiBold,
-        modifier = modifier.padding(vertical = 4.dp)
-    )
-}
-
-@Composable
-fun AnalysisItemCard(label: String, displayText: String, rawValue: String? = null) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-            
-            val latexState = produceState<String?>(initialValue = null, displayText, rawValue) {
-                val toConvert = rawValue ?: displayText
-                // Try converting to LaTeX if it looks like a math expression or we have a raw value
-                if (rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' }) {
-                    val result = withContext(Dispatchers.Default) {
-                        SymjaUtils.toLaTeX(toConvert)
-                    }
-                    value = result
-                } else {
-                    value = toConvert
-                }
-            }
-
-            val latexValue = latexState.value
-
-            if (latexValue != null && (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    Latex(
-                        latex = latexValue,
-                        config = LatexConfig(
-                            fontSize = 20.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                            mathFont = MathFont.KaTeXTTF
-                        )
-                    )
-                }
-            } else {
-                Text(
-                    text = displayText,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }

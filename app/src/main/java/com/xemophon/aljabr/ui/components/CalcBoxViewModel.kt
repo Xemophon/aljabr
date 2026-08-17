@@ -47,14 +47,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.algebra.polynomials.PolyFuncs
-import com.xemophon.aljabr.algebra.polynomials.PolynomialResult
 import com.xemophon.aljabr.basicCalc.CalcFuncs
-import com.xemophon.aljabr.calculus.differentiate.AnalysisFunc
-import com.xemophon.aljabr.calculus.differentiate.AnalysisResult
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
-import com.xemophon.aljabr.ui.components.CalculusStep
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.flow.collectLatest

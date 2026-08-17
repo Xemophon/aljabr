@@ -1,16 +1,9 @@
 package com.xemophon.aljabr.algebra.polynomials
 
 import com.xemophon.aljabr.data.SymjaUtils
+import com.xemophon.aljabr.ui.components.PolynomialResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
-data class PolynomialResult(
-    val expression: String,
-    val variable: String,
-    val roots: List<String>,
-    val factoredForm: String? = null,
-    val error: String? = null
-)
 
 object PolyFuncs {
 
