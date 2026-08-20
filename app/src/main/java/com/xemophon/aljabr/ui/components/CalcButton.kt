@@ -46,6 +46,7 @@ sealed interface CalcButtonAction {
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
     data object Graph : CalcButtonAction
+    data object Done : CalcButtonAction
     data class Backspace(@param:DrawableRes val iconRes: Int) : CalcButtonAction
 }
 
@@ -395,6 +396,14 @@ fun CalcButton(
             CalcButtonAction.Calculate -> {
                 Text(
                     text = "=",
+                    style = textStyle,
+                    color = animatedContentColor
+                )
+            }
+
+            CalcButtonAction.Done -> {
+                Text(
+                    text = "✔",
                     style = textStyle,
                     color = animatedContentColor
                 )

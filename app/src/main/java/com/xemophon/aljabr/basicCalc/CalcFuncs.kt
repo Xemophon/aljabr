@@ -200,9 +200,13 @@ object CalcFuncs {
                         func == "pi" -> PI
                         func == "e" -> E
                         func == "phi" -> PHI
+                        func == "inf" || func == "infinity" -> Double.POSITIVE_INFINITY
                         func == "i" || func == "j" -> 0.0 // Basic calc is real-only
                         else -> handleFunction(func)
                     }
+                } else if (ch == '∞'.code) {
+                    nextChar()
+                    x = Double.POSITIVE_INFINITY
                 } else {
                     recursionDepth--
                     return Double.NaN

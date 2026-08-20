@@ -323,6 +323,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             is CalcButtonAction.DifferentiateSingle -> {
                 diffGridMode = "Single"
             }
+            CalcButtonAction.Done -> { /* TODO */ }
         }
     }
 

@@ -29,6 +29,12 @@ object IntegFunc {
     ): Double {
         return try {
             if (lower == upper) return 0.0
+
+            // Support for infinite limits or complex functions using NIntegrate fallback
+            if (lower.isInfinite() || upper.isInfinite()) {
+                val res = nIntegrate(expression, lower, upper, type)
+                if (!res.isNaN()) return res
+            }
             
             val symjaExpr = SymjaUtils.prepareForSymja(expression)
             val derivative = if (type == IntegralType.ARC || type == IntegralType.XSURF || type == IntegralType.YSURF) {
@@ -76,8 +82,41 @@ object IntegFunc {
                 sum += factor * valAtX
             }
 
-            (h / 3) * sum
+            val result = (h / 3) * sum
+            
+            if (result.isNaN()) {
+                return nIntegrate(expression, lower, upper, type)
+            }
+            result
         } catch (e: Throwable) {
+            nIntegrate(expression, lower, upper, type)
+        }
+    }
+
+    private fun nIntegrate(
+        expression: String,
+        lower: Double,
+        upper: Double,
+        type: IntegralType
+    ): Double {
+        return try {
+            val symjaExpr = SymjaUtils.prepareForSymja(expression)
+            val lStr = if (lower.isInfinite()) if (lower < 0) "-Infinity" else "Infinity" else lower.toString()
+            val uStr = if (upper.isInfinite()) if (upper < 0) "-Infinity" else "Infinity" else upper.toString()
+
+            val formula = when (type) {
+                IntegralType.DEFINITE -> symjaExpr
+                IntegralType.ARC -> "Sqrt(1 + (D($symjaExpr, x))^2)"
+                IntegralType.XVOL -> "Pi * ($symjaExpr)^2"
+                IntegralType.YVOL -> "2 * Pi * Abs(x * ($symjaExpr))"
+                IntegralType.XSURF -> "2 * Pi * Abs($symjaExpr) * Sqrt(1 + (D($symjaExpr, x))^2)"
+                IntegralType.YSURF -> "2 * Pi * Abs(x) * Sqrt(1 + (D($symjaExpr, x))^2)"
+                else -> symjaExpr
+            }
+
+            val res = SymjaUtils.evaluator.eval("NIntegrate[$formula, {x, $lStr, $uStr}]").toString()
+            res.toDouble()
+        } catch (_: Throwable) {
             Double.NaN
         }
     }
