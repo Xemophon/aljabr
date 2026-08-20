@@ -11,7 +11,7 @@ import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.Constants
 
 enum class MatrixMode {
-    ADDITION, SUBTRACTION, MULTIPLICATION, DETERMINANT, INVERSE, TRANSPOSE, RANK, EIGENVALUES, EIGENVECTORS
+    ADDITION, SUBTRACTION, MULTIPLICATION, DETERMINANT, INVERSE, TRANSPOSE, RANK, EIGENVALUES, EIGENVECTORS, LINEARSOLVE
 }
 
 enum class MatrixName { A, B }
@@ -194,7 +194,10 @@ class MatrixViewModel : ViewModel() {
 
     fun calculateResult() {
         val matrixA = getSymjaMatrix(MatrixName.A)
-        val matrixB = if (mode == MatrixMode.ADDITION || mode == MatrixMode.SUBTRACTION || mode == MatrixMode.MULTIPLICATION) {
+        val matrixB = if (mode == MatrixMode.ADDITION || 
+            mode == MatrixMode.SUBTRACTION || 
+            mode == MatrixMode.MULTIPLICATION ||
+            mode == MatrixMode.LINEARSOLVE) {
             getSymjaMatrix(MatrixName.B)
         } else null
 

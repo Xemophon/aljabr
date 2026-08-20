@@ -28,6 +28,7 @@ object MatrixFunc {
             MatrixMode.RANK -> "MatrixRank($symjaA)"
             MatrixMode.EIGENVALUES -> "Eigenvalues($symjaA)"
             MatrixMode.EIGENVECTORS -> "Eigenvectors($symjaA)"
+            MatrixMode.LINEARSOLVE -> "LinearSolve($symjaA, $symjaB)"
         }
 
         return try {
