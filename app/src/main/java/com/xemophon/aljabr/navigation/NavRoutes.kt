@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TableChart
+import com.xemophon.aljabr.algebra.matrices.MatrixScreen
+import com.xemophon.aljabr.algebra.matrices.MatrixViewModel
 import com.xemophon.aljabr.algebra.polynomials.PolyCalc
 import com.xemophon.aljabr.basicCalc.BasicCalc
 import com.xemophon.aljabr.calculus.differentiate.DiffCalc
@@ -18,6 +20,7 @@ import com.xemophon.aljabr.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.conversions.ConvertorPage
 import com.xemophon.aljabr.conversions.UtilitiesScreen
+import com.xemophon.aljabr.misc.MiscPage
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -38,6 +41,8 @@ object ConvertorRoute
 object SheetRoute
 @Serializable
 object PolyRoute
+@Serializable
+object MatrixRoute
 val Calculus = listOf(
 
     CalculatorVariant(
@@ -77,6 +82,16 @@ val Algebra = listOf(
         label = "Polynomials",
         icon = Icons.Default.Difference,
         content = { onOpenDrawer -> PolyCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = MatrixRoute,
+        routeClass = MatrixRoute::class,
+        label = "Matrices",
+        icon = Icons.Default.Difference,
+        content = { onOpenDrawer -> MatrixScreen(
+            onOpenDrawer = onOpenDrawer,
+            viewModel = TODO()
+        ) }
     )
 )
 
@@ -94,7 +109,7 @@ val Misc = listOf(
         routeClass = MiscRoute::class,
         label = "Settings & About",
         icon = Icons.Default.Settings,
-        content = { onOpenDrawer -> com.xemophon.aljabr.misc.MiscPage(onOpenDrawer = onOpenDrawer) }
+        content = { onOpenDrawer -> MiscPage(onOpenDrawer = onOpenDrawer) }
     )
 )
 
