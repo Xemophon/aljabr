@@ -26,7 +26,7 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
     - **Definite:** Precise numerical integration using Simpson's 1/3 rule.
 - **Limits:** Calculate finite and infinite ($\infty$) limits, including left/right-sided evaluations.
 
-### 🧩 Algebra (Upcoming)
+### 🧩 Algebra
 - **Matrices:** Support for fundamental operations: addition, multiplication, transpose, determinant, and inverse.
 - **Polynomials:** Advanced tools for root finding, polynomial division, and simplification.
 
