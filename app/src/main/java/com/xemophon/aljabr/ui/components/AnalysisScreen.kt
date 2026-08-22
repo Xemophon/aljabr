@@ -161,6 +161,25 @@ fun ReportScreen(
 }
 
 @Composable
+fun MatrixReport(
+    title: String,
+    result: String,
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = title,
+        onClear = onClear
+    ) {
+        item {
+            AnalysisSectionHeader("Resulting Matrix / Value")
+        }
+        item {
+            ResultItemCard(displayText = result)
+        }
+    }
+}
+
+@Composable
 fun AnalysisReport(
     result: AnalysisResult,
     steps: List<CalculusStep> = emptyList(),

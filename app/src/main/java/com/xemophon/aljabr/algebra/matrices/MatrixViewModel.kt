@@ -192,6 +192,10 @@ class MatrixViewModel : ViewModel() {
         }
     }
 
+    fun clearResult() {
+        resultText = ""
+    }
+
     fun calculateResult() {
         val matrixA = getSymjaMatrix(MatrixName.A)
         val matrixB = if (mode == MatrixMode.ADDITION || 

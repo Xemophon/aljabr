@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.Constants
+import com.xemophon.aljabr.ui.components.MatrixReport
 import com.xemophon.aljabr.ui.components.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.ShortGridMode
 
@@ -85,50 +86,52 @@ fun MatrixScreen(
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // Top controls: Mode, Matrix Label, and Dimensions
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        ModeSelector(
-                            currentMode = viewModel.mode,
-                            onModeSelected = { viewModel.onModeChange(it) }
-                        )
-
-                        // Matrix indicator (A or B)
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                    if (viewModel.resultText.isEmpty()) {
+                        // Top controls: Mode, Matrix Label, and Dimensions
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                text = "Matrix ${viewModel.activeMatrix.name}",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontWeight = FontWeight.Bold
+                            ModeSelector(
+                                currentMode = viewModel.mode,
+                                onModeSelected = { viewModel.onModeChange(it) }
                             )
+
+                            // Matrix indicator (A or B)
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Matrix ${viewModel.activeMatrix.name}",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                DimensionControl(
+                                    label = "R",
+                                    value = viewModel.rows,
+                                    onValueChange = { viewModel.updateRows(it) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                DimensionControl(
+                                    label = "C",
+                                    value = viewModel.columns,
+                                    onValueChange = { viewModel.updateColumns(it) }
+                                )
+                            }
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            DimensionControl(
-                                label = "R",
-                                value = viewModel.rows,
-                                onValueChange = { viewModel.updateRows(it) }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            DimensionControl(
-                                label = "C",
-                                value = viewModel.columns,
-                                onValueChange = { viewModel.updateColumns(it) }
-                            )
-                        }
+                        HorizontalDivider()
                     }
-
-                    HorizontalDivider()
 
                     // Matrix Input Field
                     Box(
@@ -138,41 +141,32 @@ fun MatrixScreen(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        MatrixBoxField(
-                            rows = viewModel.rows,
-                            cols = viewModel.columns,
-                            data = viewModel.matrixData,
-                            selectedIndex = viewModel.selectedIndex,
-                            onElementClick = { viewModel.onElementClick(it) }
-                        )
-                    }
-
-                    // Result Area
-                    if (viewModel.resultText.isNotEmpty()) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = viewModel.resultText,
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textAlign = TextAlign.Center
+                        if (viewModel.resultText.isEmpty()) {
+                            MatrixBoxField(
+                                rows = viewModel.rows,
+                                cols = viewModel.columns,
+                                data = viewModel.matrixData,
+                                selectedIndex = viewModel.selectedIndex,
+                                onElementClick = { viewModel.onElementClick(it) }
+                            )
+                        } else {
+                            MatrixReport(
+                                title = "${viewModel.mode.name.lowercase().replaceFirstChar { it.uppercase() }} Result",
+                                result = viewModel.resultText,
+                                onClear = { viewModel.clearResult() }
                             )
                         }
                     }
 
                     // Bottom Control Bar
-                    ControlBar(
-                        activeMatrix = viewModel.activeMatrix,
-                        onClear = { viewModel.clearCurrentMatrix() },
-                        onToggle = { viewModel.toggleMatrix() },
-                        onCompute = { viewModel.calculateResult() }
-                    )
+                    if (viewModel.resultText.isEmpty()) {
+                        ControlBar(
+                            activeMatrix = viewModel.activeMatrix,
+                            onClear = { viewModel.clearCurrentMatrix() },
+                            onToggle = { viewModel.toggleMatrix() },
+                            onCompute = { viewModel.calculateResult() }
+                        )
+                    }
                 }
             }
         }
@@ -318,7 +312,7 @@ fun FocusOverlay(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 16.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -356,7 +350,7 @@ fun MatrixKeypad(
     onAction: (CalcButtonAction) -> Unit
 ) {
     ShortCalcButtons(
-        modifier = Modifier.height(300.dp),
+        modifier = Modifier.height(400.dp),
         gridMode = ShortGridMode.Convertor,
         onAction = onAction,
         letterNeeded = CalcButtonAction.Constant("i", Constants.I)
