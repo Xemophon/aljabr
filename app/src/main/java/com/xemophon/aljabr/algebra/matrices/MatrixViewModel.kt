@@ -8,7 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
 import com.xemophon.aljabr.data.SettingsRepository
+import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.Constants
@@ -42,11 +44,18 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
     private val settingsRepository = SettingsRepository(application)
     var useRadians by mutableStateOf(true)
         private set
+    var autoClearCache by mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch {
             settingsRepository.useRadiansFlow.collectLatest {
                 useRadians = it
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.autoClearCacheFlow.collectLatest {
+                autoClearCache = it
             }
         }
     }
@@ -249,12 +258,24 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
     fun handleClear() {
         val data = if (activeMatrix == MatrixName.A) _matrixDataA else _matrixDataB
         data[selectedIndex] = ""
+
+        // Clear App Cache and Graph Cache if enabled
+        GraphGenerator.clearCache()
+        if (autoClearCache) {
+            StorageUtils.clearAppCache(getApplication())
+        }
     }
 
     fun clearCurrentMatrix() {
         val data = if (activeMatrix == MatrixName.A) _matrixDataA else _matrixDataB
         for (i in data.indices) {
             data[i] = ""
+        }
+        
+        // Clear App Cache and Graph Cache if enabled
+        if (autoClearCache) {
+            GraphGenerator.clearCache()
+            StorageUtils.clearAppCache(getApplication())
         }
     }
 
@@ -273,6 +294,12 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
 
     fun clearResult() {
         resultText = ""
+
+        // Clear App Cache and Graph Cache if enabled
+        if (autoClearCache) {
+            GraphGenerator.clearCache()
+            StorageUtils.clearAppCache(getApplication())
+        }
     }
 
     fun loadResultIntoMatrix(name: MatrixName) {
@@ -280,51 +307,54 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
         if (result.isBlank()) return
 
         try {
-            // Very simple parser for Symja matrix strings like {{a,b},{c,d}}
-            // or vector strings like {a,b,c}
-            
-            // Remove outer braces if they exist
             val content = result.trim()
             if (!content.startsWith("{")) return
 
-            // If it's a matrix {{...},{...}}
+            // Improved parser for Symja matrix/vector strings
+            val rowsRaw = mutableListOf<List<String>>()
+            
+            // Case 1: Matrix {{a,b},{c,d}} or {{a},{b}}
             if (content.startsWith("{{")) {
-                val rowsRaw = content.removeSurrounding("{", "}").split("},{")
-                    .map { it.removeSurrounding("{", "}").split(",") }
-                
+                // Split by "},{" but handle nested structures if any
+                // A more robust way is to find balanced braces
+                val inner = content.removeSurrounding("{", "}")
+                var depth = 0
+                var current = StringBuilder()
+                for (char in inner) {
+                    if (char == '{') depth++
+                    if (char == '}') depth--
+                    current.append(char)
+                    if (depth == 0 && char == '}') {
+                        val rowStr = current.toString().removeSurrounding("{", "}")
+                        rowsRaw.add(rowStr.split(",").map { it.trim() })
+                        current = StringBuilder()
+                    } else if (depth == 0 && char == ',') {
+                        current = StringBuilder() // Skip commas between rows
+                    }
+                }
+            } 
+            // Case 2: Vector {a,b,c}
+            else {
+                val elements = content.removeSurrounding("{", "}").split(",").map { it.trim() }
+                // Default vectors to column vectors (Nx1) for better algebraic consistency
+                elements.forEach { rowsRaw.add(listOf(it)) }
+            }
+
+            if (rowsRaw.isNotEmpty()) {
                 val newRows = rowsRaw.size
-                val newCols = rowsRaw.firstOrNull()?.size ?: 0
-                
+                val newCols = rowsRaw.first().size
+
                 if (newRows in 1..10 && newCols in 1..10) {
                     if (name == MatrixName.A) {
                         rowsA = newRows
                         columnsA = newCols
                         _matrixDataA.clear()
-                        rowsRaw.flatten().forEach { _matrixDataA.add(it.trim()) }
+                        rowsRaw.flatten().forEach { _matrixDataA.add(it) }
                     } else {
                         rowsB = newRows
                         columnsB = newCols
                         _matrixDataB.clear()
-                        rowsRaw.flatten().forEach { _matrixDataB.add(it.trim()) }
-                    }
-                    clearResult()
-                    activeMatrix = name
-                }
-            } else {
-                // It's a vector {a,b,c} - load as a column or row matrix
-                val elements = content.removeSurrounding("{", "}").split(",")
-                val count = elements.size
-                if (count in 1..10) {
-                    if (name == MatrixName.A) {
-                        rowsA = count
-                        columnsA = 1
-                        _matrixDataA.clear()
-                        elements.forEach { _matrixDataA.add(it.trim()) }
-                    } else {
-                        rowsB = count
-                        columnsB = 1
-                        _matrixDataB.clear()
-                        elements.forEach { _matrixDataB.add(it.trim()) }
+                        rowsRaw.flatten().forEach { _matrixDataB.add(it) }
                     }
                     clearResult()
                     activeMatrix = name
@@ -341,6 +371,16 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
             getSymjaMatrix(MatrixName.B)
         } else null
 
-        resultText = MatrixFunc.calculate(mode, matrixA, matrixB)
+        var res = MatrixFunc.calculate(mode, matrixA, matrixB)
+
+        // Smart Unwrap: convert 1x1 matrix {{x}} to scalar x for cleaner display
+        if (res.startsWith("{{") && res.endsWith("}}")) {
+            val inner = res.removeSurrounding("{{", "}}")
+            if (!inner.contains("},{") && !inner.contains(",")) {
+                res = inner
+            }
+        }
+
+        resultText = res
     }
 }
