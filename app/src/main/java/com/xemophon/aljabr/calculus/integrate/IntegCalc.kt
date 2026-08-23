@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.CalculusStep
@@ -128,7 +127,6 @@ fun IntegCalcContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeDrawingPadding()
             ) {
                 Box(
                     modifier = Modifier
@@ -181,20 +179,22 @@ fun IntegDisplay(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.End) {
-            if (showStepsButton) {
-                IconButton(
-                    onClick = onShowStepsClick,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Show Steps",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+        if (showStepsButton) {
+            IconButton(
+                onClick = onShowStepsClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = "Show Steps",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
+        }
 
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (result.isEmpty()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -281,23 +281,29 @@ fun IntegDisplay(
                 }
             } else {
                 // Display only the result when it exists using LaTeX if possible
-                val latexState = produceState<String?>(initialValue = null, result) {
+                val needsLatex = remember(result, integType) {
                     if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
                         val expr = result.removeSuffix(" + C")
-                        // If it looks like a Symja result (contains characters), try converting to LaTeX
-                        if (expr.any { it.isLetter() }) {
+                        expr.any { it.isLetter() }
+                    } else {
+                        result.any { it.isLetter() || it == '/' || it == '^' }
+                    }
+                }
+
+                val latexState = produceState<String?>(initialValue = if (!needsLatex) result else null, result) {
+                    if (needsLatex) {
+                        val converted = if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
+                            val expr = result.removeSuffix(" + C")
                             val res = withContext(Dispatchers.Default) {
                                 SymjaUtils.toLaTeX(expr)
                             }
-                            value = "$res + C"
+                            "$res + C"
                         } else {
-                            value = result
+                            withContext(Dispatchers.Default) {
+                                SymjaUtils.toLaTeX(result)
+                            }
                         }
-                    } else if (result.any { it.isLetter() || it == '/' || it == '^' }) {
-                        val res = withContext(Dispatchers.Default) {
-                            SymjaUtils.toLaTeX(result)
-                        }
-                        value = res
+                        value = converted
                     } else {
                         value = result
                     }
@@ -316,24 +322,27 @@ fun IntegDisplay(
                         .horizontalScroll(rememberScrollState()),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (latexContent != null && (latexContent != result || result.any { it == '^' || it == '/' })) {
-                        Latex(
-                            latex = latexContent,
-                            config = LatexConfig(
-                                fontSize = if (result.length > 15) 24.sp else 32.sp,
-                                theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                                mathFont = MathFont.KaTeXTTF
+                    if (latexContent != null) {
+                        if (needsLatex || (latexContent != result || result.any { it == '^' || it == '/' })) {
+                            Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+                                Latex(
+                                    latex = latexContent,
+                                    config = LatexConfig(
+                                        fontSize = if (result.length > 15) 24.sp else 32.sp,
+                                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                                    )
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = result,
+                                style = MaterialTheme.typography.displayMedium.copy(
+                                    fontSize = if (result.length > 15) 28.sp else 40.sp
+                                ),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
                             )
-                        )
-                    } else {
-                        Text(
-                            text = result,
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontSize = if (result.length > 15) 28.sp else 40.sp
-                            ),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                        }
                     }
                 }
             }

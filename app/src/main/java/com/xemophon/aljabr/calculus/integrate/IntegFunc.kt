@@ -28,7 +28,7 @@ object IntegFunc {
         lower: Double,
         upper: Double,
         useRadians: Boolean = true,
-        type: IntegralType = IntegralType.DEFINITE
+        type: IntegralType = IntegralType.DEFINITE,
     ): Double {
         if (lower == upper) return 0.0
 
@@ -113,10 +113,10 @@ object IntegFunc {
                 val open = match.groupValues[1]
                 val content = match.groupValues[2]
                 val close = match.groupValues[3]
-                "Log${open}Abs${open}${content}${close}${close}"
+                "Log$open" + "Abs$open$content$close$close"
             }
 
-            if (resStr == "0" && cleaned != "0" && cleaned != "0.0") {
+            if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
                 return "∫($expression)dx"
             }
 
@@ -126,13 +126,18 @@ object IntegFunc {
         }
     }
 
-    fun integrateIndefiniteWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>> {
+    fun integrateIndefiniteWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>>? {
         return try {
-            val steps = calculusEngine.integrateWithSteps(expression, useEigenmath)
-            val finalResult = integrateIndefinite(expression)
-            Pair(finalResult, steps)
+            val resultAndSteps = calculusEngine.integrateWithSteps(expression, useEigenmath)
+            if (resultAndSteps != null) {
+                val (resExpr, steps) = resultAndSteps
+                val formattedResult = formatResult(resExpr.toString())
+                Pair(formattedResult, steps)
+            } else {
+                null
+            }
         } catch (_: Exception) {
-            Pair(integrateIndefinite(expression), emptyList())
+            null
         }
     }
 

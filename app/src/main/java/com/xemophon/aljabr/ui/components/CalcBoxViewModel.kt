@@ -15,11 +15,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -81,9 +81,23 @@ fun CalcBox(
         modifier = modifier
             .fillMaxWidth()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.End,
     ) {
+        if (showStepsButton) {
+            IconButton(
+                onClick = onShowStepsClick,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = "Show Steps",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
         val expressionFontSize by animateFloatAsState(
             targetValue = if (expression.length > 12) 32f else 40f,
             label = "ExpressionFontSize"
@@ -118,23 +132,8 @@ fun CalcBox(
             )
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (showStepsButton) {
-                IconButton(
-                    onClick = onShowStepsClick,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Show Steps",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+        if (result.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
 
             AnimatedContent(
                 targetState = result,
@@ -143,28 +142,24 @@ fun CalcBox(
                             (slideOutVertically { height -> -height } + fadeOut())
                 },
                 label = "ResultAnimation",
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
             ) { targetResult ->
-                if (targetResult.isNotEmpty()) {
-                    val resultFontSize by animateFloatAsState(
-                        targetValue = if (targetResult.length > 8) 48f else 64f,
-                        label = "ResultFontSize"
-                    )
-                    Column {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = targetResult,
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontSize = resultFontSize.sp,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.End
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            lineHeight = resultFontSize.sp * 1.1f
-                        )
-                    }
-                }
+                val resultFontSize by animateFloatAsState(
+                    targetValue = if (targetResult.length > 8) 48f else 64f,
+                    label = "ResultFontSize"
+                )
+
+                Text(
+                    text = targetResult,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = resultFontSize.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
             }
         }
     }
@@ -175,6 +170,9 @@ enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
+
+    var precision by mutableIntStateOf(4)
+        private set
 
     var displayText by mutableStateOf("0")
         private set
@@ -208,9 +206,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var calculatorMode by mutableStateOf(CalculatorMode.STANDARD)
     var limitType by mutableStateOf(LimitType.FINITE)
     var integType by mutableStateOf(IntegralType.DEFINITE)
-    var calculationEnabled by mutableStateOf(true)
+    var calculationEnabled by mutableStateOf(value = true)
     var useRadians by mutableStateOf(false)
-    var precision by mutableIntStateOf(4)
     var showSteps by mutableStateOf(false)
         private set
 
@@ -225,26 +222,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private var lastExpression = ""
     private var isShowingResult = false
-
-    init {
-        viewModelScope.launch {
-            settingsRepository.useRadiansFlow.collectLatest {
-                useRadians = it
-                updateInstantResult()
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.precisionFlow.collectLatest {
-                precision = it
-                updateInstantResult()
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.showStepsFlow.collectLatest {
-                showSteps = it
-            }
-        }
-    }
 
     fun handleAction(action: CalcButtonAction) {
         // Clear mode-specific results when any input button is pressed
@@ -390,6 +367,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun insertText(toInsert: String, applyImplicitMultiplication: Boolean = false) {
+        if (cursorIndex == -1) {
+            cursorIndex = displayText.length
+            currentFocus = CalculatorFocus.EXPRESSION
+        }
+
         val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded()) " × " else ""
         val finalInsert = "$prefix$toInsert"
 
@@ -630,16 +612,25 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             if (showSteps) {
                 viewModelScope.launch {
                     isCalculatingSteps = true
-                    showStepsSheet = true
                     try {
-                        val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        val resultAndSteps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                             IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
                         }
-                        if (result.isNotEmpty()) {
-                            resultText = result
-                            if (steps.isNotEmpty()) {
-                                stepsList.addAll(steps)
-                                showStepsSheet = true
+                        
+                        if (resultAndSteps != null) {
+                            val (result, steps) = resultAndSteps
+                            if (result.isNotEmpty()) {
+                                resultText = result
+                                if (steps.isNotEmpty()) {
+                                    stepsList.addAll(steps)
+                                    showStepsSheet = true
+                                }
+                            }
+                        } else {
+                            // Fallback to standard integration without steps
+                            val res = IntegFunc.integrateIndefinite(displayText)
+                            if (res.isNotEmpty()) {
+                                resultText = res
                             }
                         }
                     } catch (e: Exception) {
@@ -811,6 +802,26 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (displayText.isEmpty()) {
             displayText = "0"
             cursorIndex = 1
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.useRadiansFlow.collectLatest {
+                useRadians = it
+                updateInstantResult()
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.precisionFlow.collectLatest {
+                precision = it
+                updateInstantResult()
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.showStepsFlow.collectLatest {
+                showSteps = it
+            }
         }
     }
 }

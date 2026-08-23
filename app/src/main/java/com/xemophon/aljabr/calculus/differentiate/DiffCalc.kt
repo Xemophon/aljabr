@@ -1,6 +1,5 @@
 package com.xemophon.aljabr.calculus.differentiate
 
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.CalculusStep
@@ -132,7 +131,6 @@ fun DiffCalcContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeDrawingPadding()
             ) {
                 Box(
                     modifier = Modifier
@@ -196,20 +194,22 @@ fun DiffDisplay(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.End) {
-            if (showStepsButton) {
-                IconButton(
-                    onClick = onShowStepsClick,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Show Steps",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+        if (showStepsButton) {
+            IconButton(
+                onClick = onShowStepsClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = "Show Steps",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
+        }
 
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (result.isEmpty()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -297,8 +297,11 @@ fun DiffDisplay(
             } else {
                 // Show Derivative Result
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val latexState = produceState<String?>(initialValue = null, result) {
-                        if (result.any { it.isLetter() || it == '^' || it == '/' }) {
+                    val needsLatex = remember(result) {
+                        result.any { it.isLetter() || it == '^' || it == '/' }
+                    }
+                    val latexState = produceState<String?>(initialValue = if (!needsLatex) result else null, result) {
+                        if (needsLatex) {
                             value = withContext(Dispatchers.Default) {
                                 SymjaUtils.toLaTeX(result)
                             }
@@ -315,24 +318,27 @@ fun DiffDisplay(
                             .horizontalScroll(rememberScrollState()),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (latexValue != null && (latexValue != result || result.contains("^") || result.contains("/"))) {
-                            Latex(
-                                latex = latexValue,
-                                config = LatexConfig(
-                                    fontSize = if (result.length > 15) 24.sp else 32.sp,
-                                    theme = LatexTheme.light(color = MaterialTheme.colorScheme.primary),
-                                    mathFont = MathFont.KaTeXTTF
+                        if (latexValue != null) {
+                            if (needsLatex || (latexValue != result || result.contains("^") || result.contains("/"))) {
+                                Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+                                    Latex(
+                                        latex = latexValue,
+                                        config = LatexConfig(
+                                            fontSize = if (result.length > 15) 24.sp else 32.sp,
+                                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.primary),
+                                        )
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = result,
+                                    style = MaterialTheme.typography.displayMedium.copy(
+                                        fontSize = if (result.length > 10) 32.sp else 48.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
                                 )
-                            )
-                        } else {
-                            Text(
-                                text = result,
-                                style = MaterialTheme.typography.displayMedium.copy(
-                                    fontSize = if (result.length > 10) 32.sp else 48.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
+                            }
                         }
                     }
                     

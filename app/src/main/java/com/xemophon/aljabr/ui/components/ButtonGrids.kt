@@ -84,7 +84,7 @@ fun ShortCalcButtons(
             buttonModifier = Modifier.fillMaxHeight(),
             overrides = when(gridMode) {
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
-                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Symbol("="), (4 to 2) to CalcButtonAction.Variable("x", Variables.X))
+                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("^", " ^ "))
                 else -> emptyMap()
             }
         )

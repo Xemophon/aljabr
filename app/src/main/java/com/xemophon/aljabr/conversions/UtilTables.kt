@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,7 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
@@ -219,21 +219,22 @@ fun ExampleSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             itemsIndexed(content) { index, formula ->
-                Latex(
-                    latex = formula,
-                    config = LatexConfig(
-                        fontSize = when {
-                            formula.length <= 20 -> 20.sp
-                            formula.length <= 40 -> 16.sp
-                            else -> 12.sp
-                        },
-                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                        mathFont = MathFont.KaTeXTTF
-                    ),
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .horizontalScroll(rememberScrollState())
-                )
+                Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    Latex(
+                        latex = formula,
+                        config = LatexConfig(
+                            fontSize = when {
+                                formula.length <= 20 -> 20.sp
+                                formula.length <= 40 -> 16.sp
+                                else -> 12.sp
+                            },
+                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                        ),
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .widthIn(max = 2000.dp)
+                    )
+                }
                 if (index < content.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 32.dp),
