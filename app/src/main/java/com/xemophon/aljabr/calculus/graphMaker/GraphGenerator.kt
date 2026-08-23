@@ -29,6 +29,13 @@ object GraphGenerator {
 
     private var cache: AnalysisCache? = null
 
+    /**
+     * Clears the internal analysis cache to free up memory.
+     */
+    fun clearCache() {
+        cache = null
+    }
+
     fun generateAndAnalyze(
         expression: String,
         minX: Double,

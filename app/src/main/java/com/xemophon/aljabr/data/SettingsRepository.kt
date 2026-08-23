@@ -28,6 +28,7 @@ class SettingsRepository(private val context: Context) {
     private val useRadiansKey = booleanPreferencesKey("use_radians")
     private val precisionKey = intPreferencesKey("decimal_precision")
     private val showStepsKey = booleanPreferencesKey("show_steps")
+    private val autoClearCacheKey = booleanPreferencesKey("auto_clear_cache")
 
     val themeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
         val themeName = preferences[themeKey] ?: AppTheme.AUTO.name
@@ -53,6 +54,10 @@ class SettingsRepository(private val context: Context) {
 
     val showStepsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[showStepsKey] ?: false
+    }
+
+    val autoClearCacheFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[autoClearCacheKey] ?: false
     }
 
     suspend fun setTheme(theme: AppTheme) {
@@ -88,6 +93,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setShowSteps(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[showStepsKey] = enabled
+        }
+    }
+
+    suspend fun setAutoClearCache(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[autoClearCacheKey] = enabled
         }
     }
 }

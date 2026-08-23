@@ -35,8 +35,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.data.AppTheme
+import com.xemophon.aljabr.data.SettingsRepository
+import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.misc.SettingsViewModel
 import com.xemophon.aljabr.navigation.Algebra
 import com.xemophon.aljabr.navigation.BasicCalcRoute
@@ -46,6 +49,7 @@ import com.xemophon.aljabr.navigation.ReferenceSheets
 import com.xemophon.aljabr.ui.components.HorizontalSeparator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -211,6 +215,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear cache on exit if enabled
+        lifecycleScope.launch(Dispatchers.IO) {
+            val repository = SettingsRepository(applicationContext)
+            val autoClear = repository.autoClearCacheFlow.first()
+            if (autoClear) {
+                StorageUtils.clearAppCache(applicationContext)
+                GraphGenerator.clearCache()
             }
         }
     }

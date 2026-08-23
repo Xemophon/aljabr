@@ -50,6 +50,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         initialValue = false
     )
 
+    val autoClearCache: StateFlow<Boolean> = repository.autoClearCacheFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             repository.setTheme(theme)
@@ -83,6 +89,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setShowSteps(enabled: Boolean) {
         viewModelScope.launch {
             repository.setShowSteps(enabled)
+        }
+    }
+
+    fun setAutoClearCache(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setAutoClearCache(enabled)
         }
     }
 }

@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.RadioButton
@@ -28,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,9 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.data.ColorSchemeType
+import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.ui.components.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.HorizontalSeparator
 import com.xemophon.aljabr.ui.components.ThemeButton
+import kotlinx.coroutines.launch
 import com.xemophon.aljabr.ui.theme.BluePrimaryDark
 import com.xemophon.aljabr.ui.theme.BluePrimaryLight
 import com.xemophon.aljabr.ui.theme.BlueSecondaryDark
@@ -111,7 +118,9 @@ fun SettingsContent(
     val useRadians by viewModel.useRadians.collectAsState()
     val precision by viewModel.precision.collectAsState()
     val showSteps by viewModel.showSteps.collectAsState()
+    val autoClearCache by viewModel.autoClearCache.collectAsState()
 
+    val scope = rememberCoroutineScope()
     val isDarkTheme = when (theme) {
         AppTheme.LIGHT -> false
         AppTheme.DARK -> true
@@ -407,7 +416,66 @@ fun SettingsContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
+            HorizontalSeparator(text = "Privacy & Storage")
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-Clear Cache",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Clear temp data on discarding a math problem",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = autoClearCache,
+                    onCheckedChange = { viewModel.setAutoClearCache(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                ElevatedButton(
+                    onClick = {
+                        scope.launch {
+                            StorageUtils.clearAppData(viewModel.getApplication())
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Clear All App Data & Cache")
+                }
+                Text(
+                    text = "Resets all temporary data. Settings are preserved.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

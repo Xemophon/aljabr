@@ -91,8 +91,16 @@ object SymjaUtils {
             try {
                 val cleaned = prepareForSymja(expression)
                 if (cleaned.isBlank()) return ""
-                // Use TeXForm to convert the expression to LaTeX
+                
+                // Use TeXForm to convert the expression to LaTeX. 
+                // Symja's TeXForm automatically handles lists as pmatrix or similar.
                 var result = evaluator.eval("TeXForm($cleaned)").toString()
+
+                // Fix standard Symja TeXForm list output which often looks like \{ \{1, 2\}, \{3, 4\} \}
+                // and convert it to a proper LaTeX pmatrix
+                if (result.contains("\\{") && result.contains("\\}")) {
+                    result = formatSymjaTexListToMatrix(result)
+                }
 
                 // Fix standard LaTeX math functions that Symja might output in raw form
                 result = result.replace("\\arcsinh", "\\operatorname{asinh}")
@@ -121,6 +129,66 @@ object SymjaUtils {
             } catch (_: Throwable) {
                 expression // Fallback to raw expression on error
             }
+        }
+    }
+
+    fun formatSymjaTexListToMatrix(texStr: String): String {
+        var content = texStr.trim()
+        
+        // Remove outer escaped braces
+        if (content.startsWith("\\{") && content.endsWith("\\}")) {
+            content = content.substring(2, content.length - 2).trim()
+        } else {
+            return texStr
+        }
+
+        return try {
+            // Check if it's a matrix (contains nested \{ \})
+            if (content.contains("\\{")) {
+                val rows = mutableListOf<String>()
+                var depth = 0
+                var current = StringBuilder()
+                
+                // Process characters to split rows carefully
+                var i = 0
+                while (i < content.length) {
+                    val char = content[i]
+                    if (char == '\\' && i + 1 < content.length) {
+                        val next = content[i + 1]
+                        if (next == '{') {
+                            depth++
+                            if (depth > 1) current.append("\\{")
+                        } else if (next == '}') {
+                            depth--
+                            if (depth > 0) {
+                                current.append("\\}")
+                            } else {
+                                rows.add(current.toString())
+                                current = StringBuilder()
+                            }
+                        }
+                        i += 2
+                        continue
+                    }
+                    
+                    if (depth > 0) {
+                        current.append(char)
+                    }
+                    i++
+                }
+                
+                val latexRows = rows.map { row ->
+                    val elements = row.trim().split(",")
+                    elements.joinToString(" & ") { it.trim() }
+                }
+                "\\begin{pmatrix} ${latexRows.joinToString(" \\\\ ")} \\end{pmatrix}"
+            } else {
+                // It's a simple vector {1, 2, 3}
+                val elements = content.split(",")
+                "\\begin{pmatrix} ${elements.joinToString(" \\\\ ") { it.trim() }} \\end{pmatrix}"
+            }
+        } catch (_: Exception) {
+            texStr
         }
     }
 
