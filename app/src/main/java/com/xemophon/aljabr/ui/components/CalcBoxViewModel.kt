@@ -2,15 +2,20 @@ package com.xemophon.aljabr.ui.components
 
 import android.app.Application
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -49,9 +54,11 @@ import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.data.SettingsRepository
+import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -100,6 +107,7 @@ fun CalcBox(
 
         val expressionFontSize by animateFloatAsState(
             targetValue = if (expression.length > 12) 32f else 40f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
             label = "ExpressionFontSize"
         )
 
@@ -132,34 +140,68 @@ fun CalcBox(
             )
         }
 
-        if (result.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
+        AnimatedContent(
+            targetState = result,
+            transitionSpec = {
+                val isAppearing = targetState.isNotEmpty() && initialState.isEmpty()
+                val isDisappearing = targetState.isEmpty() && initialState.isNotEmpty()
 
-            AnimatedContent(
-                targetState = result,
-                transitionSpec = {
-                    (slideInVertically { height -> height } + fadeIn()) togetherWith
-                            (slideOutVertically { height -> -height } + fadeOut())
-                },
-                label = "ResultAnimation",
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterEnd
-            ) { targetResult ->
-                val resultFontSize by animateFloatAsState(
-                    targetValue = if (targetResult.length > 8) 48f else 64f,
-                    label = "ResultFontSize"
-                )
+                if (isAppearing) {
+                    (slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 3 } +
+                            fadeIn(animationSpec = tween(220)) +
+                            scaleIn(initialScale = 0.92f))
+                        .togetherWith(fadeOut(animationSpec = tween(90)))
+                } else if (isDisappearing) {
+                    fadeIn(animationSpec = tween(90))
+                        .togetherWith(
+                            slideOutVertically { it / 3 } +
+                                    fadeOut(animationSpec = tween(180)) +
+                                    scaleOut(targetScale = 0.92f)
+                        )
+                } else {
+                    // Directional scroll based on numerical change
+                    val isIncreasing = (targetState.toDoubleOrNull() ?: 0.0) >= (initialState.toDoubleOrNull() ?: 0.0)
+                    val slideOffset = { height: Int -> if (isIncreasing) height else -height }
 
-                Text(
-                    text = targetResult,
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = resultFontSize.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.End
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
-                )
+                    (slideInVertically(
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
+                        initialOffsetY = slideOffset
+                    ) + fadeIn(animationSpec = tween(150)))
+                        .togetherWith(
+                            slideOutVertically(
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                targetOffsetY = { -slideOffset(it) }
+                            ) + fadeOut(animationSpec = tween(150))
+                        )
+                } using SizeTransform(clip = false)
+            },
+            label = "ResultAnimation",
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterEnd
+        ) { targetResult ->
+            if (targetResult.isNotEmpty()) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val resultFontSize by animateFloatAsState(
+                        targetValue = if (targetResult.length > 8) 48f else 64f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "ResultFontSize"
+                    )
+
+                    Text(
+                        text = targetResult,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = resultFontSize.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
@@ -209,6 +251,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var calculationEnabled by mutableStateOf(value = true)
     var useRadians by mutableStateOf(false)
     var showSteps by mutableStateOf(false)
+        private set
+    var autoClearCache by mutableStateOf(false)
         private set
 
     var showStepsSheet by mutableStateOf(false)
@@ -736,6 +780,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         lowerLimitText = ""
         upperLimitText = ""
         isShowingResult = false
+
+        // Clear App Cache and Graph Cache if enabled
+        GraphGenerator.clearCache()
+        if (autoClearCache) {
+            StorageUtils.clearAppCache(getApplication())
+        }
     }
 
     private fun switchLimitMode(type: LimitType) {
@@ -821,6 +871,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             settingsRepository.showStepsFlow.collectLatest {
                 showSteps = it
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.autoClearCacheFlow.collectLatest {
+                autoClearCache = it
             }
         }
     }
