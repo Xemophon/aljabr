@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 
@@ -188,12 +188,13 @@ fun CalculusStepItem(number: Int, step: CalculusStep) {
 
 @Composable
 fun LatexView(latex: String) {
-    Latex(
-        latex = latex,
-        config = LatexConfig(
-            fontSize = 18.sp,
-            theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
-            mathFont = MathFont.KaTeXTTF
+    Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+        Latex(
+            latex = latex,
+            config = LatexConfig(
+                fontSize = 18.sp,
+                theme = LatexTheme.light(color = MaterialTheme.colorScheme.onSurface),
+            )
         )
-    )
+    }
 }
