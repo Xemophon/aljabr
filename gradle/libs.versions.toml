@@ -13,7 +13,8 @@ navigation = "2.9.2"
 kotlinxSerialization = "1.6.3"
 datastore = "1.2.1"
 matheclipseCore = "3.2.0"
-latex = "1.4.7"
+apfloat = "1.10.1"
+latex = "1.5.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 matheclipse-core = { group = "org.matheclipse", name = "matheclipse-core", version.ref = "matheclipseCore" }
+apfloat = { group = "org.apfloat", name = "apfloat", version.ref = "apfloat" }
 latex-base = { group = "io.github.huarangmeng", name = "latex-base", version.ref = "latex" }
 latex-parser = { group = "io.github.huarangmeng", name = "latex-parser", version.ref = "latex" }
 latex-renderer = { group = "io.github.huarangmeng", name = "latex-renderer", version.ref = "latex" }

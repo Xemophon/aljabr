@@ -1,28 +1,23 @@
 # Add project specific R8 rules here.
 # AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+
+# Keep metadata that might be used by reflection or serialization
+-keepattributes Signature,EnclosingMethod,InnerClasses,AnnotationDefault,*Annotation*,SourceFile,LineNumberTable
 
 # ----------------------------------------------------
 # MathEclipse / Symja Engine Rules
 # ----------------------------------------------------
-# Keep all MathEclipse core classes and interfaces.
-# Symja relies on reflection to map text inputs to mathematical functions.
--keep class org.matheclipse.core.** { *; }
--keep interface org.matheclipse.core.** { *; }
+# Keep all MathEclipse classes. Symja relies heavily on reflection.
+-keep class org.matheclipse.** { *; }
+-keep interface org.matheclipse.** { *; }
 
-# Symja uses reflection to find function implementations in these packages
+# Symja uses reflection to find function implementations
 -keep class org.matheclipse.core.builtin.** { *; }
 -keep class org.matheclipse.core.reflection.** { *; }
 
 # If Symja uses JSR305 annotations, prevent warnings during build
 -dontwarn javax.annotation.**
 -dontwarn org.matheclipse.**
-
-# Symja might use service loading for its core components
--keepnames class org.matheclipse.** { *; }
--keep interface org.matheclipse.** { *; }
 
 # --- Symja Dependencies ---
 
@@ -31,8 +26,19 @@
 -keep interface edu.jas.** { *; }
 
 # Apfloat - Used for high-precision arithmetic
+# We must keep all classes in org.apfloat because many are loaded via reflection
 -keep class org.apfloat.** { *; }
 -keep interface org.apfloat.** { *; }
+-keep class org.apfloat.internal.** { *; }
+-keep class org.apfloat.spi.** { *; }
+
+# Explicitly keep the factories which are the most common source of ClassNotFoundException
+-keep class org.apfloat.internal.LongBuilderFactory { *; }
+-keep class org.apfloat.internal.IntBuilderFactory { *; }
+-keep class org.apfloat.internal.FloatBuilderFactory { *; }
+-keep class org.apfloat.internal.DoubleBuilderFactory { *; }
+
+-dontwarn org.apfloat.**
 
 # Hipparchus - Math library used by Symja
 -keep class org.hipparchus.** { *; }
@@ -51,7 +57,6 @@
 # ----------------------------------------------------
 # Compose Latex (HRM) Rules
 # ----------------------------------------------------
-# Corrected package prefix from huarangmeng to com.hrm
 -keep class com.hrm.latex.** { *; }
 -keepclassmembers class com.hrm.latex.** { *; }
 
@@ -75,4 +80,3 @@
 # Log4j references OSGi which is missing on Android
 -dontwarn org.osgi.framework.**
 -dontwarn org.apache.logging.log4j.util.**
-
