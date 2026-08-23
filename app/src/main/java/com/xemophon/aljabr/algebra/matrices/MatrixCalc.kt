@@ -1,8 +1,14 @@
 package com.xemophon.aljabr.algebra.matrices
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -64,126 +71,166 @@ import com.xemophon.aljabr.ui.components.MatrixReport
 import com.xemophon.aljabr.ui.components.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.ShortGridMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun MatrixScreen(
     viewModel: MatrixViewModel,
     onOpenDrawer: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Main Content (Blurred when focused)
-        CalculatorScaffold(
-            title = { Text("Matrix Calculator") },
-            onOpenDrawer = onOpenDrawer
-        ) { padding ->
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .blur(if (viewModel.isFocusedMode) 12.dp else 0.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (viewModel.resultText.isEmpty()) {
-                        // Top controls: Mode, Matrix Label, and Dimensions
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            ModeSelector(
-                                currentMode = viewModel.mode,
-                                onModeSelected = { viewModel.onModeChange(it) }
-                            )
-
-                            // Matrix indicator (A or B)
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            ) {
-                                Text(
-                                    text = "Matrix ${viewModel.activeMatrix.name}",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                DimensionControl(
-                                    label = "R",
-                                    value = viewModel.rows,
-                                    onValueChange = { viewModel.updateRows(it) }
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                DimensionControl(
-                                    label = "C",
-                                    value = viewModel.columns,
-                                    onValueChange = { viewModel.updateColumns(it) }
-                                )
-                            }
-                        }
-
-                        HorizontalDivider()
-                    }
-
-                    // Matrix Input Field
-                    Box(
+    SharedTransitionLayout {
+        AnimatedVisibility(visible = true) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Main Content (Blurred when focused)
+                CalculatorScaffold(
+                    title = { Text("Matrix Calculator") },
+                    onOpenDrawer = onOpenDrawer
+                ) { padding ->
+                    Surface(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
+                            .padding(padding)
+                            .blur(if (viewModel.isFocusedMode) 12.dp else 0.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        if (viewModel.resultText.isEmpty()) {
-                            MatrixBoxField(
-                                rows = viewModel.rows,
-                                cols = viewModel.columns,
-                                data = viewModel.matrixData,
-                                selectedIndex = viewModel.selectedIndex,
-                                onElementClick = { viewModel.onElementClick(it) }
-                            )
-                        } else {
-                            MatrixReport(
-                                title = "${viewModel.mode.name.lowercase().replaceFirstChar { it.uppercase() }} Result",
-                                result = viewModel.resultText,
-                                onClear = { viewModel.clearResult() }
-                            )
-                        }
-                    }
+                        Column(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            if (viewModel.resultText.isEmpty()) {
+                                // Top controls: Mode, Matrix Label, and Dimensions
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    ModeSelector(
+                                        currentMode = viewModel.mode,
+                                        onModeSelected = { viewModel.onModeChange(it) }
+                                    )
 
-                    // Bottom Control Bar
-                    if (viewModel.resultText.isEmpty()) {
-                        ControlBar(
-                            activeMatrix = viewModel.activeMatrix,
-                            onClear = { viewModel.clearCurrentMatrix() },
-                            onToggle = { viewModel.toggleMatrix() },
-                            onCompute = { viewModel.calculateResult() }
-                        )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        val isMatrixB = viewModel.activeMatrix == MatrixName.B
+                                        val rowsEnabled = !isMatrixB || viewModel.mode !in listOf(
+                                            MatrixMode.ADDITION,
+                                            MatrixMode.SUBTRACTION,
+                                            MatrixMode.MULTIPLICATION,
+                                            MatrixMode.LINEARSOLVE
+                                        )
+                                        val colsEnabled = (viewModel.activeMatrix == MatrixName.A && viewModel.mode !in SquareMatrixModes) ||
+                                                (viewModel.activeMatrix == MatrixName.B && viewModel.mode !in listOf(
+                                                    MatrixMode.ADDITION,
+                                                    MatrixMode.SUBTRACTION,
+                                                ))
+
+                                        DimensionControl(
+                                            label = "R",
+                                            value = viewModel.rows,
+                                            enabled = rowsEnabled,
+                                            onValueChange = { viewModel.updateRows(it) }
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        DimensionControl(
+                                            label = "C",
+                                            value = viewModel.columns,
+                                            enabled = colsEnabled,
+                                            onValueChange = { viewModel.updateColumns(it) }
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider()
+                            }
+
+                            // Matrix Input Field
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    // Matrix indicator (A or B)
+                                    androidx.compose.animation.AnimatedVisibility(visible = viewModel.mode !in SingleMatrixModes || viewModel.activeMatrix == MatrixName.A) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.padding(horizontal = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Matrix ${viewModel.activeMatrix.name}",
+                                                modifier = Modifier.padding(
+                                                    horizontal = 12.dp,
+                                                    vertical = 4.dp
+                                                ),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                    if (viewModel.resultText.isEmpty()) {
+                                        MatrixBoxField(
+                                            rows = viewModel.rows,
+                                            cols = viewModel.columns,
+                                            data = viewModel.matrixData,
+                                            selectedIndex = viewModel.selectedIndex,
+                                            sharedTransitionScope = this@SharedTransitionLayout,
+                                            animatedVisibilityScope = this@AnimatedVisibility,
+                                            onElementClick = { viewModel.onElementClick(it) }
+                                        )
+                                    } else {
+                                        MatrixReport(
+                                            title = "${
+                                                viewModel.mode.name.lowercase()
+                                                    .replaceFirstChar { it.uppercase() }
+                                            } Result",
+                                            result = viewModel.resultText,
+                                            onLoadA = { viewModel.loadResultIntoMatrix(MatrixName.A) },
+                                            onLoadB = { viewModel.loadResultIntoMatrix(MatrixName.B) },
+                                            onClear = { viewModel.clearResult() }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Bottom Control Bar
+                            if (viewModel.resultText.isEmpty()) {
+                                ControlBar(
+                                    activeMatrix = viewModel.activeMatrix,
+                                    activeMode = viewModel.mode,
+                                    onClear = { viewModel.clearCurrentMatrix() },
+                                    onToggle = { viewModel.toggleMatrix() },
+                                    onCompute = { viewModel.calculateResult() }
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        // Focus Overlay
-        AnimatedVisibility(
-            visible = viewModel.isFocusedMode,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            FocusOverlay(
-                value = viewModel.matrixData.getOrNull(viewModel.selectedIndex) ?: "",
-                onDismiss = { viewModel.dismissFocus() },
-                onAction = { viewModel.handleAction(it) },
-                onPrev = { viewModel.prevElement() },
-                onNext = { viewModel.nextElement() }
-            )
+                // Focus Overlay
+                AnimatedVisibility(
+                    visible = viewModel.isFocusedMode,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    FocusOverlay(
+                        value = viewModel.matrixData.getOrNull(viewModel.selectedIndex) ?: "",
+                        selectedIndex = viewModel.selectedIndex,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this,
+                        onDismiss = { viewModel.dismissFocus() },
+                        onAction = { viewModel.handleAction(it) },
+                        onPrev = { viewModel.prevElement() },
+                        onNext = { viewModel.nextElement() }
+                    )
+                }
+            }
         }
     }
 }
@@ -191,10 +238,13 @@ fun MatrixScreen(
 @Composable
 fun ControlBar(
     activeMatrix: MatrixName,
+    activeMode: MatrixMode,
     onClear: () -> Unit,
     onToggle: () -> Unit,
     onCompute: () -> Unit
 ) {
+    val visible = activeMode !in SingleMatrixModes
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -216,17 +266,19 @@ fun ControlBar(
                 color = MaterialTheme.colorScheme.error
             )
 
-            Button(
-                onClick = onToggle,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Icon(Icons.Default.SwapHoriz, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("To Matrix ${if (activeMatrix == MatrixName.A) "B" else "A"}")
+            AnimatedVisibility(visible) {
+                Button(
+                    onClick = onToggle,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.SwapHoriz, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("To Matrix ${if (activeMatrix == MatrixName.A) "B" else "A"}")
+                }
             }
 
             FooterButton(
@@ -258,9 +310,13 @@ fun FooterButton(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FocusOverlay(
     value: String,
+    selectedIndex: Int,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onDismiss: () -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onPrev: () -> Unit,
@@ -282,21 +338,34 @@ fun FocusOverlay(
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    .clickable(enabled = false) { },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
+            // Large Focused Element Box (Shared Element)
+            with(sharedTransitionScope) {
+                Box(
+                    modifier = Modifier
+                        .sharedBounds(
+                            rememberSharedContentState(key = "element_$selectedIndex"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                        .size(200.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                        .clickable(enabled = false) { },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AnimatedContent(
+                        targetState = value,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "ValueTransition"
+                    ) { targetValue ->
+                        Text(
+                            text = targetValue,
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -385,7 +454,9 @@ fun ModeSelector(
         ) {
             MatrixMode.entries.forEach { mode ->
                 DropdownMenuItem(
-                    text = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                    text = { Text(
+                        mode.name.lowercase().replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodyMedium) },
                     onClick = {
                         onModeSelected(mode)
                         expanded = false
@@ -400,13 +471,18 @@ fun ModeSelector(
 fun DimensionControl(
     label: String,
     value: Int,
+    enabled: Boolean = true,
     onValueChange: (Int) -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.alpha(if (enabled) 1f else 0.5f)
+    ) {
         Text(text = label, style = MaterialTheme.typography.labelSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
                 onClick = { onValueChange(value - 1) },
+                enabled = enabled,
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
@@ -419,6 +495,7 @@ fun DimensionControl(
             )
             IconButton(
                 onClick = { onValueChange(value + 1) },
+                enabled = enabled,
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
@@ -427,12 +504,15 @@ fun DimensionControl(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MatrixBoxField(
     rows: Int,
     cols: Int,
     data: List<String>,
     selectedIndex: Int,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onElementClick: (Int) -> Unit
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -454,6 +534,9 @@ fun MatrixBoxField(
                             modifier = Modifier.size(cellSize),
                             value = data.getOrNull(index) ?: "",
                             isSelected = index == selectedIndex,
+                            index = index,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             onClick = { onElementClick(index) }
                         )
                     }
@@ -463,74 +546,86 @@ fun MatrixBoxField(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MatrixElementBox(
     modifier: Modifier = Modifier,
     value: String,
     isSelected: Boolean,
+    index: Int,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .padding(4.dp)
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(8.dp)
+    with(sharedTransitionScope) {
+        Box(
+            modifier = modifier
+                .padding(4.dp)
+                .sharedBounds(
+                    rememberSharedContentState(key = "element_$index"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                )
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .border(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .clickable { onClick() }
+                .background(
+                    if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                    else MaterialTheme.colorScheme.surface
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = if (value.length > 5) 14.sp else 18.sp
+                ),
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
-            .clickable { onClick() }
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
-                else MaterialTheme.colorScheme.surface
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = if (value.length > 5) 10.sp else 14.sp
-            ),
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MatrixScreenPreview() {
-    val viewModel = remember { MatrixViewModel() }
-    MaterialTheme {
-        MatrixScreen(
-            viewModel = viewModel,
-            onOpenDrawer = {}
-        )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun FocusOverlayPreview() {
-    MaterialTheme {
-        FocusOverlay(
-            value = "1.23",
-            onDismiss = {},
-            onAction = {},
-            onPrev = {},
-            onNext = {}
-        )
+    SharedTransitionLayout {
+        AnimatedVisibility(visible = true) {
+            MaterialTheme {
+                FocusOverlay(
+                    value = "1.23",
+                    selectedIndex = 0,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@AnimatedVisibility,
+                    onDismiss = {},
+                    onAction = {},
+                    onPrev = {},
+                    onNext = {}
+                )
+            }
+        }
     }
 }
 
 @Preview
 @Composable
-fun BoxPreview(){
-    MatrixElementBox(
-        modifier = Modifier.size(64.dp),
-        value = "1",
-        isSelected = true,
-        onClick = {}
-    )
+fun BoxPreview() {
+    SharedTransitionLayout {
+        AnimatedVisibility(visible = true) {
+            MatrixElementBox(
+                modifier = Modifier.size(64.dp),
+                value = "1",
+                isSelected = true,
+                index = 0,
+                sharedTransitionScope = this@SharedTransitionLayout,
+                animatedVisibilityScope = this@AnimatedVisibility,
+                onClick = {}
+            )
+        }
+    }
 }

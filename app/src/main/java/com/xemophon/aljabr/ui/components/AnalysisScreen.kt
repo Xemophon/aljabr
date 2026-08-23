@@ -11,22 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.font.MathFont
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
@@ -75,42 +78,50 @@ fun ResultItemCard(label: String? = null, displayText: String, rawValue: String?
                 Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             }
             
-            val latexState = produceState<String?>(initialValue = null, displayText, rawValue) {
+            val needsLatex = remember(displayText, rawValue) {
                 val toConvert = rawValue ?: displayText
-                if (rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' }) {
+                rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' || it == '{' || it == '}' }
+            }
+
+            val latexState = produceState<String?>(initialValue = if (!needsLatex) (rawValue ?: displayText) else null, displayText, rawValue) {
+                if (needsLatex) {
+                    val toConvert = rawValue ?: displayText
                     val result = withContext(Dispatchers.Default) {
                         SymjaUtils.toLaTeX(toConvert)
                     }
                     value = result
                 } else {
-                    value = toConvert
+                    value = rawValue ?: displayText
                 }
             }
 
             val latexValue = latexState.value
 
-            if (latexValue != null && (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = if (label != null) 4.dp else 0.dp)
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    Latex(
-                        latex = latexValue,
-                        config = LatexConfig(
-                            fontSize = 20.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                            mathFont = MathFont.KaTeXTTF
-                        )
+            if (latexValue != null) {
+                if (needsLatex || (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = if (label != null) 4.dp else 0.dp)
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+                            Latex(
+                                latex = latexValue,
+                                config = LatexConfig(
+                                    fontSize = 20.sp,
+                                    theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = displayText,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                        fontWeight = FontWeight.Medium
                     )
                 }
-            } else {
-                Text(
-                    text = displayText,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }
@@ -164,6 +175,8 @@ fun ReportScreen(
 fun MatrixReport(
     title: String,
     result: String,
+    onLoadA: (() -> Unit)? = null,
+    onLoadB: (() -> Unit)? = null,
     onClear: () -> Unit
 ) {
     ReportScreen(
@@ -175,6 +188,34 @@ fun MatrixReport(
         }
         item {
             ResultItemCard(displayText = result)
+        }
+
+        if (onLoadA != null || onLoadB != null) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    onLoadA?.let {
+                        OutlinedButton(
+                            onClick = it,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Load into A")
+                        }
+                    }
+                    onLoadB?.let {
+                        OutlinedButton(
+                            onClick = it,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Load into B")
+                        }
+                    }
+                }
+            }
         }
     }
 }

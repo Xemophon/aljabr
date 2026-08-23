@@ -95,9 +95,9 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         navController.navigate(variant.route) {
                                             if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
                                             } else {
-                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                                popUpTo(BasicCalcRoute::class) { saveState = true }
                                             }
                                         }
                                         scope.launch { drawerState.close() }
@@ -114,9 +114,9 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         navController.navigate(variant.route) {
                                             if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
                                             } else {
-                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                                popUpTo(BasicCalcRoute::class) { saveState = true }
                                             }
                                         }
                                         scope.launch { drawerState.close() }
@@ -133,9 +133,9 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         navController.navigate(variant.route) {
                                             if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
                                             } else {
-                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                                popUpTo(BasicCalcRoute::class) { saveState = true }
                                             }
                                         }
                                         scope.launch { drawerState.close() }
@@ -152,9 +152,9 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         navController.navigate(variant.route) {
                                             if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute) { inclusive = true }
+                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
                                             } else {
-                                                popUpTo(BasicCalcRoute) { saveState = true }
+                                                popUpTo(BasicCalcRoute::class) { saveState = true }
                                             }
                                         }
                                         scope.launch { drawerState.close() }
@@ -167,7 +167,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = BasicCalcRoute,
+                        startDestination = BasicCalcRoute::class,
                         enterTransition = {
                             fadeIn(animationSpec = tween(220, easing = LinearOutSlowInEasing)) +
                                     scaleIn(
