@@ -116,6 +116,7 @@ fun SettingsContent(
     val dynamicColor by viewModel.dynamicColor.collectAsState()
     val colorSchemeType by viewModel.colorScheme.collectAsState()
     val useRadians by viewModel.useRadians.collectAsState()
+    val useRationalize by viewModel.useRationalize.collectAsState()
     val precision by viewModel.precision.collectAsState()
     val showSteps by viewModel.showSteps.collectAsState()
     val autoClearCache by viewModel.autoClearCache.collectAsState()
@@ -390,17 +391,42 @@ fun SettingsContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            Row(
+                modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Use Rational Numbers",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Favors fractions over decimals (e.g., 0.5 becomes 1/2)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = useRationalize,
+                    onCheckedChange = { viewModel.setUseRationalize(it) }
+                )
+            }
+
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Decimal Precision",
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        color = if (useRationalize) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = precision.toString(),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (useRationalize) MaterialTheme.colorScheme.primary.copy(alpha = 0.38f) else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -408,12 +434,13 @@ fun SettingsContent(
                     value = precision.toFloat(),
                     onValueChange = { viewModel.setPrecision(it.toInt()) },
                     valueRange = 0f..10f,
-                    steps = 9
+                    steps = 9,
+                    enabled = !useRationalize
                 )
                 Text(
-                    text = "Number of decimal places displayed",
+                    text = if (useRationalize) "Disabled when using rational numbers" else "Number of decimal places displayed",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (useRationalize) 0.38f else 1f)
                 )
             }
 

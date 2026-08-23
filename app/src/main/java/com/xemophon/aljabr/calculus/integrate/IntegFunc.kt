@@ -40,6 +40,49 @@ object IntegFunc {
         return symjaSymbolicIntegrate(expression, lower, upper, useRadians, type)
     }
 
+    /**
+     * Performs symbolic integration which preserves fractions and exact values.
+     */
+    fun integrateSymbolic(
+        expression: String,
+        lower: String,
+        upper: String,
+        useRadians: Boolean = true,
+        useRationalize: Boolean = false,
+        type: IntegralType = IntegralType.DEFINITE
+    ): String {
+        return synchronized(SymjaUtils.evaluator) {
+            try {
+                val formula = constructFormula(expression, useRadians, type)
+                val lStr = if (lower.isBlank()) "a" else SymjaUtils.prepareForSymja(lower)
+                val uStr = if (upper.isBlank()) "b" else SymjaUtils.prepareForSymja(upper)
+
+                val command = if (useRationalize) {
+                    "Rationalize(Integrate[Rationalize($formula), {x, Rationalize($lStr), Rationalize($uStr)}])"
+                } else {
+                    "Integrate[$formula, {x, $lStr, $uStr}]"
+                }
+
+                val res = SymjaUtils.evaluator.eval(command).toString()
+                
+                if (res.contains("Integrate")) {
+                    // Fallback to numerical if symbolic fails
+                    val lNum = lower.toDoubleOrNull() ?: Double.NaN
+                    val uNum = upper.toDoubleOrNull() ?: Double.NaN
+                    if (!lNum.isNaN() && !uNum.isNaN()) {
+                        val num = integrate(expression, lNum, uNum, useRadians, type)
+                        if (!num.isNaN()) return num.toString()
+                    }
+                    return "∫($expression)dx"
+                }
+
+                SymjaUtils.formatResult(res)
+            } catch (_: Exception) {
+                "Error"
+            }
+        }
+    }
+
     private fun symjaNumericalIntegrate(
         expression: String,
         lower: Double,
@@ -99,14 +142,20 @@ object IntegFunc {
         }
     }
 
-    fun integrateIndefinite(expression: String): String {
+    fun integrateIndefinite(expression: String, useRationalize: Boolean = false): String {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            var resStr = SymjaUtils.evaluator.eval("Simplify[Integrate[$cleaned, x]]").toString()
+            val command = if (useRationalize) {
+                "Simplify[Rationalize(Integrate[Rationalize($cleaned), x])]"
+            } else {
+                "Simplify[Integrate[$cleaned, x]]"
+            }
+            var resStr = SymjaUtils.evaluator.eval(command).toString()
 
             if (resStr.contains("Integrate", ignoreCase = true)) {
                 return "∫($expression)dx"
             }
+// ...
 
             val logRegex = Regex("""Log([\[(])([^,\])]+)([)])""", RegexOption.IGNORE_CASE)
             resStr = resStr.replace(logRegex) { match ->

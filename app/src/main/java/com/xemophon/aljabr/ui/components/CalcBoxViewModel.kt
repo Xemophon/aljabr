@@ -216,6 +216,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     var precision by mutableIntStateOf(4)
         private set
 
+    var useRationalize by mutableStateOf(false)
+
     var displayText by mutableStateOf("0")
         private set
 
@@ -529,8 +531,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         try {
-            val result = if (displayText.contains("j", ignoreCase = true)) {
-                SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+            val result = if (useRationalize || displayText.contains("j", ignoreCase = true)) {
+                SymjaUtils.calculateNumerical(displayText, useRadians, useRationalize, precision)
             } else {
                 val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
                 CalcFuncs.formatResult(numResult, precision)
@@ -585,8 +587,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             cursorIndex = displayText.length
         } else {
             try {
-                val result = if (displayText.contains("j", ignoreCase = true)) {
-                    SymjaUtils.calculateNumerical(displayText, useRadians, precision)
+                val result = if (useRationalize || displayText.contains("j", ignoreCase = true)) {
+                    SymjaUtils.calculateNumerical(displayText, useRadians, useRationalize, precision)
                 } else {
                     val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
                     CalcFuncs.formatResult(numResult, precision)
@@ -609,7 +611,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         stepsList.clear()
 
         try {
-            val res = LimitsFunc.calculateLimit(displayText, "x", targetText)
+            val res = LimitsFunc.calculateLimit(displayText, "x", targetText, useRationalize)
 
             lastExpression = displayText
             resultText = res
@@ -627,30 +629,47 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         stepsList.clear()
 
         if (integType != IntegralType.INDEFINITE) {
-            try {
-                // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
-                val lower = CalcFuncs.calculateExpression(lowerLimitText)
-                val upper = CalcFuncs.calculateExpression(upperLimitText)
-
-                if (lower.isNaN() || upper.isNaN()) {
-                    resultText = "Invalid Limits"
-                    return
+            if (useRationalize) {
+                // Symbolic approach preserves fractions
+                try {
+                    val res = IntegFunc.integrateSymbolic(
+                        expression = displayText,
+                        lower = lowerLimitText,
+                        upper = upperLimitText,
+                        useRadians = useRadians,
+                        useRationalize = true,
+                        type = integType
+                    )
+                    resultText = res
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
                 }
+            } else {
+                try {
+                    // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
+                    val lower = CalcFuncs.calculateExpression(lowerLimitText)
+                    val upper = CalcFuncs.calculateExpression(upperLimitText)
 
-                val result = IntegFunc.integrate(
-                    expression = displayText,
-                    lower = lower,
-                    upper = upper,
-                    useRadians = useRadians,
-                    type = integType
-                )
-                if (result.isNaN()) {
-                    resultText = "No convergence"
-                } else {
-                    resultText = CalcFuncs.formatResult(result, precision)
+                    if (lower.isNaN() || upper.isNaN()) {
+                        resultText = "Invalid Limits"
+                        return
+                    }
+
+                    val result = IntegFunc.integrate(
+                        expression = displayText,
+                        lower = lower,
+                        upper = upper,
+                        useRadians = useRadians,
+                        type = integType
+                    )
+                    if (result.isNaN()) {
+                        resultText = "No convergence"
+                    } else {
+                        resultText = CalcFuncs.formatResult(result, precision)
+                    }
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
                 }
-            } catch (e: Exception) {
-                resultText = "Calculation Error"
             }
         } else {
             if (showSteps) {
@@ -672,7 +691,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                             }
                         } else {
                             // Fallback to standard integration without steps
-                            val res = IntegFunc.integrateIndefinite(displayText)
+                            val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
                             if (res.isNotEmpty()) {
                                 resultText = res
                             }
@@ -685,7 +704,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             } else {
                 try {
-                    val res = IntegFunc.integrateIndefinite(displayText)
+                    val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
                     if (res.isNotEmpty()) {
                         resultText = res
                     }
@@ -725,7 +744,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         } else {
             try {
                 analysisResult = AnalysisFunc.fullAnalysis(displayText)
-                val res = DiffFunc.differentiate(displayText)
+                val res = DiffFunc.differentiate(displayText, useRationalize)
                 if (res.isNotEmpty()) {
                     resultText = res
                 }
@@ -753,7 +772,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (displayText.isEmpty() || displayText == "0") return
         viewModelScope.launch {
             try {
-                polynomialResult = PolyFuncs.analyzePolynomial(displayText)
+                polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
                 isShowingResult = true
             } catch (e: Exception) {
                 // resultText = "Error"
@@ -876,6 +895,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             settingsRepository.autoClearCacheFlow.collectLatest {
                 autoClearCache = it
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.useRationalizeFlow.collectLatest {
+                useRationalize = it
+                updateInstantResult()
             }
         }
     }

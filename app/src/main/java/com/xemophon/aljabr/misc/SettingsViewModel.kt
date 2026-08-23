@@ -38,6 +38,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         initialValue = false
     )
 
+    val useRationalize: StateFlow<Boolean> = repository.useRationalizeFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
+
     val precision: StateFlow<Int> = repository.precisionFlow.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -77,6 +84,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setUseRadians(useRadians: Boolean) {
         viewModelScope.launch {
             repository.setUseRadians(useRadians)
+        }
+    }
+
+    fun setUseRationalize(useRationalize: Boolean) {
+        viewModelScope.launch {
+            repository.setUseRationalize(useRationalize)
         }
     }
 

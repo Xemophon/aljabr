@@ -17,7 +17,7 @@ object DiffFunc {
         }
     }
 
-    fun differentiate(expression: String): String {
+    fun differentiate(expression: String, useRationalize: Boolean = false): String {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return ""
@@ -30,7 +30,13 @@ object DiffFunc {
             }
             val v = if (vars.size == 1) vars[0] else "x"
 
-            val resStr = eval.eval("Simplify[D[$cleaned, $v]]").toString()
+            val command = if (useRationalize) {
+                "Simplify[Rationalize(D[Rationalize($cleaned), $v])]"
+            } else {
+                "Simplify[D[$cleaned, $v]]"
+            }
+
+            val resStr = eval.eval(command).toString()
 
             if (resStr.contains("D", ignoreCase = true)) {
                 return "d/d$v($expression)"

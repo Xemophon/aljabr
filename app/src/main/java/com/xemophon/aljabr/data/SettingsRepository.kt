@@ -26,6 +26,7 @@ class SettingsRepository(private val context: Context) {
     private val dynamicColorKey = booleanPreferencesKey("use_dynamic_color")
     private val colorSchemeKey = stringPreferencesKey("color_scheme")
     private val useRadiansKey = booleanPreferencesKey("use_radians")
+    private val useRationalizeKey = booleanPreferencesKey("use_rationalize")
     private val precisionKey = intPreferencesKey("decimal_precision")
     private val showStepsKey = booleanPreferencesKey("show_steps")
     private val autoClearCacheKey = booleanPreferencesKey("auto_clear_cache")
@@ -46,6 +47,10 @@ class SettingsRepository(private val context: Context) {
 
     val useRadiansFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[useRadiansKey] ?: false
+    }
+
+    val useRationalizeFlow : Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[useRationalizeKey] ?: false
     }
 
     val precisionFlow: Flow<Int> = context.dataStore.data.map { preferences ->
@@ -99,6 +104,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAutoClearCache(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[autoClearCacheKey] = enabled
+        }
+    }
+
+    suspend fun setUseRationalize(useRationalize: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[useRationalizeKey] = useRationalize
         }
     }
 }

@@ -10,10 +10,15 @@ object PolyFuncs {
     /**
      * Finds roots and analytical properties of a polynomial.
      */
-    suspend fun analyzePolynomial(expression: String): PolynomialResult = withContext(Dispatchers.Default) {
+    suspend fun analyzePolynomial(expression: String, useRationalize: Boolean = false): PolynomialResult = withContext(Dispatchers.Default) {
         synchronized(SymjaUtils.evaluator) {
             try {
-                val cleaned = SymjaUtils.prepareForSymja(expression)
+                val cleaned = if (useRationalize) {
+                    SymjaUtils.evaluator.eval("Rationalize(${SymjaUtils.prepareForSymja(expression)})").toString()
+                } else {
+                    SymjaUtils.prepareForSymja(expression)
+                }
+                
                 if (cleaned.isBlank()) return@synchronized PolynomialResult(expression, "", emptyList(), error = "Empty expression")
 
                 // 1. Identify variable
@@ -26,9 +31,15 @@ object PolyFuncs {
                 val variable = vars[0]
 
                 // 2. Find Roots (Numerical and Analytical)
-                // Using NSolve for broad coverage of complex roots
-                val nSolveRes = SymjaUtils.evaluator.eval("NSolve($cleaned == 0, $variable)").toString()
-                val roots = SymjaUtils.parseSolveResult(nSolveRes).map { rule ->
+                // Using Solve if rationalizing, otherwise NSolve
+                val solveCommand = if (useRationalize) {
+                    "Solve($cleaned == 0, $variable)"
+                } else {
+                    "NSolve($cleaned == 0, $variable)"
+                }
+                
+                val solveRes = SymjaUtils.evaluator.eval(solveCommand).toString()
+                val roots = SymjaUtils.parseSolveResult(solveRes).map { rule ->
                     val rootVal = rule.substringAfter("->").trim()
                     SymjaUtils.formatResult(rootVal)
                 }.distinct()

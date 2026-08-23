@@ -55,7 +55,7 @@ object SymjaUtils {
     /**
      * Forces numerical evaluation using N() and handles degrees if needed.
      */
-    fun calculateNumerical(expression: String, useRadians: Boolean, precision: Int = 4): String {
+    fun calculateNumerical(expression: String, useRadians: Boolean, useRationalize: Boolean = false, precision: Int = 4): String {
         return synchronized(evaluator) {
             try {
                 if (!useRadians) {
@@ -70,12 +70,16 @@ object SymjaUtils {
                 val cleaned = prepareForSymja(expression, useRadians)
                 if (cleaned.isBlank()) return ""
 
-                val result = evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
+                val result = if(!useRationalize) {
+                    evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
+                } else{
+                    evaluator.eval("Rationalize($cleaned)")
+                }
                 val resStr = result.toString()
 
                 // If it's a simple number, format it with the requested precision
                 val d = resStr.toDoubleOrNull()
-                if (d != null) {
+                if (d != null && !useRationalize) {
                     CalcFuncs.formatResult(d, precision)
                 } else {
                     formatResult(resStr)

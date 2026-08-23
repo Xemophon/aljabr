@@ -7,7 +7,8 @@ object LimitsFunc {
     fun calculateLimit(
         expression: String,
         variable: String = "x",
-        target: String
+        target: String,
+        useRationalize: Boolean = false
     ): String {
         return try {
             val cleanedExpr = SymjaUtils.prepareForSymja(expression)
@@ -17,8 +18,13 @@ object LimitsFunc {
                 else -> SymjaUtils.prepareForSymja(target)
             }
 
-            val symjaCommand = "Simplify[Limit($cleanedExpr, $variable -> $cleanedTarget)]"
-            val result = SymjaUtils.evaluator.eval(symjaCommand).toString()
+            val command = if (useRationalize) {
+                "Simplify[Rationalize(Limit[Rationalize($cleanedExpr), $variable -> Rationalize($cleanedTarget)])]"
+            } else {
+                "Simplify[Limit($cleanedExpr, $variable -> $cleanedTarget)]"
+            }
+
+            val result = SymjaUtils.evaluator.eval(command).toString()
 
             if (result.contains("Limit") || result.contains("Indeterminate")) {
                 "DNE"
