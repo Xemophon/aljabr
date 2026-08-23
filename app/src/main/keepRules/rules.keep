@@ -1,8 +1,13 @@
-# Add project specific R8 rules here.
 # AGP will combine all keep rule files in src/main/keepRules to pass to R8
 
-# Keep metadata that might be used by reflection or serialization
+# Disable global optimizations and preverification to prevent OOM and runtime instability
+-dontoptimize
+-dontpreverify
+
+# Keep metadata required for reflection, generic type resolution, and stack traces
 -keepattributes Signature,EnclosingMethod,InnerClasses,AnnotationDefault,*Annotation*,SourceFile,LineNumberTable
+-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
+-keepattributes RuntimeInvisibleAnnotations,RuntimeInvisibleParameterAnnotations
 
 # ----------------------------------------------------
 # MathEclipse / Symja Engine Rules
