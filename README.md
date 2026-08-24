@@ -30,7 +30,7 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
 - **Matrices:** Support for fundamental operations: addition, multiplication, transpose, determinant, and inverse.
 - **Polynomials:** Advanced tools for root finding, polynomial division, and simplification.
 
-### 📉 Series (Upcoming)
+### 📉 Series
 - **Power Series:** Generate Taylor and Maclaurin expansions for common mathematical functions.
 - **Fourier Analysis:** Decompose periodic functions into their constituent sine and cosine components.
 
