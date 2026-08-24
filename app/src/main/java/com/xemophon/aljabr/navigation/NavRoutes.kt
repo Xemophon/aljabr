@@ -23,6 +23,7 @@ import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.conversions.ConvertorPage
 import com.xemophon.aljabr.conversions.UtilitiesScreen
 import com.xemophon.aljabr.misc.MiscPage
+import com.xemophon.aljabr.series.fourier.FourierCalc
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -45,6 +46,8 @@ object SheetRoute
 object PolyRoute
 @Serializable
 object MatrixRoute
+@Serializable
+object FourierRoute
 val Calculus = listOf(
 
     CalculatorVariant(
@@ -100,6 +103,15 @@ val Algebra = listOf(
     )
 )
 
+val Series = listOf(
+    CalculatorVariant(
+        route = FourierRoute,
+        routeClass = FourierRoute::class,
+        label = "Fourier Series",
+        icon = Icons.AutoMirrored.Filled.ArrowRightAlt,
+        content = { onOpenDrawer -> FourierCalc(onOpenDrawer = onOpenDrawer) }
+    )
+)
 
 val Misc = listOf(
     CalculatorVariant(

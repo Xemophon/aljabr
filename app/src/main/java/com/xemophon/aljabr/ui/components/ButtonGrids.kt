@@ -66,6 +66,8 @@ private fun CalcButtonSheet(
 sealed class ShortGridMode{
     data object Convertor : ShortGridMode()
     data object Polynomials : ShortGridMode()
+    data object Functions : ShortGridMode()
+    data object None : ShortGridMode()
 }
 
 @Composable
@@ -85,6 +87,7 @@ fun ShortCalcButtons(
             overrides = when(gridMode) {
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
                 ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("^", " ^ "))
+                ShortGridMode.Functions -> mapOf((4 to 1) to CalcButtonAction.Variable("x", Variables.X), (4 to 2) to CalcButtonAction.Done)
                 else -> emptyMap()
             }
         )

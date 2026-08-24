@@ -46,6 +46,7 @@ import com.xemophon.aljabr.navigation.BasicCalcRoute
 import com.xemophon.aljabr.navigation.Calculus
 import com.xemophon.aljabr.navigation.Misc
 import com.xemophon.aljabr.navigation.ReferenceSheets
+import com.xemophon.aljabr.navigation.Series
 import com.xemophon.aljabr.ui.components.HorizontalSeparator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
@@ -147,6 +148,25 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                 )
                             }
+                            HorizontalSeparator(text = "Series Expansion")
+                            Series.forEach { variant ->
+                                NavigationDrawerItem(
+                                    label = { Text(variant.label) },
+                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
+                                    onClick = {
+                                        navController.navigate(variant.route) {
+                                            if (variant.route is BasicCalcRoute) {
+                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
+                                            } else {
+                                                popUpTo(BasicCalcRoute::class) { saveState = true }
+                                            }
+                                        }
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                )
+                            }
                             HorizontalSeparator(text = "Utilities")
                             ReferenceSheets.forEach { variant ->
                                 NavigationDrawerItem(
@@ -199,6 +219,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Algebra.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
+                        }
+                        Series.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }

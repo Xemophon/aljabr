@@ -50,6 +50,15 @@ data class AnalysisResult(
 
 data class NamedExpression(val name: String, val expression: String, val rawExpression: String = "")
 
+data class FourierResult(
+    val l: String,
+    val a0: String,
+    val an: List<String>,
+    val bn: List<String>,
+    val fullSeries: String,
+    val error: String? = null
+)
+
 data class PolynomialResult(
     val expression: String,
     val variable: String,
@@ -217,6 +226,39 @@ fun MatrixReport(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FourierReport(
+    result: FourierResult,
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = "Fourier Series Analysis",
+        error = result.error,
+        onClear = onClear
+    ) {
+        item { AnalysisSectionHeader("Transformation Parameters") }
+        item { ResultItemCard("L (Half-period)", result.l) }
+        item { ResultItemCard("a₀ (DC Component)", result.a0) }
+
+        if (result.an.isNotEmpty()) {
+            item { AnalysisSectionHeader("Cosine Coefficients (aₙ)") }
+            items(result.an.size) { index ->
+                ResultItemCard("a_${index + 1}", result.an[index])
+            }
+        }
+
+        if (result.bn.isNotEmpty()) {
+            item { AnalysisSectionHeader("Sine Coefficients (bₙ)") }
+            items(result.bn.size) { index ->
+                ResultItemCard("b_${index + 1}", result.bn[index])
+            }
+        }
+
+        item { AnalysisSectionHeader("Full Expansion (S_n)") }
+        item { ResultItemCard(displayText = result.fullSeries) }
     }
 }
 
