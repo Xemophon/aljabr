@@ -249,6 +249,17 @@ object SymjaUtils {
         result = result.replace("[", "(")
             .replace("]", ")")
 
+        // Fourier and common identities (assuming integer n)
+        try {
+            result = result.replace(Regex("""cos\(n\s*π\)""", RegexOption.IGNORE_CASE), "(-1)ⁿ")
+                .replace(Regex("""sin\(n\s*π\)""", RegexOption.IGNORE_CASE), "0")
+                .replace(Regex("""cos\(2\s*n\s*π\)""", RegexOption.IGNORE_CASE), "1")
+                .replace(Regex("""sin\(2\s*n\s*π\)""", RegexOption.IGNORE_CASE), "0")
+                // Handle cases like (-1)^(2n) -> 1
+                .replace(Regex("""\(-1\)\^\(2\s*n\)"""), "1")
+                .replace(Regex("""\(-1\)\^\(2\s*n\s*\+\s*1\)"""), "-1")
+        } catch (_: Exception) {}
+
         // Safely strip brackets around absolute values
         try {
             result = result.replace(Regex("""ln\(\|(.+?)\|\)"""), "ln|$1|")

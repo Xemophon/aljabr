@@ -76,6 +76,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
             when (type) {
                 Variables.X -> CalcButtonAction.Variable(text = "x", Variables.X)
                 Variables.Y -> CalcButtonAction.Variable(text = "y", Variables.Y)
+                Variables.N -> CalcButtonAction.Variable(text = "n", Variables.N)
             }
         }
 
@@ -86,7 +87,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
 enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL }
 
 enum class Constants { PI, I, PHI, E, INF}
-enum class Variables { X, Y }
+enum class Variables { X, Y, N }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL}
 

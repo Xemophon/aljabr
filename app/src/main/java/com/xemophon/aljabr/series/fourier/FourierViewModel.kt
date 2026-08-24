@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.series.SeriesFuncs
 import com.xemophon.aljabr.ui.components.CalcButtonAction
 import com.xemophon.aljabr.ui.components.Constants
 import com.xemophon.aljabr.ui.components.FourierResult
@@ -121,7 +120,7 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
         
         viewModelScope.launch {
             isCalculating = true
-            fourierResult = FourierResult("", "", mutableListOf(), mutableListOf(), "")
+            fourierResult = FourierResult("", "", mutableListOf(), mutableListOf(), null, null, "")
             
             try {
                 withContext(Dispatchers.Default) {
@@ -157,7 +156,30 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                         if (a0Half != "0") resultText = a0Half
                     }
 
-                    // 3. Coefficients n=1 to 2
+                    // 3. General coefficients an, bn (symbolic n)
+                    val genArg = "(n * Pi * x) / ($bigLRaw)"
+                    val anGenExpr = if (f2Clean == null) {
+                        "(1/($bigLRaw)) * (${integral("$f1Clean * Cos[$genArg]", aClean, cClean)})"
+                    } else {
+                        "(1/($bigLRaw)) * (${integral("$f1Clean * Cos[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Cos[$genArg]", bClean, cClean)})"
+                    }
+                    val bnGenExpr = if (f2Clean == null) {
+                        "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, cClean)})"
+                    } else {
+                        "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Sin[$genArg]", bClean, cClean)})"
+                    }
+
+                    val anGenVal = try { SymjaUtils.evaluator.eval("Simplify[$anGenExpr]").toString() } catch(e:Exception) { null }
+                    val bnGenVal = try { SymjaUtils.evaluator.eval("Simplify[$bnGenExpr]").toString() } catch(e:Exception) { null }
+
+                    withContext(Dispatchers.Main) {
+                        fourierResult = fourierResult?.copy(
+                            anGeneral = if (anGenVal != null && !anGenVal.contains("Integrate")) SymjaUtils.formatResult(anGenVal) else null,
+                            bnGeneral = if (bnGenVal != null && !bnGenVal.contains("Integrate")) SymjaUtils.formatResult(bnGenVal) else null
+                        )
+                    }
+
+                    // 4. Numerical Coefficients n=1 to 2
                     val terms = if (a0Half != "0") mutableListOf<String>(a0Half) else mutableListOf<String>()
                     
                     for (n in 1..2) {
@@ -201,7 +223,7 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                     }
                     
                     withContext(Dispatchers.Main) {
-                        fourierResult = fourierResult?.copy(fullSeries = resultText)
+                        fourierResult = fourierResult?.copy(fullSeries = "f(x) = $resultText")
                     }
                 }
             } catch (e: Exception) {

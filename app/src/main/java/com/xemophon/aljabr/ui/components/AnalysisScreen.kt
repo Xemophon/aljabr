@@ -55,6 +55,8 @@ data class FourierResult(
     val a0: String,
     val an: List<String>,
     val bn: List<String>,
+    val anGeneral: String? = null,
+    val bnGeneral: String? = null,
     val fullSeries: String,
     val error: String? = null
 )
@@ -240,8 +242,19 @@ fun FourierReport(
         onClear = onClear
     ) {
         item { AnalysisSectionHeader("Transformation Parameters") }
-        item { ResultItemCard("L (Half-period)", result.l) }
-        item { ResultItemCard("a₀ (DC Component)", result.a0) }
+        item { ResultItemCard("Half-period (L)", result.l) }
+        item { ResultItemCard("DC Component (a₀)", result.a0) }
+
+        if (result.anGeneral != null || result.bnGeneral != null) {
+            item { AnalysisSectionHeader("General Fourier Series") }
+            val a0Part = if (result.a0 != "0") "\\frac{${result.a0}}{2}" else ""
+            val anPart = result.anGeneral?.let { "(${it}) \\cos\\left(\\frac{n\\pi x}{${result.l}}\\right)" } ?: ""
+            val bnPart = result.bnGeneral?.let { "(${it}) \\sin\\left(\\frac{n\\pi x}{${result.l}}\\right)" } ?: ""
+            val plus = if (anPart.isNotEmpty() && bnPart.isNotEmpty()) " + " else ""
+            
+            val sigmaFormula = "f(x) = $a0Part + \\sum_{n=1}^{\\infty} \\left[ $anPart$plus$bnPart \\right]"
+            item { ResultItemCard(displayText = sigmaFormula, rawValue = sigmaFormula) }
+        }
 
         if (result.an.isNotEmpty()) {
             item { AnalysisSectionHeader("Cosine Coefficients (aₙ)") }
@@ -257,7 +270,7 @@ fun FourierReport(
             }
         }
 
-        item { AnalysisSectionHeader("Full Expansion (S_n)") }
+        item { AnalysisSectionHeader("Expanded Series (Partial Sum)") }
         item { ResultItemCard(displayText = result.fullSeries) }
     }
 }

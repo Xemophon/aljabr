@@ -87,7 +87,11 @@ fun ShortCalcButtons(
             overrides = when(gridMode) {
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
                 ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("^", " ^ "))
-                ShortGridMode.Functions -> mapOf((4 to 1) to CalcButtonAction.Variable("x", Variables.X), (4 to 2) to CalcButtonAction.Done)
+                ShortGridMode.Functions -> mapOf(
+                    (4 to 1) to CalcButtonAction.Variable("x", Variables.X),
+                    (4 to 2) to CalcButtonAction.Clear,
+                    (4 to 3) to CalcButtonAction.Done,
+                )
                 else -> emptyMap()
             }
         )
@@ -218,6 +222,7 @@ sealed class AdvancedGridMode {
     data class Limits(val currentType: LimitType) : AdvancedGridMode()
     data class Integration(val currentType: IntegralType, val axis: String) : AdvancedGridMode()
     data class Differentiation(val currentMode: String) : AdvancedGridMode()
+    data object Taylor : AdvancedGridMode()
     data object Graph : AdvancedGridMode()
 }
 
@@ -370,6 +375,32 @@ fun AdvancedButtonsGrid(
                     onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+        }
+        is AdvancedGridMode.Taylor -> {
+            buttons.add {
+                Button(
+                    onClick = { onAction(CalcButtonAction.Calculate) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "=", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            buttons.add {
+                Button(
+                    onClick = { onAction(CalcButtonAction.Clear) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
         else -> {}
