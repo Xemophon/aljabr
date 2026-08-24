@@ -276,6 +276,26 @@ object SymjaUtils {
     }
 
     /**
+     * Calculates the Taylor series expansion for a function.
+     */
+    fun calculateTaylor(expression: String, center: String, order: Int): String {
+        return synchronized(evaluator) {
+            try {
+                val cleaned = prepareForSymja(expression)
+                if (cleaned.isBlank()) return ""
+                val centerClean = if (center.isBlank()) "0" else prepareForSymja(center)
+
+                // Series[f, {x, x0, n}] calculates the series expansion
+                // Normal[] converts it from SeriesData to a regular polynomial expression
+                val result = evaluator.eval("Normal(Series($cleaned, {x, $centerClean, $order}))")
+                formatResult(result.toString())
+            } catch (_: Throwable) {
+                "Error"
+            }
+        }
+    }
+
+    /**
      * Parses Symja's Solve/NSolve output like {{x -> 0}, {y -> 2}} or {{x -> 1}}
      * into a list of rules like ["x -> 0", "y -> 2"] or ["x -> 1"].
      */

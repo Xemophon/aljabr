@@ -24,6 +24,7 @@ import com.xemophon.aljabr.conversions.ConvertorPage
 import com.xemophon.aljabr.conversions.UtilitiesScreen
 import com.xemophon.aljabr.misc.MiscPage
 import com.xemophon.aljabr.series.fourier.FourierCalc
+import com.xemophon.aljabr.series.taylor.TaylorCalc
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -48,6 +49,8 @@ object PolyRoute
 object MatrixRoute
 @Serializable
 object FourierRoute
+@Serializable
+object TaylorRoute
 val Calculus = listOf(
 
     CalculatorVariant(
@@ -110,6 +113,13 @@ val Series = listOf(
         label = "Fourier Series",
         icon = Icons.AutoMirrored.Filled.ArrowRightAlt,
         content = { onOpenDrawer -> FourierCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = TaylorRoute,
+        routeClass = TaylorRoute::class,
+        label = "Taylor Series",
+        icon = Icons.AutoMirrored.Filled.ArrowRightAlt,
+        content = { onOpenDrawer -> TaylorCalc(onOpenDrawer = onOpenDrawer) }
     )
 )
 

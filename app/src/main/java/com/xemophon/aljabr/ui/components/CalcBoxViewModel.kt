@@ -20,6 +20,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.Icon
@@ -103,41 +106,59 @@ fun CalcBox(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.End
+            ) {
+                val expressionFontSize by animateFloatAsState(
+                    targetValue = if (expression.length > 12) 32f else 40f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "ExpressionFontSize"
+                )
 
-        val expressionFontSize by animateFloatAsState(
-            targetValue = if (expression.length > 12) 32f else 40f,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
-            label = "ExpressionFontSize"
-        )
+                val textStyle = MaterialTheme.typography.displayMedium.copy(
+                    fontSize = expressionFontSize.sp,
+                    fontWeight = FontWeight.Light,
+                    textAlign = TextAlign.End
+                )
 
-        Box(contentAlignment = Alignment.CenterEnd) {
-            val textStyle = MaterialTheme.typography.displayMedium.copy(
-                fontSize = expressionFontSize.sp,
-                fontWeight = FontWeight.Light,
-                textAlign = TextAlign.End
-            )
-
-            val annotatedExpression = buildAnnotatedString {
-                if (cursorIndex != -1 && cursorIndex <= expression.length) {
-                    append(expression.substring(0, cursorIndex))
-                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = cursorAlpha))) {
-                        append("|")
+                val annotatedExpression = buildAnnotatedString {
+                    if (cursorIndex != -1 && cursorIndex <= expression.length) {
+                        append(expression.substring(0, cursorIndex))
+                        withStyle(
+                            style = SpanStyle(
+                                color = MaterialTheme.colorScheme.primary.copy(
+                                    alpha = cursorAlpha
+                                )
+                            )
+                        ) {
+                            append("|")
+                        }
+                        append(expression.substring(cursorIndex))
+                    } else {
+                        append(expression)
                     }
-                    append(expression.substring(cursorIndex))
-                } else {
-                    append(expression)
                 }
-            }
 
-            Text(
-                text = annotatedExpression,
-                style = textStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                maxLines = 2,
-                lineHeight = expressionFontSize.sp * 1.1f,
-                modifier = Modifier.clickable { onCursorIndexChange(expression.length) }
-            )
+                Text(
+                    text = annotatedExpression,
+                    style = textStyle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    lineHeight = expressionFontSize.sp * 1.1f,
+                    modifier = Modifier.clickable { onCursorIndexChange(expression.length) }
+                )
+            }
         }
 
         AnimatedContent(
@@ -207,8 +228,8 @@ fun CalcBox(
     }
 }
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS }
-enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR }
+enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, ORDER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
@@ -234,6 +255,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     var upperLimitText by mutableStateOf("")
+        private set
+
+    var orderText by mutableStateOf("5")
         private set
 
     var analysisResult by mutableStateOf<AnalysisResult?>(null)
@@ -272,7 +296,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     fun handleAction(action: CalcButtonAction) {
         // Clear mode-specific results when any input button is pressed
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
-            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS) {
+            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || 
+                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -381,6 +406,17 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
             return
+        }
+
+        if (calculatorMode == CalculatorMode.TAYLOR) {
+            if (currentFocus == CalculatorFocus.TARGET) {
+                if (symbol.matches(Regex("[0-9.-]+"))) targetText += symbol
+                return
+            }
+            if (currentFocus == CalculatorFocus.ORDER) {
+                if (symbol.matches(Regex("[0-9]+"))) orderText += symbol
+                return
+            }
         }
 
         if (calculatorMode == CalculatorMode.INTEGRATE) {
@@ -519,7 +555,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (!calculationEnabled || displayText == "0" || displayText.isBlank() ||
             calculatorMode == CalculatorMode.LIMITS ||
             calculatorMode == CalculatorMode.INTEGRATE ||
-            calculatorMode == CalculatorMode.DIFFERENTIATE
+            calculatorMode == CalculatorMode.DIFFERENTIATE ||
+            calculatorMode == CalculatorMode.TAYLOR
         ) {
             resultText = ""
             return
@@ -575,6 +612,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
         if (calculatorMode == CalculatorMode.POLYNOMIALS) {
             runPolynomialCalculation()
+            return
+        }
+        if (calculatorMode == CalculatorMode.TAYLOR) {
+            runTaylorCalculation()
             return
         }
 
@@ -780,8 +821,25 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun runTaylorCalculation() {
+        if (displayText.isBlank()) return
+        stepsList.clear()
+
+        try {
+            val ord = orderText.toIntOrNull() ?: 5
+            val res = SymjaUtils.calculateTaylor(displayText, targetText, ord)
+
+            if (res != "Error" && res.isNotEmpty()) {
+                resultText = res
+                isShowingResult = true
+            }
+        } catch (e: Exception) {
+            resultText = "Error"
+        }
+    }
+
     private fun clearAll() {
-        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS) && isShowingResult) {
+        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR) && isShowingResult) {
             resultText = ""
             isShowingResult = false
             polynomialResult = null
@@ -798,6 +856,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""
         upperLimitText = ""
+        orderText = "5"
         isShowingResult = false
 
         // Clear App Cache and Graph Cache if enabled
@@ -836,6 +895,17 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 targetText = targetText.dropLast(1)
             }
             return
+        }
+
+        if (calculatorMode == CalculatorMode.TAYLOR) {
+            if (currentFocus == CalculatorFocus.TARGET && targetText.isNotEmpty()) {
+                targetText = targetText.dropLast(1)
+                return
+            }
+            if (currentFocus == CalculatorFocus.ORDER && orderText.isNotEmpty()) {
+                orderText = orderText.dropLast(1)
+                return
+            }
         }
 
         if (calculatorMode == CalculatorMode.INTEGRATE) {
