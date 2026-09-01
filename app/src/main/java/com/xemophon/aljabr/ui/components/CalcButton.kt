@@ -113,14 +113,52 @@ val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Symbol("0"),
         CalcButtonAction.Symbol("."),
-        CalcButtonAction.Symbol("( )"),
+        CalcButtonAction.Symbol("^", " ^ "),
         CalcButtonAction.Symbol("+")
     ),
     listOf(
         CalcButtonAction.Backspace(R.drawable.backspace),
         CalcButtonAction.Clear,
         CalcButtonAction.Constant("π", Constants.PI),
-        CalcButtonAction.Constant("φ", Constants.PHI)
+        CalcButtonAction.Symbol("( )")
+    )
+)
+
+val FunctionsButtonGrid : List<List<CalcButtonAction>> = listOf(
+    listOf(
+        CalcButtonAction.Symbol("7"),
+        CalcButtonAction.Symbol("8"),
+        CalcButtonAction.Symbol("9"),
+        CalcButtonAction.Symbol("÷", "/")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("4"),
+        CalcButtonAction.Symbol("5"),
+        CalcButtonAction.Symbol("6"),
+        CalcButtonAction.Symbol("×", "*")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("1"),
+        CalcButtonAction.Symbol("2"),
+        CalcButtonAction.Symbol("3"),
+        CalcButtonAction.Symbol("-")
+    ),
+    listOf(
+        CalcButtonAction.Symbol("0"),
+        CalcButtonAction.Symbol("."),
+        CalcButtonAction.Constant("π", Constants.PI),
+        CalcButtonAction.Symbol("+")
+    ),
+    listOf(
+        CalcButtonAction.Variable("x", Variables.X),
+        CalcButtonAction.Symbol("("),
+        CalcButtonAction.Symbol(")"),
+        CalcButtonAction.Symbol("^", " ^ "),
+    ),
+    listOf(
+        CalcButtonAction.Backspace(R.drawable.backspace),
+        CalcButtonAction.Clear,
+        CalcButtonAction.Done
     )
 )
 val StandardButtonsGrid : List<List<CalcButtonAction>> = listOf(

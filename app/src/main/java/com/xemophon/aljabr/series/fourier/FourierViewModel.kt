@@ -72,7 +72,13 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
 
     fun handleAction(action: CalcButtonAction) {
         when (action) {
-            is CalcButtonAction.Symbol -> handleSymbol(action.text)
+            is CalcButtonAction.Symbol -> {
+                if (action.text == "( )" || action.text == "()") {
+                    handleBrackets()
+                } else {
+                    handleSymbol(action.text)
+                }
+            }
             is CalcButtonAction.Scientific -> handleSymbol(action.text)
             is CalcButtonAction.Constant -> {
                 val toInsert = when (action.type) {
@@ -95,6 +101,22 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
 
     private fun handleSymbol(symbol: String) {
         updateCurrentField { it + symbol }
+    }
+
+    private fun handleBrackets() {
+        updateCurrentField { text ->
+            val openBrackets = text.count { it == '(' }
+            val closedBrackets = text.count { it == ')' }
+            
+            val lastChar = text.lastOrNull()
+            val isImplicitNeeded = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'n' || lastChar == 'π' || lastChar == 'e')
+
+            if (openBrackets > closedBrackets && isImplicitNeeded) {
+                text + ")"
+            } else {
+                if (isImplicitNeeded) text + " * (" else text + "("
+            }
+        }
     }
 
     private fun handleBackspace() {
@@ -120,7 +142,7 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
         
         viewModelScope.launch {
             isCalculating = true
-            fourierResult = FourierResult("", "", mutableListOf(), mutableListOf(), null, null, "")
+            fourierResult = FourierResult("", "", null, null, "")
             
             try {
                 withContext(Dispatchers.Default) {
@@ -145,15 +167,11 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                     } else {
                         "(1/($bigLRaw)) * (${integral(f1Clean, aClean, bClean)} + ${integral(f2Clean, bClean, cClean)})"
                     }
-                    val a0Val = SymjaUtils.evaluator.eval("Simplify[$a0Expr]").toString()
+                    val a0Val = SymjaUtils.evaluator.eval("FullSimplify[$a0Expr]").toString()
                     val a0 = SymjaUtils.formatResult(a0Val)
                     
-                    val a0HalfVal = SymjaUtils.evaluator.eval("Simplify[$a0Val / 2]").toString()
-                    val a0Half = SymjaUtils.formatResult(a0HalfVal)
-
                     withContext(Dispatchers.Main) {
                         fourierResult = fourierResult?.copy(a0 = a0)
-                        if (a0Half != "0") resultText = a0Half
                     }
 
                     // 3. General coefficients an, bn (symbolic n)
@@ -169,61 +187,14 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                         "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Sin[$genArg]", bClean, cClean)})"
                     }
 
-                    val anGenVal = try { SymjaUtils.evaluator.eval("Simplify[$anGenExpr]").toString() } catch(e:Exception) { null }
-                    val bnGenVal = try { SymjaUtils.evaluator.eval("Simplify[$bnGenExpr]").toString() } catch(e:Exception) { null }
+                    val anGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$anGenExpr, Element[n, Integers]]").toString() } catch(e:Exception) { null }
+                    val bnGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$bnGenExpr, Element[n, Integers]]").toString() } catch(e:Exception) { null }
 
                     withContext(Dispatchers.Main) {
                         fourierResult = fourierResult?.copy(
                             anGeneral = if (anGenVal != null && !anGenVal.contains("Integrate")) SymjaUtils.formatResult(anGenVal) else null,
                             bnGeneral = if (bnGenVal != null && !bnGenVal.contains("Integrate")) SymjaUtils.formatResult(bnGenVal) else null
                         )
-                    }
-
-                    // 4. Numerical Coefficients n=1 to 2
-                    val terms = if (a0Half != "0") mutableListOf<String>(a0Half) else mutableListOf<String>()
-                    
-                    for (n in 1..2) {
-                        val arg = "($n * Pi * x) / ($bigLRaw)"
-                        val cosTerm = "Cos[$arg]"
-                        val sinTerm = "Sin[$arg]"
-                        
-                        val anExpr = if (f2Clean == null) {
-                            "(1/($bigLRaw)) * (${integral("$f1Clean * $cosTerm", aClean, cClean)})"
-                        } else {
-                            "(1/($bigLRaw)) * (${integral("$f1Clean * $cosTerm", aClean, bClean)} + ${integral("$f2Clean * $cosTerm", bClean, cClean)})"
-                        }
-                        
-                        val bnExpr = if (f2Clean == null) {
-                            "(1/($bigLRaw)) * (${integral("$f1Clean * $sinTerm", aClean, cClean)})"
-                        } else {
-                            "(1/($bigLRaw)) * (${integral("$f1Clean * $sinTerm", aClean, bClean)} + ${integral("$f2Clean * $sinTerm", bClean, cClean)})"
-                        }
-
-                        val anVal = SymjaUtils.evaluator.eval("Simplify[$anExpr]").toString()
-                        val bnVal = SymjaUtils.evaluator.eval("Simplify[$bnExpr]").toString()
-                        
-                        val an = SymjaUtils.formatResult(anVal)
-                        val bn = SymjaUtils.formatResult(bnVal)
-
-                        withContext(Dispatchers.Main) {
-                            val current = fourierResult!!
-                            fourierResult = current.copy(
-                                an = current.an + an,
-                                bn = current.bn + bn
-                            )
-                            
-                            if (an != "0" && !anVal.contains("Integrate")) {
-                                terms.add("($an)${SymjaUtils.formatResult(cosTerm)}")
-                            }
-                            if (bn != "0" && !bnVal.contains("Integrate")) {
-                                terms.add("($bn)${SymjaUtils.formatResult(sinTerm)}")
-                            }
-                            resultText = terms.joinToString(" + ").replace("+ -", "- ")
-                        }
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        fourierResult = fourierResult?.copy(fullSeries = "f(x) = $resultText")
                     }
                 }
             } catch (e: Exception) {

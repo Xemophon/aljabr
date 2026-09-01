@@ -324,21 +324,10 @@ fun FourierLoadingReport(viewModel: FourierViewModel) {
                     ResultItemCard("a₀ (DC Component)", result.a0)
                 }
 
-                if (result.an.isNotEmpty() || result.bn.isNotEmpty()) {
-                    AnalysisSectionHeader("Coefficients (Live)")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            result.an.forEachIndexed { i, an -> ResultItemCard("a_${i+1}", an) }
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            result.bn.forEachIndexed { i, bn -> ResultItemCard("b_${i+1}", bn) }
-                        }
-                    }
-                }
-                
-                if (viewModel.resultText.isNotEmpty()) {
-                    AnalysisSectionHeader("Current Expansion")
-                    ResultItemCard(displayText = viewModel.resultText)
+                if (result.anGeneral != null || result.bnGeneral != null) {
+                    AnalysisSectionHeader("General Coefficients")
+                    result.anGeneral?.let { ResultItemCard("aₙ (Symbolic)", it) }
+                    result.bnGeneral?.let { ResultItemCard("bₙ (Symbolic)", it) }
                 }
             }
         }
@@ -391,8 +380,11 @@ fun FourierFocusOverlay(
                     Text(
                         text = targetValue.ifEmpty { 
                             when(viewModel.currentFocus) {
-                                FourierFocus.BRANCH1, FourierFocus.BRANCH2 -> "f(x)"
-                                else -> "val"
+                                FourierFocus.BRANCH1 -> if (viewModel.isTwoBranch) "f1(x)" else "f(x)"
+                                FourierFocus.BRANCH2 -> "f2(x)"
+                                FourierFocus.LIMIT_A -> "a"
+                                FourierFocus.LIMIT_B -> "b"
+                                FourierFocus.LIMIT_C -> "c"
                             }
                         },
                         style = MaterialTheme.typography.headlineLarge,

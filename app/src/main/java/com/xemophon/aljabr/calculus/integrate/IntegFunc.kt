@@ -195,3 +195,5 @@ object IntegFunc {
         return "$formatted + C"
     }
 }
+
+/* TODO : Make double integral with TwoVariableGrid */

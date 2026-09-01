@@ -53,8 +53,6 @@ data class NamedExpression(val name: String, val expression: String, val rawExpr
 data class FourierResult(
     val l: String,
     val a0: String,
-    val an: List<String>,
-    val bn: List<String>,
     val anGeneral: String? = null,
     val bnGeneral: String? = null,
     val fullSeries: String,
@@ -246,32 +244,74 @@ fun FourierReport(
         item { ResultItemCard("DC Component (a₀)", result.a0) }
 
         if (result.anGeneral != null || result.bnGeneral != null) {
-            item { AnalysisSectionHeader("General Fourier Series") }
-            val a0Part = if (result.a0 != "0") "\\frac{${result.a0}}{2}" else ""
-            val anPart = result.anGeneral?.let { "(${it}) \\cos\\left(\\frac{n\\pi x}{${result.l}}\\right)" } ?: ""
-            val bnPart = result.bnGeneral?.let { "(${it}) \\sin\\left(\\frac{n\\pi x}{${result.l}}\\right)" } ?: ""
-            val plus = if (anPart.isNotEmpty() && bnPart.isNotEmpty()) " + " else ""
+            item { AnalysisSectionHeader("General Fourier Coefficients") }
+            result.anGeneral?.let { item { ResultItemCard("aₙ (Symbolic)", it) } }
+            result.bnGeneral?.let { item { ResultItemCard("bₙ (Symbolic)", it) } }
+
+            item { AnalysisSectionHeader("General Form (Summation)") }
             
-            val sigmaFormula = "f(x) = $a0Part + \\sum_{n=1}^{\\infty} \\left[ $anPart$plus$bnPart \\right]"
-            item { ResultItemCard(displayText = sigmaFormula, rawValue = sigmaFormula) }
+            // Simplify the argument once
+            val argLatex = SymjaUtils.toLaTeX("(n * Pi * x) / (${result.l})")
+            
+            val anPart = result.anGeneral?.let { 
+                if (it == "0" || it.isBlank()) ""
+                else {
+                    val latex = SymjaUtils.toLaTeX(it, assumeIntegerN = true)
+                    "\\left(${latex}\\right) \\cos\\left(${argLatex}\\right)" 
+                }
+            } ?: ""
+            
+            val bnPart = result.bnGeneral?.let { 
+                if (it == "0" || it.isBlank()) ""
+                else {
+                    val latex = SymjaUtils.toLaTeX(it, assumeIntegerN = true)
+                    "\\left(${latex}\\right) \\sin\\left(${argLatex}\\right)" 
+                }
+            } ?: ""
+            
+            val innerSum = when {
+                anPart.isNotEmpty() && bnPart.isNotEmpty() -> "$anPart + $bnPart"
+                anPart.isNotEmpty() -> anPart
+                bnPart.isNotEmpty() -> bnPart
+                else -> ""
+            }
+            
+            val a0Part = if (result.a0 != "0") {
+                // Try to simplify a0/2
+                val a0Latex = SymjaUtils.toLaTeX("(${result.a0}) / 2")
+                "$a0Latex + "
+            } else ""
+            
+            val fullFormula = if (innerSum.isNotEmpty()) {
+                "f(x) = $a0Part \\sum_{n=1}^{\\infty} \\left[ $innerSum \\right]"
+            } else {
+                "f(x) = ${if (a0Part.isNotEmpty()) a0Part.removeSuffix(" + ") else "0"}"
+            }
+            
+            item { LatexResultCard(fullFormula) }
         }
+    }
+}
 
-        if (result.an.isNotEmpty()) {
-            item { AnalysisSectionHeader("Cosine Coefficients (aₙ)") }
-            items(result.an.size) { index ->
-                ResultItemCard("a_${index + 1}", result.an[index])
+@Composable
+fun LatexResultCard(latex: String) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+        ) {
+            Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+                Latex(
+                    latex = latex,
+                    config = LatexConfig(
+                        fontSize = 20.sp,
+                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
+                    )
+                )
             }
         }
-
-        if (result.bn.isNotEmpty()) {
-            item { AnalysisSectionHeader("Sine Coefficients (bₙ)") }
-            items(result.bn.size) { index ->
-                ResultItemCard("b_${index + 1}", result.bn[index])
-            }
-        }
-
-        item { AnalysisSectionHeader("Expanded Series (Partial Sum)") }
-        item { ResultItemCard(displayText = result.fullSeries) }
     }
 }
 

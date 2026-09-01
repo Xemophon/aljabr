@@ -25,6 +25,9 @@ object SymjaUtils {
             .replace("i", "I", ignoreCase = true)
             .replace("√", "Sqrt")
             .replace("sqrt", "Sqrt", ignoreCase = true)
+            .replace("ⁿ", "^n")
+            .replace("(-1)^n", "(-1)^n") // Already fine
+            .replace("(-1)ⁿ", "(-1)^n")
 
         // Convert |x| to Abs(x)
         val absRegex = Regex("""\|([^|]+)\|""")
@@ -90,15 +93,19 @@ object SymjaUtils {
         }
     }
 
-    fun toLaTeX(expression: String): String {
+    fun toLaTeX(expression: String, assumeIntegerN: Boolean = false): String {
         return synchronized(evaluator) {
             try {
                 val cleaned = prepareForSymja(expression)
                 if (cleaned.isBlank()) return ""
                 
-                // Use TeXForm to convert the expression to LaTeX. 
-                // Symja's TeXForm automatically handles lists as pmatrix or similar.
-                var result = evaluator.eval("TeXForm($cleaned)").toString()
+                val evalExpr = if (assumeIntegerN) {
+                    "TeXForm(FullSimplify[$cleaned, Element[n, Integers]])"
+                } else {
+                    "TeXForm($cleaned)"
+                }
+                
+                var result = evaluator.eval(evalExpr).toString()
 
                 // Fix standard Symja TeXForm list output which often looks like \{ \{1, 2\}, \{3, 4\} \}
                 // and convert it to a proper LaTeX pmatrix
@@ -251,13 +258,7 @@ object SymjaUtils {
 
         // Fourier and common identities (assuming integer n)
         try {
-            result = result.replace(Regex("""cos\(n\s*π\)""", RegexOption.IGNORE_CASE), "(-1)ⁿ")
-                .replace(Regex("""sin\(n\s*π\)""", RegexOption.IGNORE_CASE), "0")
-                .replace(Regex("""cos\(2\s*n\s*π\)""", RegexOption.IGNORE_CASE), "1")
-                .replace(Regex("""sin\(2\s*n\s*π\)""", RegexOption.IGNORE_CASE), "0")
-                // Handle cases like (-1)^(2n) -> 1
-                .replace(Regex("""\(-1\)\^\(2\s*n\)"""), "1")
-                .replace(Regex("""\(-1\)\^\(2\s*n\s*\+\s*1\)"""), "-1")
+            result = tryRecognizeTrigPatterns(result)
         } catch (_: Exception) {}
 
         // Safely strip brackets around absolute values
@@ -293,6 +294,80 @@ object SymjaUtils {
                 "Error"
             }
         }
+    }
+
+    /**
+     * Attempts to recognize trigonometric patterns involving 'n' by evaluating them at n=1 and n=2.
+     * This helps simplify Fourier coefficients that Symja might not have fully collapsed.
+     */
+    private fun tryRecognizeTrigPatterns(input: String): String {
+        var output = input
+        
+        // Match common trig terms in the output string
+        val trigRegex = Regex("""(cos|sin|Cos|Sin)\s*[( \[]([^()\[\]]*n[^()\[\]]*)[)\]]""", RegexOption.IGNORE_CASE)
+        
+        val matches = trigRegex.findAll(input).toList().distinctBy { it.value }
+        
+        for (match in matches) {
+            val fullMatch = match.value
+            val evalTerm = prepareForSymja(fullMatch)
+            
+            try {
+                // Evaluate at n=1, 2, 3 for better verification
+                val val1 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 1]]").toString().removeSuffix(".0")
+                val val2 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 2]]").toString().removeSuffix(".0")
+                val val3 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 3]]").toString().removeSuffix(".0")
+                
+                val simplified = when {
+                    val1 == "-1" && val2 == "1" && val3 == "-1" -> "(-1)ⁿ"
+                    val1 == "1" && val2 == "-1" && val3 == "1" -> "-(-1)ⁿ"
+                    val1 == "0" && val2 == "0" && val3 == "0" -> "0"
+                    val1 == "1" && val2 == "1" && val3 == "1" -> "1"
+                    val1 == "-1" && val2 == "-1" && val3 == "-1" -> "-1"
+                    else -> null
+                }
+                
+                if (simplified != null) {
+                    output = output.replace(fullMatch, simplified)
+                }
+            } catch (_: Exception) {}
+        }
+        
+        // Handle common (-1)^n algebraic variations
+        try {
+            output = output.replace(Regex("""\(-1\)\^n"""), "(-1)ⁿ")
+                .replace(Regex("""\(-1\)\^\(\s*n\s*\+\s*1\s*\)"""), "-(-1)ⁿ")
+                .replace(Regex("""\(-1\)\^\(\s*n\s*-\s*1\s*\)"""), "-(-1)ⁿ")
+                .replace(Regex("""\(-1\)\^\(\s*2\s*n\s*\)"""), "1")
+                .replace(Regex("""\(-1\)\^\(\s*2\s*n\s*\+\s*1\s*\)"""), "-1")
+                .replace(Regex("""\(-1\)\^\(\s*2\s*n\s*-\s*1\s*\)"""), "-1")
+        } catch (_: Exception) {}
+
+        // Post-recognition cleanup for zeros and ones
+        try {
+            // Remove multiplication by 0: 0 * anything or anything * 0
+            output = output.replace(Regex("""\b0\s*[×*]\s*[\w()]+\b"""), "0")
+                .replace(Regex("""\b[\w()]+\s*[×*]\s*0\b"""), "0")
+                
+            // Remove multiplication by 1: 1 * x -> x, x * 1 -> x
+            output = output.replace(Regex("""\b1\s*[×*]\s*"""), "")
+                .replace(Regex("""\s*[×*]\s*1\b"""), "")
+                
+            // Clean up 0 additions: x + 0 -> x, 0 + x -> x
+            // Careful with signs
+            output = output.replace(Regex("""\+\s*0\b"""), "")
+                .replace(Regex("""\b0\s*\+\s*"""), "")
+                .replace(Regex("""-\s*0\b"""), "")
+                
+            // Fix double operators
+            output = output.replace("+-", "-")
+                .replace("-+", "-")
+                .replace("--", "+")
+                .replace("++", "+")
+                .replace("  ", " ")
+        } catch (_: Exception) {}
+        
+        return output
     }
 
     /**

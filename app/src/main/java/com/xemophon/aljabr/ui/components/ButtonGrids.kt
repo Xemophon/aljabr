@@ -78,8 +78,11 @@ fun ShortCalcButtons(
     onAction: (CalcButtonAction) -> Unit,
 ) {
     CalcButtonSheet(modifier.fillMaxHeight()) {
+        val isFunctions = gridMode == ShortGridMode.Functions
+        val selectedGrid = if (isFunctions) FunctionsButtonGrid else ShortButtonGrid
+        
         ButtonGrid(
-            gridData = ShortButtonGrid,
+            gridData = selectedGrid,
             modifier = Modifier.weight(1f),
             isExpanded = true,
             onAction = onAction,
@@ -87,11 +90,6 @@ fun ShortCalcButtons(
             overrides = when(gridMode) {
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
                 ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("^", " ^ "))
-                ShortGridMode.Functions -> mapOf(
-                    (4 to 1) to CalcButtonAction.Variable("x", Variables.X),
-                    (4 to 2) to CalcButtonAction.Clear,
-                    (4 to 3) to CalcButtonAction.Done,
-                )
                 else -> emptyMap()
             }
         )
@@ -242,13 +240,15 @@ fun AdvancedButtonsGrid(
     }
 
     val buttons = mutableListOf<@Composable () -> Unit>()
-    buttons.add {
-        ModeToggleButton(
-            label = "Inv",
-            isSelected = isInverse,
-            onClick = onToggleInverse,
-            modifier = Modifier.fillMaxWidth()
-        )
+    if(gridMode !is AdvancedGridMode.Taylor) {
+        buttons.add {
+            ModeToggleButton(
+                label = "Inv",
+                isSelected = isInverse,
+                onClick = onToggleInverse,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 
     when (gridMode) {
@@ -378,30 +378,7 @@ fun AdvancedButtonsGrid(
             }
         }
         is AdvancedGridMode.Taylor -> {
-            buttons.add {
-                Button(
-                    onClick = { onAction(CalcButtonAction.Calculate) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "=", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            buttons.add {
-                Button(
-                    onClick = { onAction(CalcButtonAction.Clear) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
-                }
-            }
+            /* Nothing to do here */
         }
         else -> {}
     }
