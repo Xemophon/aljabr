@@ -1,6 +1,5 @@
 package com.xemophon.aljabr.series.taylor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -121,114 +120,33 @@ fun TaylorDisplay(
         contentAlignment = Alignment.Center
     ) {
         if (result.isEmpty()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+            // Function Definition only
+            Box(
+                modifier = Modifier
+                    .clickable {
+                        onFocusChange(CalculatorFocus.EXPRESSION)
+                        onCursorIndexChange(expression.length)
+                    }
+                    .padding(8.dp)
             ) {
-                // Summation Symbol with limits
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = order.ifEmpty { "n" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (focus == CalculatorFocus.ORDER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clickable { onFocusChange(CalculatorFocus.ORDER) }
-                    )
-                    Text(
-                        text = "Σ",
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "k=0",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // General Term Fraction
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(modifier = Modifier.padding(4.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "f",
-                                style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "(k)",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                modifier = Modifier.offset(y = (-8).dp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "($center)",
-                                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-                                color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.clickable { onFocusChange(CalculatorFocus.TARGET) }
-                            )
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .width(60.dp)
-                            .height(2.dp)
-                            .background(MaterialTheme.colorScheme.onSurface)
-                    )
-                    Text(
-                        text = "k!",
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // (x-a)^k part
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "(x - $center)",
-                        style = MaterialTheme.typography.displayMedium.copy(fontSize = 32.sp),
-                        color = if (focus == CalculatorFocus.TARGET) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clickable { onFocusChange(CalculatorFocus.TARGET) }
-                    )
-                    Text(
-                        text = "k",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.offset(y = (-12).dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Function Definition
-                Box(
-                    modifier = Modifier
-                        .clickable {
-                            onFocusChange(CalculatorFocus.EXPRESSION)
-                            onCursorIndexChange(expression.length)
-                        }
-                        .padding(8.dp)
-                ) {
-                    val base = if (expression == "0") "" else expression
-                    val textWithCursor = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                        if (cursorIndex < base.length) {
-                            StringBuilder(base).insert(cursorIndex, "|").toString()
-                        } else {
-                            "$base|"
-                        }
+                val base = if (expression == "0") "" else expression
+                val textWithCursor = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                    if (cursorIndex < base.length) {
+                        StringBuilder(base).insert(cursorIndex, "|").toString()
                     } else {
-                        base.ifEmpty { "f(x)" }
+                        "$base|"
                     }
-
-                    Text(
-                        text = "f(x)=$textWithCursor",
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontSize = if (textWithCursor.length > 10) 24.sp else 32.sp
-                        ),
-                        color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
+                } else {
+                    base.ifEmpty { "f(x)" }
                 }
+
+                Text(
+                    text = textWithCursor,
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontSize = if (textWithCursor.length > 10) 24.sp else 32.sp
+                    ),
+                    color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
         } else {
             // Result View with LaTeX
