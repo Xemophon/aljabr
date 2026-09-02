@@ -17,7 +17,7 @@ import com.xemophon.aljabr.algebra.matrices.MatrixViewModel
 import com.xemophon.aljabr.algebra.polynomials.PolyCalc
 import com.xemophon.aljabr.basicCalc.BasicCalc
 import com.xemophon.aljabr.calculus.differentiate.DiffCalc
-import com.xemophon.aljabr.calculus.graphMaker.GraphMaker
+import com.xemophon.aljabr.graphMaker.GraphMaker
 import com.xemophon.aljabr.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.calculus.limits.Limits
 import com.xemophon.aljabr.conversions.ConvertorPage
@@ -52,14 +52,6 @@ object FourierRoute
 @Serializable
 object TaylorRoute
 val Calculus = listOf(
-
-    CalculatorVariant(
-        route = GraphMakerRoute,
-        routeClass = GraphMakerRoute::class,
-        label = "Graph Maker",
-        icon = Icons.AutoMirrored.Filled.ShowChart,
-        content = { onOpenDrawer -> GraphMaker(onOpenDrawer = onOpenDrawer) }
-    ),
     CalculatorVariant(
         route = LimitsRoute,
         routeClass = LimitsRoute::class,
@@ -130,6 +122,13 @@ val Misc = listOf(
         label = "Basic Calculator",
         icon = Icons.Default.Calculate,
         content = { onOpenDrawer -> BasicCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = GraphMakerRoute,
+        routeClass = GraphMakerRoute::class,
+        label = "Graph Maker",
+        icon = Icons.AutoMirrored.Filled.ShowChart,
+        content = { onOpenDrawer -> GraphMaker(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = MiscRoute,

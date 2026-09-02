@@ -20,12 +20,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -57,7 +54,7 @@ import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.basicCalc.CalcFuncs
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
+import com.xemophon.aljabr.graphMaker.GraphGenerator
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.data.SettingsRepository

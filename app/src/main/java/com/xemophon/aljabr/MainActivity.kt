@@ -35,7 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
+import com.xemophon.aljabr.graphMaker.GraphGenerator
 import com.xemophon.aljabr.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.data.SettingsRepository

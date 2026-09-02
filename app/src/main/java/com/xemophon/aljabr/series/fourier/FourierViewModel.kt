@@ -174,7 +174,7 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                         fourierResult = fourierResult?.copy(a0 = a0)
                     }
 
-                    // 3. General coefficients an, bn (symbolic n)
+                    // 3. General coefficients
                     val genArg = "(n * Pi * x) / ($bigLRaw)"
                     val anGenExpr = if (f2Clean == null) {
                         "(1/($bigLRaw)) * (${integral("$f1Clean * Cos[$genArg]", aClean, cClean)})"

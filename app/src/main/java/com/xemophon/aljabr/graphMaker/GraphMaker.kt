@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.calculus.graphMaker
+package com.xemophon.aljabr.graphMaker
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable

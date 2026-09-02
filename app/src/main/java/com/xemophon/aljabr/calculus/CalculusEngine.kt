@@ -11,11 +11,11 @@ class CalculusEngine {
     /**
      * Entry point for integration steps.
      * Uses IntegrationSolver for algorithmic and pattern-based steps.
-     * @param useEugene If true, use the hybrid solver; otherwise fall back.
+     * @param useHybridSolver If true, use the hybrid solver; otherwise fall back.
      */
-    fun integrateWithSteps(expression: String, useEugene: Boolean = true): Pair<org.matheclipse.core.interfaces.IExpr, List<CalculusStep>>? {
+    fun integrateWithSteps(expression: String, useHybridSolver: Boolean = true): Pair<org.matheclipse.core.interfaces.IExpr, List<CalculusStep>>? {
         val steps = mutableListOf<CalculusStep>()
-        if (!useEugene) return null
+        if (!useHybridSolver) return null
 
         try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
@@ -42,11 +42,11 @@ class CalculusEngine {
 
     /**
      * Entry point for differentiation steps.
-     * @param useEugene If true, use the rule-based solver; otherwise fall back.
+     * @param useHybridSolver If true, use the rule-based solver; otherwise fall back.
      */
-    fun differentiateWithSteps(expression: String, variable: String = "x", useEugene: Boolean = true): List<CalculusStep> {
+    fun differentiateWithSteps(expression: String, variable: String = "x", useHybridSolver: Boolean = true): List<CalculusStep> {
         val steps = mutableListOf<CalculusStep>()
-        if (!useEugene) return steps
+        if (!useHybridSolver) return steps
 
         try {
             val cleaned = SymjaUtils.prepareForSymja(expression)

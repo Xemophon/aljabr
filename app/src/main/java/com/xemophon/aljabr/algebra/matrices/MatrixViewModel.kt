@@ -8,7 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.calculus.graphMaker.GraphGenerator
+import com.xemophon.aljabr.graphMaker.GraphGenerator
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
