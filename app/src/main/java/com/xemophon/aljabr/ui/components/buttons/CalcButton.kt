@@ -39,10 +39,12 @@ sealed interface CalcButtonAction {
     data class Scientific(val text: String, val type: ScientificType) : CalcButtonAction
     data class Constant(val text: String, val type: Constants) : CalcButtonAction
     data class Variable(val text: String, val type: Variables) : CalcButtonAction
+    data class Param(val text: String, val type: Parameter) : CalcButtonAction
     data class Limits(val text: String, val type: LimitType) : CalcButtonAction
     data class Integrals(val text: String, val type: IntegralType) : CalcButtonAction
     data class Differentiate(val text: String = "d/dx") : CalcButtonAction
     data class DifferentiateSingle(val text: String = "d/dx") : CalcButtonAction
+    data class Laplace(val text: String) : CalcButtonAction
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
     data object Graph : CalcButtonAction
@@ -76,9 +78,17 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
             when (type) {
                 Variables.X -> CalcButtonAction.Variable(text = "x", Variables.X)
                 Variables.Y -> CalcButtonAction.Variable(text = "y", Variables.Y)
-                Variables.N -> CalcButtonAction.Variable(text = "n", Variables.N)
+                Variables.T -> CalcButtonAction.Variable(text = "t", Variables.T)
+                Variables.S -> CalcButtonAction.Variable(text = "s", Variables.S)
             }
         }
+
+        is CalcButtonAction.Param -> {
+            when (type) {
+                Parameter.N -> CalcButtonAction.Param(text = "n", Parameter.N)
+            }
+        }
+
 
         else -> this
     }
@@ -87,7 +97,8 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
 enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL }
 
 enum class Constants { PI, I, PHI, E, INF}
-enum class Variables { X, Y, N }
+enum class Variables { X, Y, T, S}
+enum class Parameter { N }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE }
 
@@ -416,6 +427,14 @@ fun CalcButton(
                 )
             }
 
+            is CalcButtonAction.Laplace -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = animatedContentColor
+                )
+            }
+
             is CalcButtonAction.Variable -> {
                 Text(
                     text = action.text,
@@ -423,6 +442,15 @@ fun CalcButton(
                     color = animatedContentColor
                 )
             }
+
+            is CalcButtonAction.Param -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = animatedContentColor
+                )
+            }
+
 
             is CalcButtonAction.Limits -> {
                 Text(

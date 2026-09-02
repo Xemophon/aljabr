@@ -220,6 +220,7 @@ sealed class AdvancedGridMode {
     data class Limits(val currentType: LimitType) : AdvancedGridMode()
     data class Integration(val currentType: IntegralType, val axis: String) : AdvancedGridMode()
     data class Differentiation(val currentMode: String) : AdvancedGridMode()
+    data class Laplace(val currentMode: String) : AdvancedGridMode()
     data object Taylor : AdvancedGridMode()
     data object Graph : AdvancedGridMode()
 }
@@ -396,7 +397,24 @@ fun AdvancedButtonsGrid(
         is AdvancedGridMode.Taylor -> {
             /* Nothing to do here */
         }
-        else -> {}
+        is AdvancedGridMode.Laplace -> {
+            buttons.add{
+                ModeToggleButton(
+                    label = "ℒ",
+                    isSelected = gridMode.currentMode == "Laplace",
+                    onClick = { onAction(CalcButtonAction.Laplace("Laplace")) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add{
+                ModeToggleButton(
+                    label = "ℒ⁻¹",
+                    isSelected = gridMode.currentMode == "Reverse",
+                    onClick = { onAction(CalcButtonAction.Laplace("Reverse")) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
 
     AdditionalButtons(buttons = buttons)
@@ -409,6 +427,13 @@ fun AdvancedButtonsGrid(
         overrides = when (gridMode) {
             is AdvancedGridMode.Graph -> {
                 mapOf((6 to 3) to CalcButtonAction.Symbol("="))
+            }
+            is AdvancedGridMode.Laplace -> {
+                if (gridMode.currentMode == "Reverse") {
+                    mapOf((0 to 0) to CalcButtonAction.Variable("s", Variables.S))
+                } else {
+                    mapOf((0 to 0) to CalcButtonAction.Variable("t", Variables.T))
+                }
             }
             else -> emptyMap()
         }

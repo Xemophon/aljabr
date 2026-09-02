@@ -11,9 +11,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
@@ -103,12 +104,17 @@ class MainActivity : ComponentActivity() {
                     drawerState = drawerState,
                     drawerContent = {
                         ModalDrawerSheet {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            DrawerSection(items = Misc, currentDestination = currentDestination, onNavigate = onNavigate)
-                            DrawerSection(title = "Calculus", items = Calculus, currentDestination = currentDestination, onNavigate = onNavigate)
-                            DrawerSection(title = "Algebra", items = Algebra, currentDestination = currentDestination, onNavigate = onNavigate)
-                            DrawerSection(title = "Series Expansion", items = Series, currentDestination = currentDestination, onNavigate = onNavigate)
-                            DrawerSection(title = "Utilities", items = ReferenceSheets, currentDestination = currentDestination, onNavigate = onNavigate)
+                            Column(
+                                modifier = Modifier
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(vertical = 12.dp)
+                            ) {
+                                DrawerSection(items = Misc, currentDestination = currentDestination, onNavigate = onNavigate)
+                                DrawerSection(title = "Calculus", items = Calculus, currentDestination = currentDestination, onNavigate = onNavigate)
+                                DrawerSection(title = "Algebra", items = Algebra, currentDestination = currentDestination, onNavigate = onNavigate)
+                                DrawerSection(title = "Series Expansion", items = Series, currentDestination = currentDestination, onNavigate = onNavigate)
+                                DrawerSection(title = "Utilities", items = ReferenceSheets, currentDestination = currentDestination, onNavigate = onNavigate)
+                            }
                         }
                     }
                 ) {

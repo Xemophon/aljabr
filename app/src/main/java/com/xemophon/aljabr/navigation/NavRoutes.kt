@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.JoinInner
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Transform
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.R
 import com.xemophon.aljabr.modules.algebra.matrices.MatrixScreen
@@ -19,6 +20,7 @@ import com.xemophon.aljabr.modules.basicCalc.BasicCalc
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.modules.graphMaker.GraphMaker
 import com.xemophon.aljabr.modules.calculus.integrate.IntegCalc
+import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
 import com.xemophon.aljabr.modules.conversions.ConvertorPage
 import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
@@ -51,6 +53,8 @@ object MatrixRoute
 object FourierRoute
 @Serializable
 object TaylorRoute
+@Serializable
+object LaplaceRoute
 val Calculus = listOf(
     CalculatorVariant(
         route = LimitsRoute,
@@ -72,6 +76,13 @@ val Calculus = listOf(
         label = "Differentiate",
         icon = R.drawable.function,
         content = { onOpenDrawer -> DiffCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = LaplaceRoute,
+        routeClass = LaplaceRoute::class,
+        label = "Laplace Transform",
+        icon = Icons.Default.Transform,
+        content = { onOpenDrawer -> LaplaceCalc(onOpenDrawer = onOpenDrawer) }
     )
 )
 

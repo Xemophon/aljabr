@@ -54,6 +54,7 @@ import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.modules.calculus.laplace.LaplaceFunc
 import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
 import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.modules.calculus.limits.LimitsFunc
@@ -233,7 +234,7 @@ fun CalcBox(
     }
 }
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
@@ -278,6 +279,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     var diffGridMode by mutableStateOf("Single") // "Single" or "Multiple"
+    var laplaceMode by mutableStateOf("Laplace") // "Laplace" or "Reverse"
 
     var currentFocus by mutableStateOf(CalculatorFocus.EXPRESSION)
         private set
@@ -308,7 +310,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         // Clear mode-specific results when any input button is pressed
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
             if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || 
-                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR) {
+                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -382,7 +384,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             is CalcButtonAction.DifferentiateSingle -> {
                 diffGridMode = "Single"
             }
+            is CalcButtonAction.Laplace -> {
+                laplaceMode = action.text
+            }
             CalcButtonAction.Done -> { /* TODO */ }
+
+            else -> {}
         }
     }
 
@@ -474,6 +481,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (cursorIndex == -1) {
             cursorIndex = displayText.length
             currentFocus = CalculatorFocus.EXPRESSION
+            resultText = ""
+            isShowingResult = false
         }
 
         val state = MathInputHandler.insertText(
@@ -588,7 +597,13 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        insertText(action.text, applyImplicitMultiplication = true)
+        val varText = if (calculatorMode == CalculatorMode.LAPLACE) {
+            if (laplaceMode == "Reverse") "s" else "t"
+        } else {
+            action.text
+        }
+
+        insertText(varText, applyImplicitMultiplication = true)
     }
 
     private fun updateInstantResult() {
@@ -597,7 +612,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             calculatorMode == CalculatorMode.INTEGRATE ||
             calculatorMode == CalculatorMode.DIFFERENTIATE ||
             calculatorMode == CalculatorMode.TAYLOR ||
-            calculatorMode == CalculatorMode.POLYNOMIALS
+            calculatorMode == CalculatorMode.POLYNOMIALS ||
+            calculatorMode == CalculatorMode.LAPLACE
         ) {
             resultText = ""
             return
@@ -657,6 +673,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
         if (calculatorMode == CalculatorMode.TAYLOR) {
             runTaylorCalculation()
+            return
+        }
+        if (calculatorMode == CalculatorMode.LAPLACE) {
+            runLaplaceCalculation()
             return
         }
 
@@ -957,8 +977,26 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun runLaplaceCalculation() {
+        if (displayText.isBlank() || displayText == "0") return
+        stepsList.clear()
+
+        try {
+            val isInverse = laplaceMode == "Reverse"
+            val res = LaplaceFunc.calculateLaplace(displayText, isInverse = isInverse, useRationalize = useRationalize)
+
+            lastExpression = displayText
+            resultText = res
+            cursorIndex = -1
+            isShowingResult = true
+        } catch (e: Exception) {
+            resultText = "Error"
+            isShowingResult = false
+        }
+    }
+
     private fun clearAll() {
-        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR) && isShowingResult) {
+        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE) && isShowingResult) {
             resultText = ""
             isShowingResult = false
             polynomialResult = null
@@ -1049,6 +1087,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 innerUpperLimitText = innerUpperLimitText.dropLast(1)
                 return
             }
+        }
+
+        if (cursorIndex == -1) {
+            cursorIndex = displayText.length
+            resultText = ""
+            isShowingResult = false
         }
 
         if (cursorIndex <= 0) return

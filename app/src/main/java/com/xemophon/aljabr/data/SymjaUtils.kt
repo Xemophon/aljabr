@@ -174,6 +174,8 @@ object SymjaUtils {
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
                     .replace("\\log", "\\ln")
+                    .replace("\\text{DiracDelta}", "\\delta")
+                    .replace("DiracDelta", "\\delta")
 
                 if (result.contains("\\ln") && result.contains("\\left|")) {
                     try {
@@ -253,6 +255,7 @@ object SymjaUtils {
         var result = resStr
             .replace("ComplexInfinity", "∞")
             .replace("Infinity", "∞")
+            .replace("DiracDelta", "δ")
 
         try {
             result = result.replace(D_REGEX, "d/d$2($1)")
