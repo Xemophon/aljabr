@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.JoinInner
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.xemophon.aljabr.R
 import com.xemophon.aljabr.algebra.matrices.MatrixScreen
 import com.xemophon.aljabr.algebra.matrices.MatrixViewModel
 import com.xemophon.aljabr.algebra.polynomials.PolyCalc
@@ -70,7 +71,7 @@ val Calculus = listOf(
         route = DifferentiateRoute,
         routeClass = DifferentiateRoute::class,
         label = "Differentiate",
-        icon = Icons.AutoMirrored.Filled.TrendingUp,
+        icon = R.drawable.function,
         content = { onOpenDrawer -> DiffCalc(onOpenDrawer = onOpenDrawer) }
     )
 )
@@ -103,14 +104,14 @@ val Series = listOf(
         route = FourierRoute,
         routeClass = FourierRoute::class,
         label = "Fourier Series",
-        icon = Icons.AutoMirrored.Filled.ArrowRightAlt,
+        icon = R.drawable.fourier,
         content = { onOpenDrawer -> FourierCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = TaylorRoute,
         routeClass = TaylorRoute::class,
         label = "Taylor Series",
-        icon = Icons.AutoMirrored.Filled.ArrowRightAlt,
+        icon = R.drawable.taylor,
         content = { onOpenDrawer -> TaylorCalc(onOpenDrawer = onOpenDrawer) }
     )
 )

@@ -26,6 +26,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -95,7 +97,12 @@ class MainActivity : ComponentActivity() {
                             Misc.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
-                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    icon = {
+                                        when (val icon = variant.icon) {
+                                            is ImageVector -> Icon(icon, contentDescription = null)
+                                            is Int -> Icon(painterResource(icon), contentDescription = null)
+                                        }
+                                    },
                                     selected = currentDestination?.hasRoute(variant.routeClass) == true,
                                     onClick = {
                                         navController.navigate(variant.route) {
@@ -114,7 +121,12 @@ class MainActivity : ComponentActivity() {
                             Calculus.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
-                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    icon = {
+                                        when (val icon = variant.icon) {
+                                            is ImageVector -> Icon(icon, contentDescription = null)
+                                            is Int -> Icon(painterResource(icon), contentDescription = null)
+                                        }
+                                    },
                                     selected = currentDestination?.hasRoute(variant.routeClass) == true,
                                     onClick = {
                                         navController.navigate(variant.route) {
@@ -133,7 +145,12 @@ class MainActivity : ComponentActivity() {
                             Algebra.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
-                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    icon = {
+                                        when (val icon = variant.icon) {
+                                            is ImageVector -> Icon(icon, contentDescription = null)
+                                            is Int -> Icon(painterResource(icon), contentDescription = null)
+                                        }
+                                    },
                                     selected = currentDestination?.hasRoute(variant.routeClass) == true,
                                     onClick = {
                                         navController.navigate(variant.route) {
@@ -152,7 +169,12 @@ class MainActivity : ComponentActivity() {
                             Series.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
-                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    icon = {
+                                        when (val icon = variant.icon) {
+                                            is ImageVector -> Icon(icon, contentDescription = null)
+                                            is Int -> Icon(painterResource(icon), contentDescription = null)
+                                        }
+                                    },
                                     selected = currentDestination?.hasRoute(variant.routeClass) == true,
                                     onClick = {
                                         navController.navigate(variant.route) {
@@ -171,7 +193,12 @@ class MainActivity : ComponentActivity() {
                             ReferenceSheets.forEach { variant ->
                                 NavigationDrawerItem(
                                     label = { Text(variant.label) },
-                                    icon = { Icon(variant.icon, contentDescription = null) },
+                                    icon = {
+                                        when (val icon = variant.icon) {
+                                            is ImageVector -> Icon(icon, contentDescription = null)
+                                            is Int -> Icon(painterResource(icon), contentDescription = null)
+                                        }
+                                    },
                                     selected = currentDestination?.hasRoute(variant.routeClass) == true,
                                     onClick = {
                                         navController.navigate(variant.route) {
