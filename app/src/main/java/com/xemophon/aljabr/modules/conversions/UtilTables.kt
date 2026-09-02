@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 
 val derivativesSheet = listOf(
     // Basic Rules & Power Rule

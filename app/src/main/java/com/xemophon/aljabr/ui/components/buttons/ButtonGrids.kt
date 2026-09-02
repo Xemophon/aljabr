@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.ui.components
+package com.xemophon.aljabr.ui.components.buttons
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility

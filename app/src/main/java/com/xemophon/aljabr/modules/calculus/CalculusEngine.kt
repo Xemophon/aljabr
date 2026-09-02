@@ -1,9 +1,9 @@
 package com.xemophon.aljabr.modules.calculus
 
-import com.xemophon.aljabr.calculus.integrate.IntegrationSolver
-import com.xemophon.aljabr.calculus.differentiate.DerivativeSolver
+import com.xemophon.aljabr.modules.calculus.integrate.IntegrationSolver
+import com.xemophon.aljabr.modules.calculus.differentiate.DerivativeSolver
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.ui.components.CalculusStep
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import org.matheclipse.core.interfaces.ISymbol
 
 class CalculusEngine {

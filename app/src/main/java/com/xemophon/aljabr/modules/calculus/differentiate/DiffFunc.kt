@@ -1,7 +1,7 @@
 package com.xemophon.aljabr.modules.calculus.differentiate
 
-import com.xemophon.aljabr.calculus.CalculusEngine
-import com.xemophon.aljabr.ui.components.CalculusStep
+import com.xemophon.aljabr.modules.calculus.CalculusEngine
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 
 object DiffFunc {
@@ -48,7 +48,7 @@ object DiffFunc {
         }
     }
 
-    suspend fun differentiateWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>> {
+    fun differentiateWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return Pair("", emptyList())

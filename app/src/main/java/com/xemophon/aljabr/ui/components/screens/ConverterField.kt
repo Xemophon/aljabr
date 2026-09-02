@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.ui.components
+package com.xemophon.aljabr.ui.components.screens
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode

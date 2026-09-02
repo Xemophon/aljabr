@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.ui.components
+package com.xemophon.aljabr.ui.components.screens
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons

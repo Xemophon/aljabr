@@ -1,9 +1,9 @@
 package com.xemophon.aljabr.modules.calculus.integrate
 
-import com.xemophon.aljabr.calculus.CalculusEngine
-import com.xemophon.aljabr.ui.components.CalculusStep
+import com.xemophon.aljabr.modules.calculus.CalculusEngine
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.ui.components.IntegralType
+import com.xemophon.aljabr.ui.components.buttons.IntegralType
 
 object IntegFunc {
     private val calculusEngine = CalculusEngine()

@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.ui.components
+package com.xemophon.aljabr.ui.components.screens
 
 import android.app.Application
 import androidx.compose.animation.AnimatedContent
@@ -51,17 +51,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.algebra.polynomials.PolyFuncs
-import com.xemophon.aljabr.basicCalc.CalcFuncs
-import com.xemophon.aljabr.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.graphMaker.GraphGenerator
-import com.xemophon.aljabr.calculus.integrate.IntegFunc
-import com.xemophon.aljabr.calculus.limits.LimitsFunc
+import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
+import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
+import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.modules.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.buttons.IntegralType
+import com.xemophon.aljabr.ui.components.buttons.LimitType
+import com.xemophon.aljabr.ui.components.buttons.ScientificType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun CalcBox(
@@ -714,7 +721,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 viewModelScope.launch {
                     isCalculatingSteps = true
                     try {
-                        val resultAndSteps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        val resultAndSteps = withContext(Dispatchers.Default) {
                             IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
                         }
                         
@@ -762,7 +769,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 isCalculatingSteps = true
                 showStepsSheet = true
                 try {
-                    val (result, steps) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    val (result, steps) = withContext(Dispatchers.Default) {
                         DiffFunc.differentiateWithSteps(displayText, showSteps)
                     }
                     if (result.isNotEmpty()) {
@@ -797,7 +804,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (displayText.isEmpty() || displayText == "0") return
         viewModelScope.launch {
             try {
-                analysisResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                analysisResult = withContext(Dispatchers.Default) {
                     AnalysisFunc.fullAnalysis(displayText)
                 }
             } catch (e: Exception) {
@@ -874,8 +881,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private fun switchIntegMode(type: IntegralType) {
         integType = type
-        if (type == IntegralType.DEFINITE || type == IntegralType.ARC || 
-            type == IntegralType.XVOL || type == IntegralType.YVOL || 
+        if (type == IntegralType.DEFINITE || type == IntegralType.ARC ||
+            type == IntegralType.XVOL || type == IntegralType.YVOL ||
             type == IntegralType.XSURF || type == IntegralType.YSURF) {
             currentFocus = CalculatorFocus.INTEG_LOWER
         } else {

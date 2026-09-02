@@ -28,14 +28,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.AdvancedButtonsGrid
-import com.xemophon.aljabr.ui.components.AdvancedGridMode
-import com.xemophon.aljabr.ui.components.CalcBoxViewModel
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalculatorFocus
-import com.xemophon.aljabr.ui.components.CalculatorMode
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.LimitType
+import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
+import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
+import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.CalculatorFocus
+import com.xemophon.aljabr.ui.components.screens.CalculatorMode
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.LimitType
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 
 @Composable

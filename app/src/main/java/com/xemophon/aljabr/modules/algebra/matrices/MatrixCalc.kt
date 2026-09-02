@@ -62,12 +62,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.Constants
-import com.xemophon.aljabr.ui.components.MatrixReport
-import com.xemophon.aljabr.ui.components.ShortCalcButtons
-import com.xemophon.aljabr.ui.components.ShortGridMode
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.screens.MatrixReport
+import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
+import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,34 +100,34 @@ fun MatrixScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.ModeSelector(
+                            ModeSelector(
                                 currentMode = viewModel.mode,
                                 onModeSelected = { viewModel.onModeChange(it) }
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                val isMatrixB = viewModel.activeMatrix == _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.B
+                                val isMatrixB = viewModel.activeMatrix == MatrixName.B
                                 val rowsEnabled = !isMatrixB || viewModel.mode !in listOf(
-                                    _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.ADDITION,
-                                    _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.SUBTRACTION,
-                                    _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.MULTIPLICATION,
-                                    _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.LINEARSOLVE
+                                    MatrixMode.ADDITION,
+                                    MatrixMode.SUBTRACTION,
+                                    MatrixMode.MULTIPLICATION,
+                                    MatrixMode.LINEARSOLVE
                                 )
-                                val colsEnabled = (viewModel.activeMatrix == _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.A && viewModel.mode !in _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.SquareMatrixModes) ||
-                                        (viewModel.activeMatrix == _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.B && viewModel.mode !in listOf(
-                                            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.ADDITION,
-                                            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.SUBTRACTION,
-                                            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.LINEARSOLVE
+                                val colsEnabled = (viewModel.activeMatrix == MatrixName.A && viewModel.mode !in SquareMatrixModes) ||
+                                        (viewModel.activeMatrix == MatrixName.B && viewModel.mode !in listOf(
+                                            MatrixMode.ADDITION,
+                                            MatrixMode.SUBTRACTION,
+                                            MatrixMode.LINEARSOLVE
                                         ))
 
-                                _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.DimensionControl(
+                                DimensionControl(
                                     label = "R",
                                     value = viewModel.rows,
                                     enabled = rowsEnabled,
                                     onValueChange = { viewModel.updateRows(it) }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.DimensionControl(
+                                DimensionControl(
                                     label = "C",
                                     value = viewModel.columns,
                                     enabled = colsEnabled,
@@ -153,7 +153,7 @@ fun MatrixScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // Matrix indicator (A or B)
-                            AnimatedVisibility(visible = viewModel.mode !in _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.SingleMatrixModes || viewModel.activeMatrix == _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.A) {
+                            AnimatedVisibility(visible = viewModel.mode !in SingleMatrixModes || viewModel.activeMatrix == MatrixName.A) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     shape = RoundedCornerShape(8.dp),
@@ -172,7 +172,7 @@ fun MatrixScreen(
                                 }
                             }
                             if (viewModel.resultText.isEmpty()) {
-                                _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixBoxField(
+                                MatrixBoxField(
                                     rows = viewModel.rows,
                                     cols = viewModel.columns,
                                     data = viewModel.matrixData,
@@ -186,8 +186,8 @@ fun MatrixScreen(
                                             .replaceFirstChar { it.uppercase() }
                                     } Result",
                                     result = viewModel.resultText,
-                                    onLoadA = { viewModel.loadResultIntoMatrix(_root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.A) },
-                                    onLoadB = { viewModel.loadResultIntoMatrix(_root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixName.B) },
+                                    onLoadA = { viewModel.loadResultIntoMatrix(MatrixName.A) },
+                                    onLoadB = { viewModel.loadResultIntoMatrix(MatrixName.B) },
                                     onClear = { viewModel.clearResult() }
                                 )
                             }
@@ -196,7 +196,7 @@ fun MatrixScreen(
 
                     // Bottom Control Bar
                     if (viewModel.resultText.isEmpty()) {
-                        _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.ControlBar(
+                        ControlBar(
                             activeMatrix = viewModel.activeMatrix,
                             activeMode = viewModel.mode,
                             onClear = { viewModel.clearCurrentMatrix() },

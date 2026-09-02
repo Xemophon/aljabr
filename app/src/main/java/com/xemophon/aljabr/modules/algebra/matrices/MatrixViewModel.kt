@@ -12,8 +12,8 @@ import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.Constants
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.buttons.Constants
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

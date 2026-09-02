@@ -1,7 +1,7 @@
 package com.xemophon.aljabr.modules.calculus.integrate
 
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.ui.components.CalculusStep
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import org.matheclipse.core.eval.EvalEngine
 import org.matheclipse.core.expression.F
 import org.matheclipse.core.interfaces.IAST

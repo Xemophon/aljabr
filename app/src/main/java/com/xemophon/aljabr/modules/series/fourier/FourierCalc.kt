@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,16 +46,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.AnalysisSectionHeader
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.Constants
-import com.xemophon.aljabr.ui.components.FourierReport
-import com.xemophon.aljabr.ui.components.ResultItemCard
-import com.xemophon.aljabr.ui.components.ShortCalcButtons
-import com.xemophon.aljabr.ui.components.ShortGridMode
+import com.xemophon.aljabr.ui.components.screens.AnalysisSectionHeader
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.screens.FourierReport
+import com.xemophon.aljabr.ui.components.screens.ResultItemCard
+import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
+import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 
 @Composable
 fun FourierCalc(

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.RadioButton
@@ -47,9 +48,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.data.ColorSchemeType
 import com.xemophon.aljabr.data.StorageUtils
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.HorizontalSeparator
-import com.xemophon.aljabr.ui.components.ThemeButton
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.buttons.ThemeButton
 import kotlinx.coroutines.launch
 import com.xemophon.aljabr.ui.theme.BluePrimaryDark
 import com.xemophon.aljabr.ui.theme.BluePrimaryLight
@@ -621,7 +622,7 @@ fun MiscPage(
                             )
                         },
                         icon = {
-                            androidx.compose.material3.Icon(
+                            Icon(
                                 imageVector = tab.icon,
                                 contentDescription = tab.contentDescription
                             )

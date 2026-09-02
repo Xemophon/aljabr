@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.ui.components
+package com.xemophon.aljabr.ui.components.buttons
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState

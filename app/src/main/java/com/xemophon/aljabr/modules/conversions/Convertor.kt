@@ -28,13 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.Constants
-import com.xemophon.aljabr.ui.components.ConverterField
-import com.xemophon.aljabr.ui.components.HorizontalSeparator
-import com.xemophon.aljabr.ui.components.ShortCalcButtons
-import com.xemophon.aljabr.ui.components.ShortGridMode
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.screens.ConverterField
+import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
+import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
+import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable

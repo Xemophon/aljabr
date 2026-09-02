@@ -18,15 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.CalcBox
-import com.xemophon.aljabr.ui.components.CalcBoxViewModel
-import com.xemophon.aljabr.ui.components.CalcButtonAction
-import com.xemophon.aljabr.ui.components.CalculatorMode
-import com.xemophon.aljabr.ui.components.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.PolynomialReport
-import com.xemophon.aljabr.ui.components.PolynomialResult
-import com.xemophon.aljabr.ui.components.ShortCalcButtons
-import com.xemophon.aljabr.ui.components.ShortGridMode
+import com.xemophon.aljabr.ui.components.screens.CalcBox
+import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.CalculatorMode
+import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.PolynomialReport
+import com.xemophon.aljabr.ui.components.screens.PolynomialResult
+import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
+import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 
 @Composable

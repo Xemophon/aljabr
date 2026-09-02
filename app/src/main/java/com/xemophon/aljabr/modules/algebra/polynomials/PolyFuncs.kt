@@ -1,7 +1,7 @@
 package com.xemophon.aljabr.modules.algebra.polynomials
 
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.ui.components.PolynomialResult
+import com.xemophon.aljabr.ui.components.screens.PolynomialResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

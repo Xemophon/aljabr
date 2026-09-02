@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.modules.graphMaker
 
-import com.xemophon.aljabr.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.data.SymjaUtils
 import org.matheclipse.core.interfaces.IAST
 import kotlin.math.abs
