@@ -11,6 +11,8 @@ import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.input.InputState
+import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -95,69 +97,53 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun handleSymbol(symbol: String) {
+    private fun updateActiveFieldValue(update: (text: String, cursor: Int) -> InputState) {
         if (selectedField == SelectedField.PRIMARY) {
             if (selectedSubField == SubField.MAIN) {
-                primaryValue = insertAtCursor(primaryValue, primaryCursor, symbol)
-                primaryCursor += symbol.length
+                val newState = update(primaryValue, primaryCursor)
+                primaryValue = newState.text
+                primaryCursor = newState.cursorIndex
             } else {
-                primaryValue2 = insertAtCursor(primaryValue2, primaryCursor2, symbol)
-                primaryCursor2 += symbol.length
+                val newState = update(primaryValue2, primaryCursor2)
+                primaryValue2 = newState.text
+                primaryCursor2 = newState.cursorIndex
             }
         } else {
             if (selectedSubField == SubField.MAIN) {
-                secondaryValue = insertAtCursor(secondaryValue, secondaryCursor, symbol)
-                secondaryCursor += symbol.length
+                val newState = update(secondaryValue, secondaryCursor)
+                secondaryValue = newState.text
+                secondaryCursor = newState.cursorIndex
             } else {
-                secondaryValue2 = insertAtCursor(secondaryValue2, secondaryCursor2, symbol)
-                secondaryCursor2 += symbol.length
+                val newState = update(secondaryValue2, secondaryCursor2)
+                secondaryValue2 = newState.text
+                secondaryCursor2 = newState.cursorIndex
             }
         }
         performInstantConversion()
+    }
+
+    private fun handleSymbol(symbol: String) {
+        updateActiveFieldValue { text, cursor ->
+            MathInputHandler.handleSymbol(text, cursor, symbol)
+        }
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
-        handleSymbol(action.text)
+        updateActiveFieldValue { text, cursor ->
+            MathInputHandler.handleScientific(text, cursor, action)
+        }
     }
 
     private fun handleConstant(action: CalcButtonAction.Constant) {
-        val toInsert = when (action.type) {
-            Constants.PI -> "π"
-            Constants.E -> "e"
-            Constants.I -> "j"
-            Constants.PHI -> "φ"
-            Constants.INF -> "∞"
+        updateActiveFieldValue { text, cursor ->
+            MathInputHandler.handleConstant(text, cursor, action)
         }
-        handleSymbol(toInsert)
     }
 
     private fun handleBackspace() {
-        if (selectedField == SelectedField.PRIMARY) {
-            if (selectedSubField == SubField.MAIN) {
-                if (primaryCursor > 0) {
-                    primaryValue = primaryValue.removeRange(primaryCursor - 1, primaryCursor)
-                    primaryCursor--
-                }
-            } else {
-                if (primaryCursor2 > 0) {
-                    primaryValue2 = primaryValue2.removeRange(primaryCursor2 - 1, primaryCursor2)
-                    primaryCursor2--
-                }
-            }
-        } else {
-            if (selectedSubField == SubField.MAIN) {
-                if (secondaryCursor > 0) {
-                    secondaryValue = secondaryValue.removeRange(secondaryCursor - 1, secondaryCursor)
-                    secondaryCursor--
-                }
-            } else {
-                if (secondaryCursor2 > 0) {
-                    secondaryValue2 = secondaryValue2.removeRange(secondaryCursor2 - 1, secondaryCursor2)
-                    secondaryCursor2--
-                }
-            }
+        updateActiveFieldValue { text, cursor ->
+            MathInputHandler.handleBackspace(text, cursor)
         }
-        performInstantConversion()
     }
 
     fun getLabels(): Pair<String, String> {
@@ -178,10 +164,6 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             ConversionMode.COMPLEX -> cart to polar
         }
         return if (isSwapped) base.second to base.first else base
-    }
-
-    private fun insertAtCursor(text: String, cursor: Int, toInsert: String): String {
-        return text.substring(0, cursor) + toInsert + text.substring(cursor)
     }
 
     fun swapFields() {

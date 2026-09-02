@@ -11,7 +11,7 @@ object MatrixFunc {
     }
 
     fun calculate(
-        mode: com.xemophon.aljabr.modules.algebra.matrices.MatrixMode,
+        mode: MatrixMode,
         matrixA: List<List<String>>,
         matrixB: List<List<String>>? = null
     ): String {
@@ -21,7 +21,7 @@ object MatrixFunc {
         val expression = when (mode) {
             MatrixMode.ADDITION -> "$symjaA + $symjaB"
             MatrixMode.SUBTRACTION -> "$symjaA - $symjaB"
-            MatrixMode.MULTIPLICATION -> "$symjaA . $symjaB" // Dot for matrix multiplication in Symja
+            MatrixMode.MULTIPLICATION -> "$symjaA . $symjaB"
             MatrixMode.DETERMINANT -> "Det($symjaA)"
             MatrixMode.INVERSE -> "Inverse($symjaA)"
             MatrixMode.TRANSPOSE -> "Transpose($symjaA)"
@@ -32,8 +32,10 @@ object MatrixFunc {
         }
 
         return try {
-            val result = SymjaUtils.evaluator.eval(expression)
-            result.toString()
+            SymjaUtils.evaluate { eval ->
+                val result = eval.eval(expression)
+                result.toString()
+            }
         } catch (e: Exception) {
             "Error: ${e.message}"
         }

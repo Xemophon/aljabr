@@ -2,16 +2,68 @@ package com.xemophon.aljabr.data
 
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 object SymjaUtils {
-    // Shared evaluator to avoid expensive re-initialization.
-    val evaluator by lazy {
+
+    private class EvaluatorPool(private val maxPoolSize: Int = 4) {
+        private val pool = ConcurrentLinkedQueue<ExprEvaluator>()
+
+        fun <T> evaluate(block: (ExprEvaluator) -> T): T {
+            val eval = pool.poll() ?: createEvaluator()
+            try {
+                return block(eval)
+            } finally {
+                if (pool.size < maxPoolSize) {
+                    pool.offer(eval)
+                }
+            }
+        }
+
+        private fun createEvaluator(): ExprEvaluator {
+            return ExprEvaluator().apply {
+                evalEngine.isRelaxedSyntax = true
+                evalEngine.recursionLimit = 128
+                evalEngine.iterationLimit = 500
+            }
+        }
+    }
+
+    private val pool = EvaluatorPool()
+
+    /**
+     * Executes a block safely using a pooled [ExprEvaluator].
+     */
+    fun <T> evaluate(block: (ExprEvaluator) -> T): T = pool.evaluate(block)
+
+    // Shared default evaluator instance kept for legacy compatibility.
+    val evaluator: ExprEvaluator by lazy {
         ExprEvaluator().apply {
             evalEngine.isRelaxedSyntax = true
             evalEngine.recursionLimit = 128
             evalEngine.iterationLimit = 500
         }
     }
+
+    // Pre-compiled regexes for high performance
+    private val ABS_REGEX = Regex("""\|([^|]+)\|""")
+    private val LOG10_REGEX = Regex("""(?<![a-zA-Z])log(?!10)""", RegexOption.IGNORE_CASE)
+    private val LN_LATEX_REGEX = Regex("""\\ln\s*\(\s*\\left\|\s*(.+?)\s*\\right\|\s*\)""")
+    private val D_REGEX = Regex("""D\[(.+?),\s*(.+?)]""")
+    private val INTEGRATE_REGEX = Regex("""Integrate\[(.+?),\s*(.+?)]""")
+    private val LOG10_BRACKET_REGEX = Regex("""Log10\[(.+?)]""")
+    private val LOG10_COMMA_REGEX = Regex("""Log\[10,\s*(.+?)]""")
+    private val LOG_SINGLE_REGEX = Regex("""Log\[([^,]+)]""")
+    private val LOG_DUAL_REGEX = Regex("""Log\[([^,]+),\s*(.+?)]""")
+    private val I_REGEX = Regex("""(?<![a-zA-Z])I(?![a-zA-Z])""")
+    private val LN_ABS_REGEX = Regex("""ln\(\|(.+?)\|\)""")
+    private val LOG_ABS_REGEX = Regex("""log\(\|(.+?)\|\)""")
+    private val ABS_BRACKET_REGEX = Regex("""Abs\((.+?)\)""")
+    private val TRIG_REGEX = Regex("""(cos|sin|Cos|Sin)\s*[( \[]([^()\[\]]*n[^()\[\]]*)[)\]]""", RegexOption.IGNORE_CASE)
+
+    // Thread-safe LRU Cache for LaTeX string outputs
+    private val lateXCache = ConcurrentHashMap<String, String>()
 
     fun prepareForSymja(expression: String, useRadians: Boolean = true): String {
         var cleaned = expression
@@ -26,12 +78,11 @@ object SymjaUtils {
             .replace("√", "Sqrt")
             .replace("sqrt", "Sqrt", ignoreCase = true)
             .replace("ⁿ", "^n")
-            .replace("(-1)^n", "(-1)^n") // Already fine
+            .replace("(-1)^n", "(-1)^n")
             .replace("(-1)ⁿ", "(-1)^n")
 
         // Convert |x| to Abs(x)
-        val absRegex = Regex("""\|([^|]+)\|""")
-        cleaned = cleaned.replace(absRegex, "(Abs($1))")
+        cleaned = cleaned.replace(ABS_REGEX, "(Abs($1))")
 
         if (!useRadians) {
             cleaned = cleaned
@@ -51,7 +102,7 @@ object SymjaUtils {
             .replace("cos", "Cos", ignoreCase = true)
             .replace("tan", "Tan", ignoreCase = true)
             .replace("log10", "Log10", ignoreCase = true)
-            .replace(Regex("(?<![a-zA-Z])log(?!10)", RegexOption.IGNORE_CASE), "Log10")
+            .replace(LOG10_REGEX, "Log10")
             .replace("ln", "Log", ignoreCase = true)
     }
 
@@ -59,31 +110,30 @@ object SymjaUtils {
      * Forces numerical evaluation using N() and handles degrees if needed.
      */
     fun calculateNumerical(expression: String, useRadians: Boolean, useRationalize: Boolean = false, precision: Int = 4): String {
-        return synchronized(evaluator) {
+        return evaluate { eval ->
             try {
                 if (!useRadians) {
-                    evaluator.eval("SinDeg[x_] := Sin[x * Degree]")
-                    evaluator.eval("CosDeg[x_] := Cos[x * Degree]")
-                    evaluator.eval("TanDeg[x_] := Tan[x * Degree]")
-                    evaluator.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
-                    evaluator.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
-                    evaluator.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
+                    eval.eval("SinDeg[x_] := Sin[x * Degree]")
+                    eval.eval("CosDeg[x_] := Cos[x * Degree]")
+                    eval.eval("TanDeg[x_] := Tan[x * Degree]")
+                    eval.eval("ArcSinDeg[x_] := ArcSin[x] / Degree")
+                    eval.eval("ArcCosDeg[x_] := ArcCos[x] / Degree")
+                    eval.eval("ArcTanDeg[x_] := ArcTan[x] / Degree")
                 }
 
                 val cleaned = prepareForSymja(expression, useRadians)
-                if (cleaned.isBlank()) return ""
+                if (cleaned.isBlank()) return@evaluate ""
 
-                val result = if(!useRationalize) {
-                    evaluator.eval("N($cleaned, $precision + 2)") // Request slightly more precision for calculation
-                } else{
-                    evaluator.eval("Rationalize($cleaned)")
+                val result = if (!useRationalize) {
+                    eval.eval("N($cleaned, $precision + 2)")
+                } else {
+                    eval.eval("Rationalize($cleaned)")
                 }
                 val resStr = result.toString()
 
-                // If it's a simple number, format it with the requested precision
                 val d = resStr.toDoubleOrNull()
                 if (d != null && !useRationalize) {
-                    _root_ide_package_.com.xemophon.aljabr.modules.basicCalc.CalcFuncs.formatResult(d, precision)
+                    CalcFuncs.formatResult(d, precision)
                 } else {
                     formatResult(resStr)
                 }
@@ -94,26 +144,26 @@ object SymjaUtils {
     }
 
     fun toLaTeX(expression: String, assumeIntegerN: Boolean = false): String {
-        return synchronized(evaluator) {
+        val cacheKey = "$expression|$assumeIntegerN"
+        lateXCache[cacheKey]?.let { return it }
+
+        val formatted = evaluate { eval ->
             try {
                 val cleaned = prepareForSymja(expression)
-                if (cleaned.isBlank()) return ""
-                
+                if (cleaned.isBlank()) return@evaluate ""
+
                 val evalExpr = if (assumeIntegerN) {
                     "TeXForm(FullSimplify[$cleaned, Element[n, Integers]])"
                 } else {
                     "TeXForm($cleaned)"
                 }
-                
-                var result = evaluator.eval(evalExpr).toString()
 
-                // Fix standard Symja TeXForm list output which often looks like \{ \{1, 2\}, \{3, 4\} \}
-                // and convert it to a proper LaTeX pmatrix
+                var result = eval.eval(evalExpr).toString()
+
                 if (result.contains("\\{") && result.contains("\\}")) {
                     result = formatSymjaTexListToMatrix(result)
                 }
 
-                // Fix standard LaTeX math functions that Symja might output in raw form
                 result = result.replace("\\arcsinh", "\\operatorname{asinh}")
                     .replace("\\arccosh", "\\operatorname{acosh}")
                     .replace("\\arctanh", "\\operatorname{atanh}")
@@ -123,30 +173,29 @@ object SymjaUtils {
                     .replace("\\operatorname{arcsinh}", "\\operatorname{asinh}")
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
-                
-                // Use simple string replacements where possible
-                result = result.replace("\\log", "\\ln")
-                
-                // For the complex ln|x| replacement, use a more robust regex or manual check
+                    .replace("\\log", "\\ln")
+
                 if (result.contains("\\ln") && result.contains("\\left|")) {
-                    // This is a bit complex for a simple replace, but let's try to match it carefully
-                    val searchPattern = """\\ln\s*\(\s*\\left\|\s*(.+?)\s*\\right\|\s*\)"""
                     try {
-                        result = result.replace(Regex(searchPattern), """\\ln\left|$1\right|""")
+                        result = result.replace(LN_LATEX_REGEX, """\\ln\left|$1\right|""")
                     } catch (_: Exception) {}
                 }
 
-                return result
+                result
             } catch (_: Throwable) {
-                expression // Fallback to raw expression on error
+                expression
             }
         }
+
+        if (formatted.isNotEmpty() && lateXCache.size < 500) {
+            lateXCache[cacheKey] = formatted
+        }
+        return formatted
     }
 
     fun formatSymjaTexListToMatrix(texStr: String): String {
         var content = texStr.trim()
-        
-        // Remove outer escaped braces
+
         if (content.startsWith("\\{") && content.endsWith("\\}")) {
             content = content.substring(2, content.length - 2).trim()
         } else {
@@ -154,13 +203,11 @@ object SymjaUtils {
         }
 
         return try {
-            // Check if it's a matrix (contains nested \{ \})
             if (content.contains("\\{")) {
                 val rows = mutableListOf<String>()
                 var depth = 0
                 var current = StringBuilder()
-                
-                // Process characters to split rows carefully
+
                 var i = 0
                 while (i < content.length) {
                     val char = content[i]
@@ -181,20 +228,19 @@ object SymjaUtils {
                         i += 2
                         continue
                     }
-                    
+
                     if (depth > 0) {
                         current.append(char)
                     }
                     i++
                 }
-                
+
                 val latexRows = rows.map { row ->
                     val elements = row.trim().split(",")
                     elements.joinToString(" & ") { it.trim() }
                 }
                 "\\begin{pmatrix} ${latexRows.joinToString(" \\\\ ")} \\end{pmatrix}"
             } else {
-                // It's a simple vector {1, 2, 3}
                 val elements = content.split(",")
                 "\\begin{pmatrix} ${elements.joinToString(" \\\\ ") { it.trim() }} \\end{pmatrix}"
             }
@@ -207,25 +253,17 @@ object SymjaUtils {
         var result = resStr
             .replace("ComplexInfinity", "∞")
             .replace("Infinity", "∞")
-        
-        // Handle Calculus notations specifically for steps
+
         try {
-            result = result.replace(Regex("""D\[(.+?),\s*(.+?)]"""), "d/d$2($1)")
-                .replace(Regex("""Integrate\[(.+?),\s*(.+?)]"""), "∫($1) d$2")
+            result = result.replace(D_REGEX, "d/d$2($1)")
+                .replace(INTEGRATE_REGEX, "∫($1) d$2")
         } catch (_: Exception) {}
 
-        // Handle Log(base, x) or Log(x)
-        // Log10[x] -> log(x)
-        // Log[10, x] -> log(x)
-        // Log[x] -> ln(x)
-        // Log[b, x] -> log(x, b)
-        
-        // Use more cautious regex for Log replacements
         try {
-            result = result.replace(Regex("""Log10\[(.+?)]"""), "log($1)")
-                .replace(Regex("""Log\[10,\s*(.+?)]"""), "log($1)")
-                .replace(Regex("""Log\[([^,]+)]"""), "ln($1)")
-                .replace(Regex("""Log\[([^,]+),\s*(.+?)]"""), "log($2, $1)")
+            result = result.replace(LOG10_BRACKET_REGEX, "log($1)")
+                .replace(LOG10_COMMA_REGEX, "log($1)")
+                .replace(LOG_SINGLE_REGEX, "ln($1)")
+                .replace(LOG_DUAL_REGEX, "log($2, $1)")
         } catch (_: Exception) {}
 
         result = result.replace("ArcSin", "asin")
@@ -240,11 +278,10 @@ object SymjaUtils {
             .replace("Pi", "π")
             .replace("pi", "π")
             .replace("GoldenRatio", "φ")
-            .replace(Regex("""(?<![a-zA-Z])I(?![a-zA-Z])"""), "j")
+            .replace(I_REGEX, "j")
             .replace("E", "e")
             .replace("Sqrt", "√")
 
-        // Handle structural leaking
         result = result.replace("Plus", "")
             .replace("Times", "")
             .replace("Power", "")
@@ -252,20 +289,17 @@ object SymjaUtils {
             .replace("Subtract", "")
             .replace("Divide", "")
 
-        // First handle brackets
         result = result.replace("[", "(")
             .replace("]", ")")
 
-        // Fourier and common identities (assuming integer n)
         try {
             result = tryRecognizeTrigPatterns(result)
         } catch (_: Exception) {}
 
-        // Safely strip brackets around absolute values
         try {
-            result = result.replace(Regex("""ln\(\|(.+?)\|\)"""), "ln|$1|")
-                .replace(Regex("""log\(\|(.+?)\|\)"""), "log|$1|")
-                .replace(Regex("""Abs\((.+?)\)"""), "|$1|")
+            result = result.replace(LN_ABS_REGEX, "ln|$1|")
+                .replace(LOG_ABS_REGEX, "log|$1|")
+                .replace(ABS_BRACKET_REGEX, "|$1|")
         } catch (_: Exception) {}
 
         result = result.replace("*", " × ")
@@ -276,19 +310,14 @@ object SymjaUtils {
         return result
     }
 
-    /**
-     * Calculates the Taylor series expansion for a function.
-     */
     fun calculateTaylor(expression: String, center: String, order: Int): String {
-        return synchronized(evaluator) {
+        return evaluate { eval ->
             try {
                 val cleaned = prepareForSymja(expression)
-                if (cleaned.isBlank()) return ""
+                if (cleaned.isBlank()) return@evaluate ""
                 val centerClean = if (center.isBlank()) "0" else prepareForSymja(center)
 
-                // Series[f, {x, x0, n}] calculates the series expansion
-                // Normal[] converts it from SeriesData to a regular polynomial expression
-                val result = evaluator.eval("Normal(Series($cleaned, {x, $centerClean, $order}))")
+                val result = eval.eval("Normal(Series($cleaned, {x, $centerClean, $order}))")
                 formatResult(result.toString())
             } catch (_: Throwable) {
                 "Error"
@@ -296,28 +325,24 @@ object SymjaUtils {
         }
     }
 
-    /**
-     * Attempts to recognize trigonometric patterns involving 'n' by evaluating them at n=1 and n=2.
-     * This helps simplify Fourier coefficients that Symja might not have fully collapsed.
-     */
     private fun tryRecognizeTrigPatterns(input: String): String {
         var output = input
-        
-        // Match common trig terms in the output string
-        val trigRegex = Regex("""(cos|sin|Cos|Sin)\s*[( \[]([^()\[\]]*n[^()\[\]]*)[)\]]""", RegexOption.IGNORE_CASE)
-        
-        val matches = trigRegex.findAll(input).toList().distinctBy { it.value }
-        
+
+        val matches = TRIG_REGEX.findAll(input).toList().distinctBy { it.value }
+
         for (match in matches) {
             val fullMatch = match.value
             val evalTerm = prepareForSymja(fullMatch)
-            
+
             try {
-                // Evaluate at n=1, 2, 3 for better verification
-                val val1 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 1]]").toString().removeSuffix(".0")
-                val val2 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 2]]").toString().removeSuffix(".0")
-                val val3 = evaluator.eval("Simplify[ReplaceAll[$evalTerm, n -> 3]]").toString().removeSuffix(".0")
-                
+                val (val1, val2, val3) = evaluate { eval ->
+                    Triple(
+                        eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 1]]").toString().removeSuffix(".0"),
+                        eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 2]]").toString().removeSuffix(".0"),
+                        eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 3]]").toString().removeSuffix(".0")
+                    )
+                }
+
                 val simplified = when {
                     val1 == "-1" && val2 == "1" && val3 == "-1" -> "(-1)ⁿ"
                     val1 == "1" && val2 == "-1" && val3 == "1" -> "-(-1)ⁿ"
@@ -326,14 +351,13 @@ object SymjaUtils {
                     val1 == "-1" && val2 == "-1" && val3 == "-1" -> "-1"
                     else -> null
                 }
-                
+
                 if (simplified != null) {
                     output = output.replace(fullMatch, simplified)
                 }
             } catch (_: Exception) {}
         }
-        
-        // Handle common (-1)^n algebraic variations
+
         try {
             output = output.replace(Regex("""\(-1\)\^n"""), "(-1)ⁿ")
                 .replace(Regex("""\(-1\)\^\(\s*n\s*\+\s*1\s*\)"""), "-(-1)ⁿ")
@@ -343,44 +367,34 @@ object SymjaUtils {
                 .replace(Regex("""\(-1\)\^\(\s*2\s*n\s*-\s*1\s*\)"""), "-1")
         } catch (_: Exception) {}
 
-        // Post-recognition cleanup for zeros and ones
         try {
-            // Remove multiplication by 0: 0 * anything or anything * 0
             output = output.replace(Regex("""\b0\s*[×*]\s*[\w()]+\b"""), "0")
                 .replace(Regex("""\b[\w()]+\s*[×*]\s*0\b"""), "0")
-                
-            // Remove multiplication by 1: 1 * x -> x, x * 1 -> x
+
             output = output.replace(Regex("""\b1\s*[×*]\s*"""), "")
                 .replace(Regex("""\s*[×*]\s*1\b"""), "")
-                
-            // Clean up 0 additions: x + 0 -> x, 0 + x -> x
-            // Careful with signs
+
             output = output.replace(Regex("""\+\s*0\b"""), "")
                 .replace(Regex("""\b0\s*\+\s*"""), "")
                 .replace(Regex("""-\s*0\b"""), "")
-                
-            // Fix double operators
+
             output = output.replace("+-", "-")
                 .replace("-+", "-")
                 .replace("--", "+")
                 .replace("++", "+")
                 .replace("  ", " ")
         } catch (_: Exception) {}
-        
+
         return output
     }
 
-    /**
-     * Parses Symja's Solve/NSolve output like {{x -> 0}, {y -> 2}} or {{x -> 1}}
-     * into a list of rules like ["x -> 0", "y -> 2"] or ["x -> 1"].
-     */
     fun parseSolveResult(solveRes: String): List<String> {
         if (solveRes == "{}" || solveRes.isBlank()) return emptyList()
 
         val results = mutableListOf<String>()
         var depth = 0
         var current = StringBuilder()
-        
+
         for (char in solveRes) {
             when (char) {
                 '{' -> {
@@ -406,15 +420,14 @@ object SymjaUtils {
                 }
             }
         }
-        
-        // Fallback for single solutions not wrapped in nested braces: {x -> 1, y -> 2}
+
         if (results.isEmpty() && solveRes.contains("->")) {
             val simplified = solveRes.trim().removeSurrounding("{", "}").trim()
             if (simplified.isNotEmpty() && !simplified.startsWith("{")) {
                 results.add(simplified)
             }
         }
-        
+
         return results.distinct()
     }
 }

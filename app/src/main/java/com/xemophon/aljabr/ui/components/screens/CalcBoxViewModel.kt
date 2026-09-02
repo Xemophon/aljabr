@@ -65,6 +65,7 @@ import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import com.xemophon.aljabr.ui.components.buttons.LimitType
 import com.xemophon.aljabr.ui.components.buttons.ScientificType
+import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -475,40 +476,28 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             currentFocus = CalculatorFocus.EXPRESSION
         }
 
-        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded()) " × " else ""
-        val finalInsert = "$prefix$toInsert"
-
-        if (displayText == "0" && !finalInsert.startsWith(" × ")) {
-            if (finalInsert == ".") {
-                displayText = "0."
-                cursorIndex = 2
-            } else {
-                displayText = finalInsert
-                cursorIndex = finalInsert.length
-            }
-        } else {
-            val sb = StringBuilder(displayText)
-            sb.insert(cursorIndex, finalInsert)
-            displayText = sb.toString()
-            cursorIndex += finalInsert.length
-        }
+        val state = MathInputHandler.insertText(
+            currentText = displayText,
+            cursorIndex = cursorIndex,
+            toInsert = toInsert,
+            applyImplicitMultiplication = applyImplicitMultiplication
+        )
+        displayText = state.text
+        cursorIndex = state.cursorIndex
     }
 
     private fun isImplicitMultiplicationNeeded(): Boolean {
-        if (displayText == "0") return false
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        return lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'y' || lastChar == 'π' || lastChar == 'e' || lastChar == 'φ' || lastChar == 'j' || lastChar == 'i' || lastChar == '%')
+        return MathInputHandler.isImplicitMultiplicationNeeded(displayText, cursorIndex)
     }
 
     private fun handleBrackets() {
-        val openBrackets = displayText.count { it == '(' }
-        val closedBrackets = displayText.count { it == ')' }
-
-        if (openBrackets > closedBrackets && isImplicitMultiplicationNeeded()) {
-            insertText(")", applyImplicitMultiplication = false)
-        } else {
-            insertText("(", applyImplicitMultiplication = true)
+        if (cursorIndex == -1) {
+            cursorIndex = displayText.length
+            currentFocus = CalculatorFocus.EXPRESSION
         }
+        val state = MathInputHandler.handleBrackets(displayText, cursorIndex)
+        displayText = state.text
+        cursorIndex = state.cursorIndex
     }
 
     private fun handlePercentage() {

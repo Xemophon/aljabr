@@ -72,7 +72,7 @@ import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatrixScreen(
-    viewModel: com.xemophon.aljabr.modules.algebra.matrices.MatrixViewModel,
+    viewModel: MatrixViewModel,
     onOpenDrawer: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -214,7 +214,7 @@ fun MatrixScreen(
             enter = fadeIn() + scaleIn(initialScale = 0.9f),
             exit = fadeOut() + scaleOut(targetScale = 0.9f)
         ) {
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.FocusOverlay(
+            FocusOverlay(
                 value = viewModel.matrixData.getOrNull(viewModel.selectedIndex) ?: "",
                 onDismiss = { viewModel.dismissFocus() },
                 onAction = { viewModel.handleAction(it) },
@@ -227,13 +227,13 @@ fun MatrixScreen(
 
 @Composable
 fun ControlBar(
-    activeMatrix: com.xemophon.aljabr.modules.algebra.matrices.MatrixName,
-    activeMode: com.xemophon.aljabr.modules.algebra.matrices.MatrixMode,
+    activeMatrix: MatrixName,
+    activeMode: MatrixMode,
     onClear: () -> Unit,
     onToggle: () -> Unit,
     onCompute: () -> Unit
 ) {
-    val visible = activeMode !in _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.SingleMatrixModes
+    val visible = activeMode !in SingleMatrixModes
 
     Surface(
         modifier = Modifier
@@ -249,7 +249,7 @@ fun ControlBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.FooterButton(
+            FooterButton(
                 text = "Clear",
                 icon = Icons.Default.Clear,
                 onClick = onClear,
@@ -271,7 +271,7 @@ fun ControlBar(
                 }
             }
 
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.FooterButton(
+            FooterButton(
                 text = "Compute",
                 icon = Icons.Default.Calculate,
                 onClick = onCompute,
@@ -410,8 +410,8 @@ fun MatrixKeypad(
 
 @Composable
 fun ModeSelector(
-    currentMode: com.xemophon.aljabr.modules.algebra.matrices.MatrixMode,
-    onModeSelected: (com.xemophon.aljabr.modules.algebra.matrices.MatrixMode) -> Unit
+    currentMode: MatrixMode,
+    onModeSelected: (MatrixMode) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -509,7 +509,7 @@ fun MatrixBoxField(
                 ) {
                     repeat(cols) { colIndex ->
                         val index = rowIndex * cols + colIndex
-                        _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixElementBox(
+                        MatrixElementBox(
                             modifier = Modifier.size(cellSize),
                             value = data.getOrNull(index) ?: "",
                             isSelected = index == selectedIndex,

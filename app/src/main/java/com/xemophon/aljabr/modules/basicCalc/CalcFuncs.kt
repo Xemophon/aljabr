@@ -55,21 +55,20 @@ object CalcFuncs {
         if (input.isBlank()) return ""
         return try {
             val cleaned = SymjaUtils.prepareForSymja(input)
-            val eval = SymjaUtils.evaluator
             
-            val result = eval.eval(cleaned)
-            val resStr = result.toString()
-            
-            // Priority: Complex or Symbolic constants should stay formatted
-            if (resStr.contains("I") || resStr.contains("GoldenRatio") || resStr.contains("Pi") || resStr.contains("E")) {
-                 SymjaUtils.formatResult(resStr)
-            } else {
-                // Try to format as a nice decimal if it's a pure real number
-                val d = resStr.toDoubleOrNull()
-                if (d != null) {
-                    formatResult(d, precision)
-                } else {
+            SymjaUtils.evaluate { eval ->
+                val result = eval.eval(cleaned)
+                val resStr = result.toString()
+
+                if (resStr.contains("I") || resStr.contains("GoldenRatio") || resStr.contains("Pi") || resStr.contains("E")) {
                     SymjaUtils.formatResult(resStr)
+                } else {
+                    val d = resStr.toDoubleOrNull()
+                    if (d != null) {
+                        formatResult(d, precision)
+                    } else {
+                        SymjaUtils.formatResult(resStr)
+                    }
                 }
             }
         } catch (e: Throwable) {

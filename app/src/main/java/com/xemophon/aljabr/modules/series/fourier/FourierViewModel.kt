@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.Constants
+import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import com.xemophon.aljabr.ui.components.screens.FourierResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,16 +80,15 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                     handleSymbol(action.text)
                 }
             }
-            is CalcButtonAction.Scientific -> handleSymbol(action.text)
-            is CalcButtonAction.Constant -> {
-                val toInsert = when (action.type) {
-                    Constants.PI -> "π"
-                    Constants.E -> "e"
-                    Constants.I -> "j"
-                    Constants.PHI -> "φ"
-                    Constants.INF -> "∞"
+            is CalcButtonAction.Scientific -> {
+                updateCurrentField { text ->
+                    MathInputHandler.handleScientific(text, text.length, action).text
                 }
-                handleSymbol(toInsert)
+            }
+            is CalcButtonAction.Constant -> {
+                updateCurrentField { text ->
+                    MathInputHandler.handleConstant(text, text.length, action).text
+                }
             }
             is CalcButtonAction.Variable -> handleSymbol(action.text)
             is CalcButtonAction.Clear -> handleClear()
@@ -100,22 +100,14 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleSymbol(symbol: String) {
-        updateCurrentField { it + symbol }
+        updateCurrentField { text ->
+            MathInputHandler.handleSymbol(text, text.length, symbol).text
+        }
     }
 
     private fun handleBrackets() {
         updateCurrentField { text ->
-            val openBrackets = text.count { it == '(' }
-            val closedBrackets = text.count { it == ')' }
-            
-            val lastChar = text.lastOrNull()
-            val isImplicitNeeded = lastChar != null && (lastChar.isDigit() || lastChar == ')' || lastChar == 'x' || lastChar == 'n' || lastChar == 'π' || lastChar == 'e')
-
-            if (openBrackets > closedBrackets && isImplicitNeeded) {
-                text + ")"
-            } else {
-                if (isImplicitNeeded) text + " * (" else text + "("
-            }
+            MathInputHandler.handleBrackets(text, text.length).text
         }
     }
 

@@ -22,6 +22,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,16 +32,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.data.AppTheme
-import com.xemophon.aljabr.data.SettingsRepository
-import com.xemophon.aljabr.data.StorageUtils
+import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.modules.misc.SettingsViewModel
 import com.xemophon.aljabr.navigation.Algebra
 import com.xemophon.aljabr.navigation.BasicCalcRoute
+import com.xemophon.aljabr.navigation.CalculatorVariant
 import com.xemophon.aljabr.navigation.Calculus
 import com.xemophon.aljabr.navigation.Misc
 import com.xemophon.aljabr.navigation.ReferenceSheets
@@ -48,7 +52,6 @@ import com.xemophon.aljabr.navigation.Series
 import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -58,16 +61,16 @@ class MainActivity : ComponentActivity() {
 
         // Warm up the math engines in the background to improve first-use performance
         lifecycleScope.launch(Dispatchers.Default) {
-            _root_ide_package_.com.xemophon.aljabr.modules.calculus.integrate.IntegFunc.warmUp()
-            _root_ide_package_.com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc.warmUp()
+            IntegFunc.warmUp()
+            DiffFunc.warmUp()
         }
 
         setContent {
-            val settingsViewModel: com.xemophon.aljabr.modules.misc.SettingsViewModel = viewModel()
+            val settingsViewModel: SettingsViewModel = viewModel()
             val appTheme by settingsViewModel.theme.collectAsState()
             val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
             val colorSchemeType by settingsViewModel.colorScheme.collectAsState()
-            
+
             val isDarkTheme = when (appTheme) {
                 AppTheme.LIGHT -> false
                 AppTheme.DARK -> true
@@ -85,130 +88,27 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
 
+                val onNavigate: (CalculatorVariant<*>) -> Unit = { variant ->
+                    navController.navigate(variant.route) {
+                        if (variant.route is BasicCalcRoute) {
+                            popUpTo(BasicCalcRoute::class) { inclusive = true }
+                        } else {
+                            popUpTo(BasicCalcRoute::class) { saveState = true }
+                        }
+                    }
+                    scope.launch { drawerState.close() }
+                }
+
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
                         ModalDrawerSheet {
                             Spacer(modifier = Modifier.height(12.dp))
-                            Misc.forEach { variant ->
-                                NavigationDrawerItem(
-                                    label = { Text(variant.label) },
-                                    icon = {
-                                        when (val icon = variant.icon) {
-                                            is ImageVector -> Icon(icon, contentDescription = null)
-                                            is Int -> Icon(painterResource(icon), contentDescription = null)
-                                        }
-                                    },
-                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
-                                    onClick = {
-                                        navController.navigate(variant.route) {
-                                            if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
-                                            } else {
-                                                popUpTo(BasicCalcRoute::class) { saveState = true }
-                                            }
-                                        }
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                )
-                            }
-                            HorizontalSeparator(text = "Calculus")
-                            Calculus.forEach { variant ->
-                                NavigationDrawerItem(
-                                    label = { Text(variant.label) },
-                                    icon = {
-                                        when (val icon = variant.icon) {
-                                            is ImageVector -> Icon(icon, contentDescription = null)
-                                            is Int -> Icon(painterResource(icon), contentDescription = null)
-                                        }
-                                    },
-                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
-                                    onClick = {
-                                        navController.navigate(variant.route) {
-                                            if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
-                                            } else {
-                                                popUpTo(BasicCalcRoute::class) { saveState = true }
-                                            }
-                                        }
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                )
-                            }
-                            HorizontalSeparator(text = "Algebra")
-                            Algebra.forEach { variant ->
-                                NavigationDrawerItem(
-                                    label = { Text(variant.label) },
-                                    icon = {
-                                        when (val icon = variant.icon) {
-                                            is ImageVector -> Icon(icon, contentDescription = null)
-                                            is Int -> Icon(painterResource(icon), contentDescription = null)
-                                        }
-                                    },
-                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
-                                    onClick = {
-                                        navController.navigate(variant.route) {
-                                            if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
-                                            } else {
-                                                popUpTo(BasicCalcRoute::class) { saveState = true }
-                                            }
-                                        }
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
-                            }
-                            HorizontalSeparator(text = "Series Expansion")
-                            Series.forEach { variant ->
-                                NavigationDrawerItem(
-                                    label = { Text(variant.label) },
-                                    icon = {
-                                        when (val icon = variant.icon) {
-                                            is ImageVector -> Icon(icon, contentDescription = null)
-                                            is Int -> Icon(painterResource(icon), contentDescription = null)
-                                        }
-                                    },
-                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
-                                    onClick = {
-                                        navController.navigate(variant.route) {
-                                            if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
-                                            } else {
-                                                popUpTo(BasicCalcRoute::class) { saveState = true }
-                                            }
-                                        }
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                )
-                            }
-                            HorizontalSeparator(text = "Utilities")
-                            ReferenceSheets.forEach { variant ->
-                                NavigationDrawerItem(
-                                    label = { Text(variant.label) },
-                                    icon = {
-                                        when (val icon = variant.icon) {
-                                            is ImageVector -> Icon(icon, contentDescription = null)
-                                            is Int -> Icon(painterResource(icon), contentDescription = null)
-                                        }
-                                    },
-                                    selected = currentDestination?.hasRoute(variant.routeClass) == true,
-                                    onClick = {
-                                        navController.navigate(variant.route) {
-                                            if (variant.route is BasicCalcRoute) {
-                                                popUpTo(BasicCalcRoute::class) { inclusive = true }
-                                            } else {
-                                                popUpTo(BasicCalcRoute::class) { saveState = true }
-                                            }
-                                        }
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                )
-                            }
+                            DrawerSection(items = Misc, currentDestination = currentDestination, onNavigate = onNavigate)
+                            DrawerSection(title = "Calculus", items = Calculus, currentDestination = currentDestination, onNavigate = onNavigate)
+                            DrawerSection(title = "Algebra", items = Algebra, currentDestination = currentDestination, onNavigate = onNavigate)
+                            DrawerSection(title = "Series Expansion", items = Series, currentDestination = currentDestination, onNavigate = onNavigate)
+                            DrawerSection(title = "Utilities", items = ReferenceSheets, currentDestination = currentDestination, onNavigate = onNavigate)
                         }
                     }
                 ) {
@@ -266,17 +166,30 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Clear cache on exit if enabled
-        lifecycleScope.launch(Dispatchers.IO) {
-            val repository = SettingsRepository(applicationContext)
-            val autoClear = repository.autoClearCacheFlow.first()
-            if (autoClear) {
-                StorageUtils.clearAppCache(applicationContext)
-                _root_ide_package_.com.xemophon.aljabr.modules.graphMaker.GraphGenerator.clearCache()
-            }
-        }
+@Composable
+private fun DrawerSection(
+    title: String? = null,
+    items: List<CalculatorVariant<*>>,
+    currentDestination: NavDestination?,
+    onNavigate: (CalculatorVariant<*>) -> Unit
+) {
+    if (title != null) {
+        HorizontalSeparator(text = title)
+    }
+    items.forEach { variant ->
+        NavigationDrawerItem(
+            label = { Text(variant.label) },
+            icon = {
+                when (val icon = variant.icon) {
+                    is ImageVector -> Icon(icon, contentDescription = null)
+                    is Int -> Icon(painterResource(icon), contentDescription = null)
+                }
+            },
+            selected = currentDestination?.hasRoute(variant.routeClass) == true,
+            onClick = { onNavigate(variant) },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
     }
 }
