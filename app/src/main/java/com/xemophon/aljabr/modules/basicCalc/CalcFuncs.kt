@@ -21,6 +21,8 @@ import kotlin.math.tan
 object CalcFuncs {
     private const val PHI = 1.618033988749895
 
+    private data class TermResult(val value: Double, val hasPercentage: Boolean)
+
     private val visualToMathMap = mapOf(
         "÷" to "/",
         "×" to "*",
@@ -104,32 +106,38 @@ object CalcFuncs {
                 return false
             }
 
+
+
             fun parse(): Double {
                 nextChar()
                 val x = parseExpression()
                 while (ch == ' '.code) nextChar()
-                return if (pos < expression.length) Double.NaN else x
+                return if (pos < expression.length) Double.NaN else x.value
             }
 
-            fun parseExpression(): Double {
+            fun parseExpression(): TermResult {
                 checkDepth()
                 var x = parseTerm()
                 while (true) {
                     when {
                         eat('+'.code) -> {
-                            val startPos = pos
                             val y = parseTerm()
-                            x += if (expression.substring(startPos, pos).trim()
-                                    .endsWith('%')
-                            ) x * (y * 100) * 0.01 else y
+                            val newVal = if (y.hasPercentage) {
+                                x.value + x.value * y.value
+                            } else {
+                                x.value + y.value
+                            }
+                            x = TermResult(newVal, false)
                         }
 
                         eat('-'.code) -> {
-                            val startPos = pos
                             val y = parseTerm()
-                            x -= if (expression.substring(startPos, pos).trim()
-                                    .endsWith('%')
-                            ) x * (y * 100) * 0.01 else y
+                            val newVal = if (y.hasPercentage) {
+                                x.value - x.value * y.value
+                            } else {
+                                x.value - y.value
+                            }
+                            x = TermResult(newVal, false)
                         }
 
                         else -> {
@@ -140,19 +148,31 @@ object CalcFuncs {
                 }
             }
 
-            fun parseTerm(): Double {
+            fun parseTerm(): TermResult {
                 checkDepth()
                 var x = parseFactor()
                 while (true) {
                     when {
-                        eat('*'.code) -> x *= parseFactor()
+                        eat('*'.code) -> {
+                            val y = parseFactor()
+                            val value = x.value * y.value
+                            val hasPercentage = x.hasPercentage && !y.hasPercentage
+                            x = TermResult(value, hasPercentage)
+                        }
                         eat('/'.code) -> {
                             val divisor = parseFactor()
-                            if (divisor == 0.0) throw ArithmeticException("Division by zero")
-                            x /= divisor
+                            if (divisor.value == 0.0) throw ArithmeticException("Division by zero")
+                            val value = x.value / divisor.value
+                            val hasPercentage = x.hasPercentage && !divisor.hasPercentage
+                            x = TermResult(value, hasPercentage)
                         }
 
-                        peekImplicit() -> x *= parseFactor()
+                        peekImplicit() -> {
+                            val y = parseFactor()
+                            val value = x.value * y.value
+                            val hasPercentage = x.hasPercentage && !y.hasPercentage
+                            x = TermResult(value, hasPercentage)
+                        }
                         else -> {
                             recursionDepth--
                             return x
@@ -169,7 +189,7 @@ object CalcFuncs {
                 return next == '(' || (next in 'a'..'z') || (next in 'A'..'Z')
             }
 
-            fun parseFactor(): Double {
+            fun parseFactor(): TermResult {
                 checkDepth()
                 while (ch == ' '.code) nextChar()
                 if (eat('+'.code)) {
@@ -178,15 +198,18 @@ object CalcFuncs {
                     return res
                 }
                 if (eat('-'.code)) {
-                    val res = -parseFactor()
+                    val res = TermResult(-parseFactor().value, false)
                     recursionDepth--
                     return res
                 }
 
                 var x: Double
+                var hasPercentage = false
                 val startPos = pos
                 if (eat('('.code)) {
-                    x = parseExpression()
+                    val res = parseExpression()
+                    x = res.value
+                    hasPercentage = res.hasPercentage
                     eat(')'.code)
                 } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) {
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
@@ -208,16 +231,16 @@ object CalcFuncs {
                     x = Double.POSITIVE_INFINITY
                 } else {
                     recursionDepth--
-                    return Double.NaN
+                    return TermResult(Double.NaN, false)
                 }
 
-                val res = parsePostfix(x)
+                val res = parsePostfix(x, hasPercentage)
                 recursionDepth--
                 return res
             }
 
             private fun handleFunction(func: String): Double {
-                val arg = parseFactor()
+                val arg = parseFactor().value
                 return when (func) {
                     "sqrt" -> sqrt(arg)
                     "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
@@ -232,19 +255,27 @@ object CalcFuncs {
                 }
             }
 
-            private fun parsePostfix(initialX: Double): Double {
+            private fun parsePostfix(initialX: Double, initialHasPercentage: Boolean): TermResult {
                 var x = initialX
+                var hasPercentage = initialHasPercentage
                 while (true) {
                     while (ch == ' '.code) nextChar()
                     when {
-                        eat('%'.code) -> x /= 100.0
-                        eat('!'.code) -> x = factorial(x)
+                        eat('%'.code) -> {
+                            x /= 100.0
+                            hasPercentage = true
+                        }
+                        eat('!'.code) -> {
+                            x = factorial(x)
+                            hasPercentage = false
+                        }
                         eat('^'.code) -> {
-                            val exponent = parseFactor()
+                            val exponent = parseFactor().value
                             x = handlePower(x, exponent)
+                            hasPercentage = false
                         }
 
-                        else -> return x
+                        else -> return TermResult(x, hasPercentage)
                     }
                 }
             }
