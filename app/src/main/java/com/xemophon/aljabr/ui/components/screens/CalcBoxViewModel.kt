@@ -233,7 +233,7 @@ fun CalcBox(
 }
 
 enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR }
-enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, ORDER }
+enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
@@ -259,6 +259,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     var upperLimitText by mutableStateOf("")
+        private set
+
+    var innerLowerLimitText by mutableStateOf("")
+        private set
+
+    var innerUpperLimitText by mutableStateOf("")
         private set
 
     var orderText by mutableStateOf("5")
@@ -424,13 +430,24 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         if (calculatorMode == CalculatorMode.INTEGRATE) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) {
-                if (symbol.matches(Regex("[0-9.-]+"))) lowerLimitText += symbol
-                return
-            }
-            if (currentFocus == CalculatorFocus.INTEG_UPPER) {
-                if (symbol.matches(Regex("[0-9.-]+"))) upperLimitText += symbol
-                return
+            when (currentFocus) {
+                CalculatorFocus.INTEG_LOWER -> {
+                    if (symbol.matches(Regex("[0-9.-]+"))) lowerLimitText += symbol
+                    return
+                }
+                CalculatorFocus.INTEG_UPPER -> {
+                    if (symbol.matches(Regex("[0-9.-]+"))) upperLimitText += symbol
+                    return
+                }
+                CalculatorFocus.INTEG_INNER_LOWER -> {
+                    if (symbol.matches(Regex("[0-9.-]+"))) innerLowerLimitText += symbol
+                    return
+                }
+                CalculatorFocus.INTEG_INNER_UPPER -> {
+                    if (symbol.matches(Regex("[0-9.-]+"))) innerUpperLimitText += symbol
+                    return
+                }
+                else -> {}
             }
         }
 
@@ -501,8 +518,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
-        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+        if (calculatorMode == CalculatorMode.INTEGRATE && (
+                    currentFocus == CalculatorFocus.INTEG_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_UPPER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_UPPER)) {
+            when (currentFocus) {
+                CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
+                CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
+                CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.text
+                CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.text
+                else -> {}
+            }
             return
         }
 
@@ -530,8 +557,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleConstant(action: CalcButtonAction.Constant) {
-        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+        if (calculatorMode == CalculatorMode.INTEGRATE && (
+                    currentFocus == CalculatorFocus.INTEG_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_UPPER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_UPPER)) {
+            when (currentFocus) {
+                CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
+                CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
+                CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.text
+                CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.text
+                else -> {}
+            }
             return
         }
 
@@ -547,8 +584,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleVariable(action: CalcButtonAction.Variable) {
-        if (calculatorMode == CalculatorMode.INTEGRATE && (currentFocus == CalculatorFocus.INTEG_LOWER || currentFocus == CalculatorFocus.INTEG_UPPER)) {
-            if (currentFocus == CalculatorFocus.INTEG_LOWER) lowerLimitText += action.text else upperLimitText += action.text
+        if (calculatorMode == CalculatorMode.INTEGRATE && (
+                    currentFocus == CalculatorFocus.INTEG_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_UPPER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_UPPER)) {
+            when (currentFocus) {
+                CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
+                CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
+                CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.text
+                CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.text
+                else -> {}
+            }
             return
         }
 
@@ -560,7 +607,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             calculatorMode == CalculatorMode.LIMITS ||
             calculatorMode == CalculatorMode.INTEGRATE ||
             calculatorMode == CalculatorMode.DIFFERENTIATE ||
-            calculatorMode == CalculatorMode.TAYLOR
+            calculatorMode == CalculatorMode.TAYLOR ||
+            calculatorMode == CalculatorMode.POLYNOMIALS
         ) {
             resultText = ""
             return
@@ -673,88 +721,166 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         stepsList.clear()
 
-        if (integType != IntegralType.INDEFINITE) {
-            if (useRationalize) {
-                // Symbolic approach preserves fractions
+        when (integType) {
+            IntegralType.DOUBLE -> {
                 try {
-                    val res = IntegFunc.integrateSymbolic(
+                    val res = IntegFunc.integrateDoubleIndefinite(
                         expression = displayText,
-                        lower = lowerLimitText,
-                        upper = upperLimitText,
                         useRadians = useRadians,
-                        useRationalize = true,
-                        type = integType
+                        useRationalize = useRationalize
                     )
-                    resultText = res
-                } catch (e: Exception) {
-                    resultText = "Calculation Error"
-                }
-            } else {
-                try {
-                    // Evaluate limits first in case they are expressions like "pi" or "sqrt(2)"
-                    val lower = CalcFuncs.calculateExpression(lowerLimitText)
-                    val upper = CalcFuncs.calculateExpression(upperLimitText)
-
-                    if (lower.isNaN() || upper.isNaN()) {
-                        resultText = "Invalid Limits"
-                        return
-                    }
-
-                    val result = IntegFunc.integrate(
-                        expression = displayText,
-                        lower = lower,
-                        upper = upper,
-                        useRadians = useRadians,
-                        type = integType
-                    )
-                    if (result.isNaN()) {
-                        resultText = "No convergence"
-                    } else {
-                        resultText = CalcFuncs.formatResult(result, precision)
-                    }
-                } catch (e: Exception) {
-                    resultText = "Calculation Error"
-                }
-            }
-        } else {
-            if (showSteps) {
-                viewModelScope.launch {
-                    isCalculatingSteps = true
-                    try {
-                        val resultAndSteps = withContext(Dispatchers.Default) {
-                            IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
-                        }
-                        
-                        if (resultAndSteps != null) {
-                            val (result, steps) = resultAndSteps
-                            if (result.isNotEmpty()) {
-                                resultText = result
-                                if (steps.isNotEmpty()) {
-                                    stepsList.addAll(steps)
-                                    showStepsSheet = true
-                                }
-                            }
-                        } else {
-                            // Fallback to standard integration without steps
-                            val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
-                            if (res.isNotEmpty()) {
-                                resultText = res
-                            }
-                        }
-                    } catch (e: Exception) {
-                        resultText = "Indefinite Error"
-                    } finally {
-                        isCalculatingSteps = false
-                    }
-                }
-            } else {
-                try {
-                    val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
                     if (res.isNotEmpty()) {
                         resultText = res
                     }
                 } catch (e: Exception) {
                     resultText = "Indefinite Error"
+                }
+            }
+            IntegralType.NDOUBLE -> {
+                if (useRationalize) {
+                    try {
+                        val res = IntegFunc.integrateDoubleDefinite(
+                            expression = displayText,
+                            xLower = lowerLimitText,
+                            xUpper = upperLimitText,
+                            yLower = innerLowerLimitText,
+                            yUpper = innerUpperLimitText,
+                            useRadians = useRadians,
+                            useRationalize = true
+                        )
+                        resultText = res
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
+                } else {
+                    try {
+                        val xLower = CalcFuncs.calculateExpression(lowerLimitText)
+                        val xUpper = CalcFuncs.calculateExpression(upperLimitText)
+                        val yLower = CalcFuncs.calculateExpression(innerLowerLimitText)
+                        val yUpper = CalcFuncs.calculateExpression(innerUpperLimitText)
+
+                        if (xLower.isNaN() || xUpper.isNaN() || yLower.isNaN() || yUpper.isNaN()) {
+                            val res = IntegFunc.integrateDoubleDefinite(
+                                expression = displayText,
+                                xLower = lowerLimitText,
+                                xUpper = upperLimitText,
+                                yLower = innerLowerLimitText,
+                                yUpper = innerUpperLimitText,
+                                useRadians = useRadians,
+                                useRationalize = false
+                            )
+                            resultText = res
+                            return
+                        }
+
+                        val result = IntegFunc.integrateDoubleNumerical(
+                            expression = displayText,
+                            xLower = xLower,
+                            xUpper = xUpper,
+                            yLower = yLower,
+                            yUpper = yUpper,
+                            useRadians = useRadians
+                        )
+                        if (result.isNaN()) {
+                            val res = IntegFunc.integrateDoubleDefinite(
+                                expression = displayText,
+                                xLower = lowerLimitText,
+                                xUpper = upperLimitText,
+                                yLower = innerLowerLimitText,
+                                yUpper = innerUpperLimitText,
+                                useRadians = useRadians,
+                                useRationalize = false
+                            )
+                            resultText = res
+                        } else {
+                            resultText = CalcFuncs.formatResult(result, precision)
+                        }
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
+                }
+            }
+            IntegralType.INDEFINITE -> {
+                if (showSteps) {
+                    viewModelScope.launch {
+                        isCalculatingSteps = true
+                        try {
+                            val resultAndSteps = withContext(Dispatchers.Default) {
+                                IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
+                            }
+
+                            if (resultAndSteps != null) {
+                                val (result, steps) = resultAndSteps
+                                if (result.isNotEmpty()) {
+                                    resultText = result
+                                    if (steps.isNotEmpty()) {
+                                        stepsList.addAll(steps)
+                                        showStepsSheet = true
+                                    }
+                                }
+                            } else {
+                                val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
+                                if (res.isNotEmpty()) {
+                                    resultText = res
+                                }
+                            }
+                        } catch (e: Exception) {
+                            resultText = "Indefinite Error"
+                        } finally {
+                            isCalculatingSteps = false
+                        }
+                    }
+                } else {
+                    try {
+                        val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
+                        if (res.isNotEmpty()) {
+                            resultText = res
+                        }
+                    } catch (e: Exception) {
+                        resultText = "Indefinite Error"
+                    }
+                }
+            }
+            else -> {
+                if (useRationalize) {
+                    try {
+                        val res = IntegFunc.integrateSymbolic(
+                            expression = displayText,
+                            lower = lowerLimitText,
+                            upper = upperLimitText,
+                            useRadians = useRadians,
+                            useRationalize = true,
+                            type = integType
+                        )
+                        resultText = res
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
+                } else {
+                    try {
+                        val lower = CalcFuncs.calculateExpression(lowerLimitText)
+                        val upper = CalcFuncs.calculateExpression(upperLimitText)
+
+                        if (lower.isNaN() || upper.isNaN()) {
+                            resultText = "Invalid Limits"
+                            return
+                        }
+
+                        val result = IntegFunc.integrate(
+                            expression = displayText,
+                            lower = lower,
+                            upper = upper,
+                            useRadians = useRadians,
+                            type = integType
+                        )
+                        if (result.isNaN()) {
+                            resultText = "No convergence"
+                        } else {
+                            resultText = CalcFuncs.formatResult(result, precision)
+                        }
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
                 }
             }
         }
@@ -860,6 +986,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""
         upperLimitText = ""
+        innerLowerLimitText = ""
+        innerUpperLimitText = ""
         orderText = "5"
         isShowingResult = false
 
@@ -883,13 +1011,16 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         integType = type
         if (type == IntegralType.DEFINITE || type == IntegralType.ARC ||
             type == IntegralType.XVOL || type == IntegralType.YVOL ||
-            type == IntegralType.XSURF || type == IntegralType.YSURF) {
+            type == IntegralType.XSURF || type == IntegralType.YSURF ||
+            type == IntegralType.NDOUBLE) {
             currentFocus = CalculatorFocus.INTEG_LOWER
         } else {
             currentFocus = CalculatorFocus.EXPRESSION
-            lowerLimitText = ""
-            upperLimitText = ""
         }
+        lowerLimitText = ""
+        upperLimitText = ""
+        innerLowerLimitText = ""
+        innerUpperLimitText = ""
         resultText = ""
     }
 
@@ -919,6 +1050,14 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             }
             if (currentFocus == CalculatorFocus.INTEG_UPPER && upperLimitText.isNotEmpty()) {
                 upperLimitText = upperLimitText.dropLast(1)
+                return
+            }
+            if (currentFocus == CalculatorFocus.INTEG_INNER_LOWER && innerLowerLimitText.isNotEmpty()) {
+                innerLowerLimitText = innerLowerLimitText.dropLast(1)
+                return
+            }
+            if (currentFocus == CalculatorFocus.INTEG_INNER_UPPER && innerUpperLimitText.isNotEmpty()) {
+                innerUpperLimitText = innerUpperLimitText.dropLast(1)
                 return
             }
         }

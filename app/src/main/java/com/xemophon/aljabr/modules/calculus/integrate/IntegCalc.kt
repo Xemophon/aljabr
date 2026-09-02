@@ -79,6 +79,8 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
         displayText = viewModel.displayText,
         lowerLimitText = viewModel.lowerLimitText,
         upperLimitText = viewModel.upperLimitText,
+        innerLowerLimitText = viewModel.innerLowerLimitText,
+        innerUpperLimitText = viewModel.innerUpperLimitText,
         resultText = viewModel.resultText,
         currentFocus = viewModel.currentFocus,
         integType = viewModel.integType,
@@ -99,6 +101,8 @@ fun IntegCalcContent(
     displayText: String,
     lowerLimitText: String,
     upperLimitText: String,
+    innerLowerLimitText: String = "",
+    innerUpperLimitText: String = "",
     resultText: String,
     currentFocus: CalculatorFocus,
     integType: IntegralType,
@@ -138,6 +142,8 @@ fun IntegCalcContent(
                         expression = displayText,
                         lower = lowerLimitText,
                         upper = upperLimitText,
+                        innerLower = innerLowerLimitText,
+                        innerUpper = innerUpperLimitText,
                         result = resultText,
                         focus = currentFocus,
                         integType = integType,
@@ -164,6 +170,8 @@ fun IntegDisplay(
     expression: String,
     lower: String,
     upper: String,
+    innerLower: String = "",
+    innerUpper: String = "",
     result: String,
     focus: CalculatorFocus,
     integType: IntegralType,
@@ -200,46 +208,146 @@ fun IntegDisplay(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // Integral Symbol with Limits
-                    Box(
-                        modifier = Modifier.height(100.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "∫",
-                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    when (integType) {
+                        IntegralType.DOUBLE -> {
+                            Box(
+                                modifier = Modifier.height(100.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "∫∫",
+                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        IntegralType.NDOUBLE -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Outer Integral Box
+                                Box(
+                                    modifier = Modifier.height(100.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Text(
+                                        text = "∫",
+                                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    // Outer Upper limit b
+                                    Text(
+                                        text = upper.ifEmpty { "b" },
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .offset(x = 25.dp, y = (-8).dp)
+                                            .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                        fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    // Outer Lower limit a
+                                    Text(
+                                        text = lower.ifEmpty { "a" },
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .offset(x = (-10).dp, y = 18.dp)
+                                            .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                        fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
 
-                        if (integType != IntegralType.INDEFINITE) {
-                            // Upper limit b
-                            Text(
-                                text = upper.ifEmpty { "b" },
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .offset(x = 25.dp, y = (-8).dp)
-                                    .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
-                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
-                                color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                            // Lower limit a
-                            Text(
-                                text = lower.ifEmpty { "a" },
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .offset(x = (-10).dp, y = 18.dp)
-                                    .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
-                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
-                                color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Inner Integral Box
+                                Box(
+                                    modifier = Modifier.height(100.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Text(
+                                        text = "∫",
+                                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    // Inner Upper limit d
+                                    Text(
+                                        text = innerUpper.ifEmpty { "d" },
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .offset(x = 25.dp, y = (-8).dp)
+                                            .clickable { onFocusChange(CalculatorFocus.INTEG_INNER_UPPER) },
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                        fontWeight = if (focus == CalculatorFocus.INTEG_INNER_UPPER) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (focus == CalculatorFocus.INTEG_INNER_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    // Inner Lower limit c
+                                    Text(
+                                        text = innerLower.ifEmpty { "c" },
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .offset(x = (-10).dp, y = 18.dp)
+                                            .clickable { onFocusChange(CalculatorFocus.INTEG_INNER_LOWER) },
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                        fontWeight = if (focus == CalculatorFocus.INTEG_INNER_LOWER) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (focus == CalculatorFocus.INTEG_INNER_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                        IntegralType.INDEFINITE -> {
+                            Box(
+                                modifier = Modifier.height(100.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = "∫",
+                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        else -> {
+                            Box(
+                                modifier = Modifier.height(100.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = "∫",
+                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                // Upper limit b
+                                Text(
+                                    text = upper.ifEmpty { "b" },
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .offset(x = 25.dp, y = (-8).dp)
+                                        .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                    fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                // Lower limit a
+                                Text(
+                                    text = lower.ifEmpty { "a" },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .offset(x = (-10).dp, y = 18.dp)
+                                        .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
+                                    fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    // Expression f(x)dx
+                    // Expression Box
                     Box(
                         modifier = Modifier
                             .clickable {
@@ -249,6 +357,7 @@ fun IntegDisplay(
                             .padding(8.dp)
                     ) {
                         val base = if (expression == "0") "" else expression
+                        val defaultPlaceholder = if (integType == IntegralType.DOUBLE || integType == IntegralType.NDOUBLE) "f(x,y)" else "f(x)"
                         val textWithCursor =
                             if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
                                 if (cursorIndex < base.length) {
@@ -257,7 +366,7 @@ fun IntegDisplay(
                                     "$base|"
                                 }
                             } else {
-                                base.ifEmpty { "f(x)" }
+                                base.ifEmpty { defaultPlaceholder }
                             }
 
                         val displayText = when (integType) {
@@ -267,6 +376,7 @@ fun IntegDisplay(
                             IntegralType.YVOL -> "2πx|$textWithCursor| dx"
                             IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² dx"
                             IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² dx"
+                            IntegralType.DOUBLE, IntegralType.NDOUBLE -> "$textWithCursor dx dy"
                         }
 
                         Text(

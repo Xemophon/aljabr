@@ -19,16 +19,16 @@ object MatrixFunc {
         val symjaB = matrixB?.let { formatMatrixForSymja(it) }
 
         val expression = when (mode) {
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.ADDITION -> "$symjaA + $symjaB"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.SUBTRACTION -> "$symjaA - $symjaB"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.MULTIPLICATION -> "$symjaA . $symjaB" // Dot for matrix multiplication in Symja
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.DETERMINANT -> "Det($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.INVERSE -> "Inverse($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.TRANSPOSE -> "Transpose($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.RANK -> "MatrixRank($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.EIGENVALUES -> "Eigenvalues($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.EIGENVECTORS -> "Eigenvectors($symjaA)"
-            _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixMode.LINEARSOLVE -> "LinearSolve($symjaA, $symjaB)"
+            MatrixMode.ADDITION -> "$symjaA + $symjaB"
+            MatrixMode.SUBTRACTION -> "$symjaA - $symjaB"
+            MatrixMode.MULTIPLICATION -> "$symjaA . $symjaB" // Dot for matrix multiplication in Symja
+            MatrixMode.DETERMINANT -> "Det($symjaA)"
+            MatrixMode.INVERSE -> "Inverse($symjaA)"
+            MatrixMode.TRANSPOSE -> "Transpose($symjaA)"
+            MatrixMode.RANK -> "MatrixRank($symjaA)"
+            MatrixMode.EIGENVALUES -> "Eigenvalues($symjaA)"
+            MatrixMode.EIGENVECTORS -> "Eigenvectors($symjaA)"
+            MatrixMode.LINEARSOLVE -> "LinearSolve($symjaA, $symjaB)"
         }
 
         return try {

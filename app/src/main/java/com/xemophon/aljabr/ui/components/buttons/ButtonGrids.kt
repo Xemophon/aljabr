@@ -235,7 +235,7 @@ fun AdvancedButtonsGrid(
 ) = CalcButtonSheet(modifier) {
     val selectedGrid = when (gridMode) {
         is AdvancedGridMode.Differentiation -> if (gridMode.currentMode == "Single") SingleVariableGrid else MultipleVariableGrid
-        is AdvancedGridMode.Graph -> MultipleVariableGrid
+        is AdvancedGridMode.Integration -> if (gridMode.currentType == IntegralType.DOUBLE || gridMode.currentType == IntegralType.NDOUBLE) MultipleVariableGrid else SingleVariableGrid
         else -> SingleVariableGrid
     }
 
@@ -354,6 +354,22 @@ fun AdvancedButtonsGrid(
                         val type = if (gridMode.axis == "X") IntegralType.XSURF else IntegralType.YSURF
                         onAction(CalcButtonAction.Integrals("Surf ${gridMode.axis}", type)) 
                     },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∫∫",
+                    isSelected = gridMode.currentType == IntegralType.DOUBLE,
+                    onClick = { onAction(CalcButtonAction.Integrals("∫∫", IntegralType.DOUBLE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∫∫d",
+                    isSelected = gridMode.currentType == IntegralType.NDOUBLE,
+                    onClick = { onAction(CalcButtonAction.Integrals("∫∫d", IntegralType.NDOUBLE)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

@@ -194,6 +194,123 @@ object IntegFunc {
         val formatted = SymjaUtils.formatResult(resStr)
         return "$formatted + C"
     }
-}
 
-/* TODO : Make double integral with TwoVariableGrid */
+    /**
+     * Performs symbolic indefinite double integration over two variables (x and y).
+     * Symja command: Integrate[expr, x, y]
+     */
+    fun integrateDoubleIndefinite(
+        expression: String,
+        useRadians: Boolean = true,
+        useRationalize: Boolean = false
+    ): String {
+        return synchronized(SymjaUtils.evaluator) {
+            try {
+                val cleaned = SymjaUtils.prepareForSymja(expression, useRadians)
+                val command = if (useRationalize) {
+                    "Simplify[Rationalize(Integrate[Rationalize($cleaned), x, y])]"
+                } else {
+                    "Simplify[Integrate[$cleaned, x, y]]"
+                }
+                var resStr = SymjaUtils.evaluator.eval(command).toString()
+
+                if (resStr.contains("Integrate", ignoreCase = true)) {
+                    return "∫∫($expression) dx dy"
+                }
+
+                val logRegex = Regex("""Log([\[(])([^,\])]+)([)])""", RegexOption.IGNORE_CASE)
+                resStr = resStr.replace(logRegex) { match ->
+                    val open = match.groupValues[1]
+                    val content = match.groupValues[2]
+                    val close = match.groupValues[3]
+                    "Log$open" + "Abs$open$content$close$close"
+                }
+
+                if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
+                    return "∫∫($expression) dx dy"
+                }
+
+                formatResult(resStr)
+            } catch (_: Exception) {
+                "∫∫($expression) dx dy"
+            }
+        }
+    }
+
+    /**
+     * Performs symbolic definite double integration over x and y.
+     * Symja command: Integrate[expr, {x, xLower, xUpper}, {y, yLower, yUpper}]
+     */
+    fun integrateDoubleDefinite(
+        expression: String,
+        xLower: String,
+        xUpper: String,
+        yLower: String,
+        yUpper: String,
+        useRadians: Boolean = true,
+        useRationalize: Boolean = false
+    ): String {
+        return synchronized(SymjaUtils.evaluator) {
+            try {
+                val formula = SymjaUtils.prepareForSymja(expression, useRadians)
+                val xL = if (xLower.isBlank()) "a" else SymjaUtils.prepareForSymja(xLower, useRadians)
+                val xU = if (xUpper.isBlank()) "b" else SymjaUtils.prepareForSymja(xUpper, useRadians)
+                val yL = if (yLower.isBlank()) "c" else SymjaUtils.prepareForSymja(yLower, useRadians)
+                val yU = if (yUpper.isBlank()) "d" else SymjaUtils.prepareForSymja(yUpper, useRadians)
+
+                val command = if (useRationalize) {
+                    "Rationalize(Integrate[Rationalize($formula), {x, Rationalize($xL), Rationalize($xU)}, {y, Rationalize($yL), Rationalize($yU)}])"
+                } else {
+                    "Integrate[$formula, {x, $xL, $xU}, {y, $yL, $yU}]"
+                }
+
+                val res = SymjaUtils.evaluator.eval(command).toString()
+
+                if (res.contains("Integrate", ignoreCase = true)) {
+                    val xLNum = xLower.toDoubleOrNull() ?: Double.NaN
+                    val xUNum = xUpper.toDoubleOrNull() ?: Double.NaN
+                    val yLNum = yLower.toDoubleOrNull() ?: Double.NaN
+                    val yUNum = yUpper.toDoubleOrNull() ?: Double.NaN
+                    if (!xLNum.isNaN() && !xUNum.isNaN() && !yLNum.isNaN() && !yUNum.isNaN()) {
+                        val num = integrateDoubleNumerical(expression, xLNum, xUNum, yLNum, yUNum, useRadians)
+                        if (!num.isNaN()) return num.toString()
+                    }
+                    return "∫∫($expression) dx dy"
+                }
+
+                SymjaUtils.formatResult(res)
+            } catch (_: Exception) {
+                "Error"
+            }
+        }
+    }
+
+    /**
+     * Performs numerical double integration using Symja's NIntegrate.
+     * Symja command: NIntegrate[expr, {x, xLower, xUpper}, {y, yLower, yUpper}]
+     */
+    fun integrateDoubleNumerical(
+        expression: String,
+        xLower: Double,
+        xUpper: Double,
+        yLower: Double,
+        yUpper: Double,
+        useRadians: Boolean = true
+    ): Double {
+        if (xLower == xUpper || yLower == yUpper) return 0.0
+
+        return try {
+            val formula = SymjaUtils.prepareForSymja(expression, useRadians)
+            val xLStr = formatLimit(xLower)
+            val xUStr = formatLimit(xUpper)
+            val yLStr = formatLimit(yLower)
+            val yUStr = formatLimit(yUpper)
+
+            val command = "NIntegrate[$formula, {x, $xLStr, $xUStr}, {y, $yLStr, $yUStr}]"
+            val res = SymjaUtils.evaluator.eval(command).toString()
+            res.toDouble()
+        } catch (_: Throwable) {
+            Double.NaN
+        }
+    }
+}

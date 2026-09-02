@@ -89,7 +89,7 @@ enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACT
 enum class Constants { PI, I, PHI, E, INF}
 enum class Variables { X, Y, N }
 enum class LimitType { FINITE, INFINITE }
-enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL}
+enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE }
 
 val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
