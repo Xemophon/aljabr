@@ -13,19 +13,19 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.R
-import com.xemophon.aljabr.algebra.matrices.MatrixScreen
-import com.xemophon.aljabr.algebra.matrices.MatrixViewModel
-import com.xemophon.aljabr.algebra.polynomials.PolyCalc
-import com.xemophon.aljabr.basicCalc.BasicCalc
-import com.xemophon.aljabr.calculus.differentiate.DiffCalc
-import com.xemophon.aljabr.graphMaker.GraphMaker
-import com.xemophon.aljabr.calculus.integrate.IntegCalc
-import com.xemophon.aljabr.calculus.limits.Limits
-import com.xemophon.aljabr.conversions.ConvertorPage
-import com.xemophon.aljabr.conversions.UtilitiesScreen
-import com.xemophon.aljabr.misc.MiscPage
-import com.xemophon.aljabr.series.fourier.FourierCalc
-import com.xemophon.aljabr.series.taylor.TaylorCalc
+import com.xemophon.aljabr.modules.algebra.matrices.MatrixScreen
+import com.xemophon.aljabr.modules.algebra.matrices.MatrixViewModel
+import com.xemophon.aljabr.modules.algebra.polynomials.PolyCalc
+import com.xemophon.aljabr.modules.basicCalc.BasicCalc
+import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
+import com.xemophon.aljabr.modules.graphMaker.GraphMaker
+import com.xemophon.aljabr.modules.calculus.integrate.IntegCalc
+import com.xemophon.aljabr.modules.calculus.limits.Limits
+import com.xemophon.aljabr.modules.conversions.ConvertorPage
+import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
+import com.xemophon.aljabr.modules.misc.MiscPage
+import com.xemophon.aljabr.modules.series.fourier.FourierCalc
+import com.xemophon.aljabr.modules.series.taylor.TaylorCalc
 import kotlinx.serialization.Serializable
 
 @Serializable

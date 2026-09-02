@@ -36,13 +36,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.xemophon.aljabr.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.graphMaker.GraphGenerator
-import com.xemophon.aljabr.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
+import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
+import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
-import com.xemophon.aljabr.misc.SettingsViewModel
+import com.xemophon.aljabr.modules.misc.SettingsViewModel
 import com.xemophon.aljabr.navigation.Algebra
 import com.xemophon.aljabr.navigation.BasicCalcRoute
 import com.xemophon.aljabr.navigation.Calculus
@@ -62,12 +62,12 @@ class MainActivity : ComponentActivity() {
 
         // Warm up the math engines in the background to improve first-use performance
         lifecycleScope.launch(Dispatchers.Default) {
-            IntegFunc.warmUp()
-            DiffFunc.warmUp()
+            _root_ide_package_.com.xemophon.aljabr.modules.calculus.integrate.IntegFunc.warmUp()
+            _root_ide_package_.com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc.warmUp()
         }
 
         setContent {
-            val settingsViewModel: SettingsViewModel = viewModel()
+            val settingsViewModel: com.xemophon.aljabr.modules.misc.SettingsViewModel = viewModel()
             val appTheme by settingsViewModel.theme.collectAsState()
             val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
             val colorSchemeType by settingsViewModel.colorScheme.collectAsState()
@@ -279,7 +279,7 @@ class MainActivity : ComponentActivity() {
             val autoClear = repository.autoClearCacheFlow.first()
             if (autoClear) {
                 StorageUtils.clearAppCache(applicationContext)
-                GraphGenerator.clearCache()
+                _root_ide_package_.com.xemophon.aljabr.modules.graphMaker.GraphGenerator.clearCache()
             }
         }
     }

@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.data
 
-import com.xemophon.aljabr.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
 
 object SymjaUtils {
@@ -83,7 +83,7 @@ object SymjaUtils {
                 // If it's a simple number, format it with the requested precision
                 val d = resStr.toDoubleOrNull()
                 if (d != null && !useRationalize) {
-                    CalcFuncs.formatResult(d, precision)
+                    _root_ide_package_.com.xemophon.aljabr.modules.basicCalc.CalcFuncs.formatResult(d, precision)
                 } else {
                     formatResult(resStr)
                 }
