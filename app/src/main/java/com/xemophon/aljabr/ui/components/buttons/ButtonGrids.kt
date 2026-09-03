@@ -379,7 +379,7 @@ fun AdvancedButtonsGrid(
         is AdvancedGridMode.Differentiation -> {
             buttons.add {
                 ModeToggleButton(
-                    label = "d/dx",
+                    label = "∂/∂x",
                     isSelected = gridMode.currentMode == "Single",
                     onClick = { onAction(CalcButtonAction.DifferentiateSingle("d/dx")) },
                     modifier = Modifier.fillMaxWidth()
@@ -387,9 +387,17 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "∇f",
+                    label = "∂/∂f",
                     isSelected = gridMode.currentMode == "Multiple",
                     onClick = { onAction(CalcButtonAction.Differentiate("∇f")) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add{
+                ModeToggleButton(
+                    label = "∂/∂z",
+                    isSelected = gridMode.currentMode == "Complex",
+                    onClick = { onAction(CalcButtonAction.Differentiate("∂f/∂x")) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -427,6 +435,9 @@ fun AdvancedButtonsGrid(
         overrides = when (gridMode) {
             is AdvancedGridMode.Graph -> {
                 mapOf((6 to 3) to CalcButtonAction.Symbol("="))
+            }
+            is AdvancedGridMode.Differentiation -> {
+                if (gridMode.currentMode == "Complex") mapOf((0 to 0) to CalcButtonAction.Variable("z", Variables.Z), (0 to 1) to CalcButtonAction.Variable("z̄", Variables.ZC)) else emptyMap()
             }
             is AdvancedGridMode.Laplace -> {
                 if (gridMode.currentMode == "Reverse") {

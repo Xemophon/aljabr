@@ -39,7 +39,8 @@ sealed interface CalcButtonAction {
     data class Scientific(val text: String, val type: ScientificType) : CalcButtonAction
     data class Constant(val text: String, val type: Constants) : CalcButtonAction
     data class Variable(val text: String, val type: Variables) : CalcButtonAction
-    data class Param(val text: String, val type: Parameter) : CalcButtonAction
+    data class Parameter(val text: String, val type: com.xemophon.aljabr.ui.components.buttons.Parameter) : CalcButtonAction
+    data class Misc(val text: String, val type: com.xemophon.aljabr.ui.components.buttons.Misc) : CalcButtonAction
     data class Limits(val text: String, val type: LimitType) : CalcButtonAction
     data class Integrals(val text: String, val type: IntegralType) : CalcButtonAction
     data class Differentiate(val text: String = "d/dx") : CalcButtonAction
@@ -78,17 +79,24 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
             when (type) {
                 Variables.X -> CalcButtonAction.Variable(text = "x", Variables.X)
                 Variables.Y -> CalcButtonAction.Variable(text = "y", Variables.Y)
+                Variables.Z -> CalcButtonAction.Variable(text = "z", Variables.Z)
+                Variables.ZC -> CalcButtonAction.Variable(text = "z̄", Variables.ZC)
                 Variables.T -> CalcButtonAction.Variable(text = "t", Variables.T)
                 Variables.S -> CalcButtonAction.Variable(text = "s", Variables.S)
             }
         }
 
-        is CalcButtonAction.Param -> {
+        is CalcButtonAction.Parameter -> {
             when (type) {
-                Parameter.N -> CalcButtonAction.Param(text = "n", Parameter.N)
+                Parameter.N -> CalcButtonAction.Parameter(text = "n", Parameter.N)
             }
         }
 
+        is CalcButtonAction.Misc ->{
+            when (type) {
+                Misc.PRIME -> CalcButtonAction.Misc("'", Misc.PRIME)
+            }
+        }
 
         else -> this
     }
@@ -97,7 +105,8 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
 enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL }
 
 enum class Constants { PI, I, PHI, E, INF}
-enum class Variables { X, Y, T, S}
+enum class Variables { X, Y, Z, ZC, T, S}
+enum class Misc { PRIME }
 enum class Parameter { N }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE }
@@ -387,6 +396,14 @@ fun CalcButton(
                 )
             }
 
+            is CalcButtonAction.Misc -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = animatedContentColor
+                )
+            }
+
             is CalcButtonAction.Scientific -> {
                 Text(
                     text = action.text,
@@ -443,7 +460,7 @@ fun CalcButton(
                 )
             }
 
-            is CalcButtonAction.Param -> {
+            is CalcButtonAction.Parameter -> {
                 Text(
                     text = action.text,
                     style = textStyle,
