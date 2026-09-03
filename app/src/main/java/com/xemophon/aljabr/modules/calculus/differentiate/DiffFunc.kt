@@ -48,7 +48,7 @@ object DiffFunc {
         }
     }
 
-    fun differentiateWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>> {
+    fun differentiateWithSteps(expression: String, useHybrid: Boolean = true): Pair<String, List<CalculusStep>> {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return Pair("", emptyList())
@@ -61,7 +61,7 @@ object DiffFunc {
             }
             val vStr = if (vars.size == 1) vars[0] else "x"
 
-            val steps = calculusEngine.differentiateWithSteps(expression, vStr, useEigenmath)
+            val steps = calculusEngine.differentiateWithSteps(expression, vStr, useHybrid)
             val finalResult = differentiate(expression)
             
             Pair(finalResult, steps)

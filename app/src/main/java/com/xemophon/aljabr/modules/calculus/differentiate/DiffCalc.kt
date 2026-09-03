@@ -216,32 +216,28 @@ fun DiffDisplay(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     // Derivative Notation
-                    if (diffGridMode == "Single") {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "d",
-                                style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(40.dp)
-                                    .height(2.dp)
-                                    .background(MaterialTheme.colorScheme.onSurface)
-                            )
-                            Text(
-                                text = "dx",
-                                style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            text = "∇f",
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp),
+                            text = "∂",
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(2.dp)
+                                .background(MaterialTheme.colorScheme.onSurface)
+                        )
+                        Text(
+                            text = when(diffGridMode){
+                                "Single" -> "∂x"
+                                "Complex" -> "∂z"
+                                else -> "∂f"
+                            },
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }

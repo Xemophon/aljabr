@@ -175,9 +175,9 @@ object IntegFunc {
         }
     }
 
-    fun integrateIndefiniteWithSteps(expression: String, useEigenmath: Boolean = true): Pair<String, List<CalculusStep>>? {
+    fun integrateIndefiniteWithSteps(expression: String, useHybrid: Boolean = true): Pair<String, List<CalculusStep>>? {
         return try {
-            val resultAndSteps = calculusEngine.integrateWithSteps(expression, useEigenmath)
+            val resultAndSteps = calculusEngine.integrateWithSteps(expression, useHybrid)
             if (resultAndSteps != null) {
                 val (resExpr, steps) = resultAndSteps
                 val formattedResult = formatResult(resExpr.toString())
