@@ -397,7 +397,7 @@ fun AdvancedButtonsGrid(
                 ModeToggleButton(
                     label = "∂/∂z",
                     isSelected = gridMode.currentMode == "Complex",
-                    onClick = { onAction(CalcButtonAction.Differentiate("∂f/∂x")) },
+                    onClick = { onAction(CalcButtonAction.DifferentiateComplex("Complex")) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

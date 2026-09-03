@@ -69,6 +69,26 @@ object DiffFunc {
             Pair(differentiate(expression), emptyList())
         }
     }
+
+    fun differentiateComplex(expression: String): String {
+        return try {
+            val cleaned = SymjaUtils.prepareForSymja(expression)
+            if (cleaned.isBlank()) return ""
+
+            val eval = SymjaUtils.evaluator
+            val substituted = cleaned
+                .replace("zc", "(x - y * I)", ignoreCase = true)
+                .replace("z̄", "(x - y * I)")
+                .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
+
+            val command = "Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]"
+            val resStr = eval.eval(command).toString()
+
+            SymjaUtils.formatResult(resStr)
+        } catch (_: Throwable) {
+            "Error"
+        }
+    }
 }
 
 /* TODO : Add complex integration with Cauchy-Riemann check*/

@@ -384,6 +384,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             is CalcButtonAction.DifferentiateSingle -> {
                 diffGridMode = "Single"
             }
+
+            is CalcButtonAction.DifferentiateComplex -> {
+                diffGridMode = "Complex"
+            }
             is CalcButtonAction.Laplace -> {
                 laplaceMode = action.text
             }
@@ -923,10 +927,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             }
         } else {
             try {
-                analysisResult = AnalysisFunc.fullAnalysis(displayText)
-                val res = DiffFunc.differentiate(displayText, useRationalize)
-                if (res.isNotEmpty()) {
-                    resultText = res
+                if (diffGridMode == "Complex") {
+                    analysisResult = AnalysisFunc.complexAnalysis(displayText)
+                    val res = DiffFunc.differentiateComplex(displayText)
+                    if (res.isNotEmpty()) {
+                        resultText = res
+                    }
+                } else {
+                    analysisResult = AnalysisFunc.fullAnalysis(displayText)
+                    val res = DiffFunc.differentiate(displayText, useRationalize)
+                    if (res.isNotEmpty()) {
+                        resultText = res
+                    }
                 }
                 isShowingResult = true
             } catch (e: Exception) {
@@ -940,7 +952,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 analysisResult = withContext(Dispatchers.Default) {
-                    AnalysisFunc.fullAnalysis(displayText)
+                    if (diffGridMode == "Complex") {
+                        AnalysisFunc.complexAnalysis(displayText)
+                    } else {
+                        AnalysisFunc.fullAnalysis(displayText)
+                    }
                 }
             } catch (e: Exception) {
                 // Handle error if needed

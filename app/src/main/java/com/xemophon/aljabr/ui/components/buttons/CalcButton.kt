@@ -45,6 +45,7 @@ sealed interface CalcButtonAction {
     data class Integrals(val text: String, val type: IntegralType) : CalcButtonAction
     data class Differentiate(val text: String = "d/dx") : CalcButtonAction
     data class DifferentiateSingle(val text: String = "d/dx") : CalcButtonAction
+    data class DifferentiateComplex(val text: String = "Complex") : CalcButtonAction
     data class Laplace(val text: String) : CalcButtonAction
     data object Clear : CalcButtonAction
     data object Calculate : CalcButtonAction
@@ -437,6 +438,14 @@ fun CalcButton(
             }
 
             is CalcButtonAction.DifferentiateSingle -> {
+                Text(
+                    text = action.text,
+                    style = textStyle,
+                    color = animatedContentColor
+                )
+            }
+
+            is CalcButtonAction.DifferentiateComplex -> {
                 Text(
                     text = action.text,
                     style = textStyle,

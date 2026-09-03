@@ -45,9 +45,6 @@ fun LaplaceCalc(onOpenDrawer: () -> Unit) {
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.LAPLACE
-//        if (viewModel.displayText == "0" || viewModel.displayText.isEmpty()) {
-//            viewModel.handleAction(CalcButtonAction.Symbol("t"))
-//        }
     }
 
     LaplaceCalcContent(

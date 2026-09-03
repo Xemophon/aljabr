@@ -37,6 +37,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
+data class ComplexAnalysisInfo(
+    val substitutedExpr: String,
+    val dfdz: String,
+    val dfdzbar: String,
+    val cauchyRiemannSatisfied: Boolean,
+    val dxdz: String,
+    val dydz: String
+)
+
 data class AnalysisResult(
     val variables: List<String>,
     val derivatives: List<NamedExpression>,
@@ -45,7 +54,8 @@ data class AnalysisResult(
     val inflectionPoints: List<String> = emptyList(),
     val stationaryPoints: List<String> = emptyList(),
     val saddlePoints: List<String> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val complexInfo: ComplexAnalysisInfo? = null
 )
 
 data class NamedExpression(val name: String, val expression: String, val rawExpression: String = "")
@@ -385,6 +395,18 @@ fun AnalysisReport(
                 ResultItemCard("Stationary", point)
             }
         }
+
+        // Complex Analysis / Cauchy-Riemann Check
+        result.complexInfo?.let { complex ->
+            item { AnalysisSectionHeader("Complex Analysis & Cauchy-Riemann") }
+            item {
+                ResultItemCard("Substituted Function f(x+iy, x-iy)", complex.substitutedExpr)
+            }
+            item {
+                val statusText = if (complex.cauchyRiemannSatisfied) "Satisfied (Holomorphic / Analytic)" else "Not Satisfied (Non-Holomorphic)"
+                ResultItemCard("Cauchy-Riemann Equations Check (df/d(z̄) == 0)", statusText)
+            }
+        }
     }
 }
 
@@ -419,6 +441,56 @@ fun PolynomialReport(
 }
 
 object AnalysisFunc {
+
+    fun complexAnalysis(expression: String): AnalysisResult {
+        return try {
+            val cleaned = SymjaUtils.prepareForSymja(expression)
+            if (cleaned.isBlank()) return AnalysisResult(emptyList(), emptyList(), error = "Empty expression")
+
+            val eval = SymjaUtils.evaluator
+            val substituted = cleaned
+                .replace("zc", "(x - y * I)", ignoreCase = true)
+                .replace("z̄", "(x - y * I)")
+                .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
+
+            val dfdxRaw = eval.eval("Simplify[D[$substituted, x]]").toString()
+            val dfdyRaw = eval.eval("Simplify[D[$substituted, y]]").toString()
+
+            val dfdzRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]").toString()
+            val dfdzbarRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] + I * D[$substituted, y])]").toString()
+
+            val crCheck = eval.eval("Simplify[D[$substituted, x] + I * D[$substituted, y] == 0]").toString()
+            val isCrSatisfied = crCheck.equals("True", ignoreCase = true) || crCheck.equals("0", ignoreCase = true)
+
+            val formattedSubst = SymjaUtils.formatResult(substituted)
+            val formattedDfDz = SymjaUtils.formatResult(dfdzRaw)
+            val formattedDfDzBar = SymjaUtils.formatResult(dfdzbarRaw)
+
+            val derivatives = listOf(
+                NamedExpression("df/dz", formattedDfDz, dfdzRaw),
+                NamedExpression("df/d(z̄)", formattedDfDzBar, dfdzbarRaw),
+                NamedExpression("∂f/∂x", SymjaUtils.formatResult(dfdxRaw), dfdxRaw),
+                NamedExpression("∂f/∂y", SymjaUtils.formatResult(dfdyRaw), dfdyRaw)
+            )
+
+            val complexInfo = ComplexAnalysisInfo(
+                substitutedExpr = formattedSubst,
+                dfdz = formattedDfDz,
+                dfdzbar = formattedDfDzBar,
+                cauchyRiemannSatisfied = isCrSatisfied,
+                dxdz = dfdxRaw,
+                dydz = dfdyRaw
+            )
+
+            AnalysisResult(
+                variables = listOf("z", "z̄"),
+                derivatives = derivatives,
+                complexInfo = complexInfo
+            )
+        } catch (e: Exception) {
+            AnalysisResult(emptyList(), emptyList(), error = e.message ?: "Complex analysis failed")
+        }
+    }
 
     fun fullAnalysis(expression: String): AnalysisResult {
         return try {
