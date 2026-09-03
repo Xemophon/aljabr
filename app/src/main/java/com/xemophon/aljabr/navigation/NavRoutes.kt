@@ -90,7 +90,7 @@ val Algebra = listOf(
     CalculatorVariant(
         route = PolyRoute,
         routeClass = PolyRoute::class,
-        label = "Polynomials",
+        label = "Polynomials and BDE",
         icon = Icons.Default.JoinInner,
         content = { onOpenDrawer -> PolyCalc(onOpenDrawer = onOpenDrawer) }
     ),

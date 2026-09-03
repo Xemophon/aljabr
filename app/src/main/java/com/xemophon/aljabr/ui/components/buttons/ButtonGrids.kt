@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.dp
 import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable
@@ -66,6 +67,7 @@ private fun CalcButtonSheet(
 sealed class ShortGridMode{
     data object Convertor : ShortGridMode()
     data object Polynomials : ShortGridMode()
+    data object BDE: ShortGridMode()
     data object Functions : ShortGridMode()
     data object None : ShortGridMode()
 }
@@ -80,6 +82,51 @@ fun ShortCalcButtons(
     CalcButtonSheet(modifier.fillMaxHeight()) {
         val isFunctions = gridMode == ShortGridMode.Functions
         val selectedGrid = if (isFunctions) FunctionsButtonGrid else ShortButtonGrid
+
+        val isPolyOrOde = gridMode == ShortGridMode.Polynomials || gridMode == ShortGridMode.BDE
+        if (isPolyOrOde) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+            ) {
+                when (gridMode) {
+                    ShortGridMode.BDE -> {
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Misc("'", Misc.PRIME)) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            Text(
+                                "'",
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                        }
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Variable("y", Variables.Y)) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            Text(
+                                "y",
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                        }
+                        Button(
+                            onClick = { onAction(CalcButtonAction.Calculate) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text(
+                            "Solve",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )}
+                    }
+                    else -> {}
+                }
+            }
+        }
         
         ButtonGrid(
             gridData = selectedGrid,
@@ -89,7 +136,8 @@ fun ShortCalcButtons(
             buttonModifier = Modifier.fillMaxHeight(),
             overrides = when(gridMode) {
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
-                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("^", " ^ "))
+                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("( )"), (3 to 2) to CalcButtonAction.Symbol("^"))
+                ShortGridMode.BDE -> mapOf((4 to 3) to CalcButtonAction.Symbol("=", "=="),(4 to 2) to CalcButtonAction.Symbol("( )"))
                 else -> emptyMap()
             }
         )

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xemophon.aljabr.modules.algebra.polynomials.OdeResult
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
@@ -240,6 +241,9 @@ enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
 
+    var polyMode by mutableStateOf("Polynomials") // "Polynomials", "BDE"
+    var odeResult by mutableStateOf<OdeResult?>(null)
+
     var precision by mutableIntStateOf(4)
         private set
 
@@ -276,6 +280,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     var polynomialResult by mutableStateOf<PolynomialResult?>(null)
+        private set
+
+    var isCalculating by mutableStateOf(false)
         private set
 
     var diffGridMode by mutableStateOf("Single") // "Single" or "Multiple"
@@ -345,6 +352,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
             is CalcButtonAction.Variable -> {
                 handleVariable(action)
+                updateInstantResult()
+            }
+
+            is CalcButtonAction.Misc -> {
+                handleSymbol(action.text)
                 updateInstantResult()
             }
 
@@ -663,6 +675,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             runLimitCalculation()
             return
         }
+
         if (calculatorMode == CalculatorMode.INTEGRATE) {
             runIntegrationCalculation()
             return
@@ -966,12 +979,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     private fun runPolynomialCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
+        isCalculating = true
         viewModelScope.launch {
             try {
-                polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
+                if (polyMode == "Polynomials") {
+                    polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
+                } else {
+                    odeResult = PolyFuncs.solveOde(displayText)
+                }
                 isShowingResult = true
-            } catch (e: Exception) {
-                // resultText = "Error"
+            } catch (_: Exception) {
+            } finally {
+                isCalculating = false
             }
         }
     }
@@ -1016,6 +1035,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             resultText = ""
             isShowingResult = false
             polynomialResult = null
+            odeResult = null
             cursorIndex = displayText.length
             return
         }
@@ -1025,6 +1045,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         resultText = ""
         analysisResult = null
         polynomialResult = null
+        odeResult = null
         targetText =
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""

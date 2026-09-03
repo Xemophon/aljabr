@@ -1,33 +1,21 @@
 package com.xemophon.aljabr.modules.algebra.polynomials
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.screens.CalcBox
-import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
-import com.xemophon.aljabr.ui.components.screens.CalculatorMode
-import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.screens.PolynomialReport
-import com.xemophon.aljabr.ui.components.screens.PolynomialResult
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
-import com.xemophon.aljabr.ui.theme.AlJabrTheme
+import com.xemophon.aljabr.ui.components.screens.*
 
 @Composable
 fun PolyCalc(
@@ -38,7 +26,7 @@ fun PolyCalc(
         viewModel.calculatorMode = CalculatorMode.POLYNOMIALS
     }
 
-    BackHandler(enabled = viewModel.polynomialResult != null) {
+    BackHandler(enabled = viewModel.polynomialResult != null || viewModel.odeResult != null || viewModel.isCalculating) {
         viewModel.handleAction(CalcButtonAction.Clear)
     }
 
@@ -47,6 +35,13 @@ fun PolyCalc(
         resultText = viewModel.resultText,
         cursorIndex = viewModel.cursorIndex,
         polynomialResult = viewModel.polynomialResult,
+        odeResult = viewModel.odeResult,
+        polyMode = viewModel.polyMode,
+        isCalculating = viewModel.isCalculating,
+        onModeChange = { mode ->
+            viewModel.polyMode = mode
+            viewModel.handleAction(CalcButtonAction.Clear)
+        },
         onUpdateCursorIndex = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
         onOpenDrawer = onOpenDrawer
@@ -59,12 +54,19 @@ fun PolyContent(
     resultText: String,
     cursorIndex: Int,
     polynomialResult: PolynomialResult? = null,
+    odeResult: OdeResult? = null,
+    polyMode: String,
+    isCalculating: Boolean = false,
+    onModeChange: (String) -> Unit,
     onUpdateCursorIndex: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
+    val modes = listOf("Polynomials", "BDE")
+    val gridMode = if (polyMode == "BDE") ShortGridMode.BDE else ShortGridMode.Polynomials
+
     CalculatorScaffold(
-        title = { Text("Polynomial Solver") },
+        title = { Text(if (polyMode == "Polynomials") "Polynomial Solver" else "Differential Equation Solver") },
         onOpenDrawer = onOpenDrawer,
     ) { padding ->
         Surface(
@@ -78,8 +80,27 @@ fun PolyContent(
                     .fillMaxSize()
                     .safeDrawingPadding()
             ) {
+                // Mode Selector Tabs
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    modes.forEach { mode ->
+                        FilterChip(
+                            selected = polyMode == mode,
+                            onClick = { onModeChange(mode) },
+                            label = { Text(if (mode == "BDE") "Differential Equation" else mode) }
+                        )
+                    }
+                }
+
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    if (polynomialResult == null) {
+                    if (isCalculating) {
+                        PolyLoadingReport(polyMode)
+                    } else if (polynomialResult == null && odeResult == null) {
                         CalcBox(
                             expression = displayText,
                             result = resultText,
@@ -88,18 +109,25 @@ fun PolyContent(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        PolynomialReport(
-                            result = polynomialResult,
-                            onClear = { onAction(CalcButtonAction.Clear) }
-                        )
+                        if (polynomialResult != null) {
+                            PolynomialReport(
+                                result = polynomialResult,
+                                onClear = { onAction(CalcButtonAction.Clear) }
+                            )
+                        } else if (odeResult != null) {
+                            OdeReport(
+                                result = odeResult,
+                                onClear = { onAction(CalcButtonAction.Clear) }
+                            )
+                        }
                     }
                 }
 
-                if (polynomialResult == null) {
+                if (polynomialResult == null && odeResult == null && !isCalculating) {
                     Spacer(modifier = Modifier.height(8.dp))
                     ShortCalcButtons(
                         modifier = Modifier.weight(1.3f),
-                        gridMode = ShortGridMode.Polynomials,
+                        gridMode = gridMode,
                         onAction = onAction
                     )
                 }
@@ -108,18 +136,25 @@ fun PolyContent(
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PolyCalcPreview() {
-    AlJabrTheme {
-        PolyContent(
-            displayText = "x^2+2*x+1",
-            resultText = "(x+1)^2",
-            cursorIndex = 5,
-            polynomialResult = null,
-            onUpdateCursorIndex = {},
-            onAction = {},
-            onOpenDrawer = {}
+fun PolyLoadingReport(polyMode: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(48.dp),
+            strokeWidth = 4.dp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = if (polyMode == "Polynomials") "Analyzing Polynomial..." else "Solving Differential Equation...",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

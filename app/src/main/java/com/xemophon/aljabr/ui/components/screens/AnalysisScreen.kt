@@ -33,6 +33,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
+import com.xemophon.aljabr.modules.algebra.polynomials.OdeResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -436,6 +437,27 @@ fun PolynomialReport(
             item {
                 ResultItemCard(displayText = factored)
             }
+        }
+    }
+}
+
+@Composable
+fun OdeReport(
+    result: OdeResult,
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = "Differential Equation Solution (DSolve)",
+        error = result.error,
+        onClear = onClear
+    ) {
+        if (result.solution.isNotEmpty()) {
+            item { AnalysisSectionHeader("General Solution") }
+            items(result.solution) { sol ->
+                ResultItemCard(displayText = sol)
+            }
+        } else {
+            item { Text(text = "No analytical solution found", style = MaterialTheme.typography.bodyLarge) }
         }
     }
 }
