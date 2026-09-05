@@ -243,6 +243,24 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private val settingsRepository = SettingsRepository(application)
 
     var odeResult by mutableStateOf<OdeResult?>(null)
+    val odeConditions = mutableStateListOf<String>()
+    var odeConditionFocusIndex by mutableIntStateOf(-1)
+
+    fun setOdeConditionFocus(index: Int) {
+        odeConditionFocusIndex = index
+    }
+
+    fun addOdeCondition() {
+        odeConditions.add("")
+        odeConditionFocusIndex = odeConditions.size - 1
+    }
+
+    fun removeOdeCondition(index: Int) {
+        if (index in odeConditions.indices) {
+            odeConditions.removeAt(index)
+            odeConditionFocusIndex = -1
+        }
+    }
 
     var precision by mutableIntStateOf(4)
         private set
@@ -433,6 +451,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleSymbol(symbol: String) {
+        if (calculatorMode == CalculatorMode.ODE && odeConditionFocusIndex >= 0 && odeConditionFocusIndex in odeConditions.indices) {
+            odeConditions[odeConditionFocusIndex] += symbol
+            return
+        }
+
         if (calculatorMode == CalculatorMode.LIMITS && currentFocus == CalculatorFocus.TARGET) {
             if (limitType == LimitType.FINITE) {
                 if (symbol.matches(Regex("[0-9.-]+"))) {
@@ -1000,7 +1023,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                odeResult = OdeFuncs.solveOde(displayText)
+                odeResult = OdeFuncs.solveOde(displayText, odeConditions)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {
@@ -1050,6 +1073,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             isShowingResult = false
             polynomialResult = null
             odeResult = null
+            odeConditions.clear()
+            odeConditionFocusIndex = -1
             cursorIndex = displayText.length
             return
         }
@@ -1060,6 +1085,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         analysisResult = null
         polynomialResult = null
         odeResult = null
+        odeConditions.clear()
+        odeConditionFocusIndex = -1
         targetText =
             if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""
@@ -1103,6 +1130,13 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleBackspace() {
+        if (calculatorMode == CalculatorMode.ODE && odeConditionFocusIndex >= 0 && odeConditionFocusIndex in odeConditions.indices) {
+            if (odeConditions[odeConditionFocusIndex].isNotEmpty()) {
+                odeConditions[odeConditionFocusIndex] = odeConditions[odeConditionFocusIndex].dropLast(1)
+            }
+            return
+        }
+
         if (calculatorMode == CalculatorMode.LIMITS && currentFocus == CalculatorFocus.TARGET) {
             if (targetText.isNotEmpty() && limitType == LimitType.FINITE) {
                 targetText = targetText.dropLast(1)

@@ -27,7 +27,7 @@ object OdeFuncs {
         return cleaned
     }
 
-    suspend fun solveOde(expression: String): OdeResult = withContext(Dispatchers.Default) {
+    suspend fun solveOde(expression: String, conditions: List<String> = emptyList()): OdeResult = withContext(Dispatchers.Default) {
         val timedOutResult = withTimeoutOrNull(5000L.milliseconds) {
             synchronized(SymjaUtils.evaluator) {
                 try {
@@ -40,7 +40,25 @@ object OdeFuncs {
                         prepared
                     }
 
-                    val dsolveCommand = "DSolve[$eq, y[x], x]"
+                    val cleanedConditions = conditions
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .map { cond ->
+                            val cPrep = prepareOdeExpression(cond)
+                            if (!cPrep.contains("==")) {
+                                cPrep.replace("=", "==")
+                            } else {
+                                cPrep
+                            }
+                        }
+
+                    val dsolveCommand = if (cleanedConditions.isEmpty()) {
+                        "DSolve[$eq, y, x]"
+                    } else {
+                        val allItems = listOf(eq) + cleanedConditions
+                        "DSolve[{${allItems.joinToString(", ")}}, y, x]"
+                    }
+
                     val res = SymjaUtils.evaluator.eval(dsolveCommand).toString()
                     val solutions = SymjaUtils.parseSolveResult(res).map { rule ->
                         val solVal = rule.substringAfter("->").trim()

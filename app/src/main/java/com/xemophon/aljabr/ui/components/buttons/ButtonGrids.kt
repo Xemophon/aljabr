@@ -131,7 +131,8 @@ fun ShortCalcButtons(
                             Text(
                             "Solve",
                             color = MaterialTheme.colorScheme.onPrimary
-                        )}
+                            )
+                        }
                     }
                     else -> {}
                 }
