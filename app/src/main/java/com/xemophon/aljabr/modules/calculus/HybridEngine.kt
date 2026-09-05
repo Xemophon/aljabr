@@ -6,7 +6,7 @@ import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import org.matheclipse.core.interfaces.ISymbol
 
-class CalculusEngine {
+class HybridEngine {
 
     /**
      * Entry point for integration steps.

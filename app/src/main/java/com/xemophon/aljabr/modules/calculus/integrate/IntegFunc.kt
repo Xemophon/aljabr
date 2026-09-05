@@ -1,12 +1,12 @@
 package com.xemophon.aljabr.modules.calculus.integrate
 
-import com.xemophon.aljabr.modules.calculus.CalculusEngine
+import com.xemophon.aljabr.modules.calculus.HybridEngine
 import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 
 object IntegFunc {
-    private val calculusEngine = CalculusEngine()
+    private val hybridEngine = HybridEngine()
 
     /**
      * Warms up the CAS engine by performing a dummy evaluation.
@@ -177,7 +177,7 @@ object IntegFunc {
 
     fun integrateIndefiniteWithSteps(expression: String, useHybrid: Boolean = true): Pair<String, List<CalculusStep>>? {
         return try {
-            val resultAndSteps = calculusEngine.integrateWithSteps(expression, useHybrid)
+            val resultAndSteps = hybridEngine.integrateWithSteps(expression, useHybrid)
             if (resultAndSteps != null) {
                 val (resExpr, steps) = resultAndSteps
                 val formattedResult = formatResult(resExpr.toString())

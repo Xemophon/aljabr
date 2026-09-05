@@ -51,7 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.modules.algebra.polynomials.OdeResult
+import com.xemophon.aljabr.modules.calculus.ode.OdeResult
+import com.xemophon.aljabr.modules.calculus.ode.OdeFuncs
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
@@ -235,13 +236,12 @@ fun CalcBox(
     }
 }
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE, ODE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
 
-    var polyMode by mutableStateOf("Polynomials") // "Polynomials", "BDE"
     var odeResult by mutableStateOf<OdeResult?>(null)
 
     var precision by mutableIntStateOf(4)
@@ -696,6 +696,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             runLaplaceCalculation()
             return
         }
+        if (calculatorMode == CalculatorMode.ODE) {
+            runOdeCalculation()
+            return
+        }
 
         stepsList.clear()
 
@@ -982,11 +986,21 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                if (polyMode == "Polynomials") {
-                    polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
-                } else {
-                    odeResult = PolyFuncs.solveOde(displayText)
-                }
+                polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
+                isShowingResult = true
+            } catch (_: Exception) {
+            } finally {
+                isCalculating = false
+            }
+        }
+    }
+
+    private fun runOdeCalculation() {
+        if (displayText.isEmpty() || displayText == "0") return
+        isCalculating = true
+        viewModelScope.launch {
+            try {
+                odeResult = OdeFuncs.solveOde(displayText)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {

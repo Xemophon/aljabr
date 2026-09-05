@@ -22,6 +22,7 @@ import com.xemophon.aljabr.modules.graphMaker.GraphMaker
 import com.xemophon.aljabr.modules.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
+import com.xemophon.aljabr.modules.calculus.ode.OdeCalc
 import com.xemophon.aljabr.modules.conversions.ConvertorPage
 import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
 import com.xemophon.aljabr.modules.misc.MiscPage
@@ -55,6 +56,8 @@ object FourierRoute
 object TaylorRoute
 @Serializable
 object LaplaceRoute
+@Serializable
+object OdeRoute
 val Calculus = listOf(
     CalculatorVariant(
         route = LimitsRoute,
@@ -83,6 +86,13 @@ val Calculus = listOf(
         label = "Laplace Transform",
         icon = Icons.Default.Transform,
         content = { onOpenDrawer -> LaplaceCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = OdeRoute,
+        routeClass = OdeRoute::class,
+        label = "Differential Equations",
+        icon = Icons.Default.Functions,
+        content = { onOpenDrawer -> OdeCalc(onOpenDrawer = onOpenDrawer) }
     )
 )
 
@@ -90,7 +100,7 @@ val Algebra = listOf(
     CalculatorVariant(
         route = PolyRoute,
         routeClass = PolyRoute::class,
-        label = "Polynomials and BDE",
+        label = "Polynomials",
         icon = Icons.Default.JoinInner,
         content = { onOpenDrawer -> PolyCalc(onOpenDrawer = onOpenDrawer) }
     ),

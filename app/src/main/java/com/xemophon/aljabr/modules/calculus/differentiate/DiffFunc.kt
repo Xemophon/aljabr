@@ -1,11 +1,11 @@
 package com.xemophon.aljabr.modules.calculus.differentiate
 
-import com.xemophon.aljabr.modules.calculus.CalculusEngine
+import com.xemophon.aljabr.modules.calculus.HybridEngine
 import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import com.xemophon.aljabr.data.SymjaUtils
 
 object DiffFunc {
-    private val calculusEngine = CalculusEngine()
+    private val hybridEngine = HybridEngine()
 
     /**
      * Warms up the CAS engine.
@@ -61,7 +61,7 @@ object DiffFunc {
             }
             val vStr = if (vars.size == 1) vars[0] else "x"
 
-            val steps = calculusEngine.differentiateWithSteps(expression, vStr, useHybrid)
+            val steps = hybridEngine.differentiateWithSteps(expression, vStr, useHybrid)
             val finalResult = differentiate(expression)
             
             Pair(finalResult, steps)

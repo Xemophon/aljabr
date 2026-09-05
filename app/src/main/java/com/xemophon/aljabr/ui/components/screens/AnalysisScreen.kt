@@ -33,7 +33,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.modules.algebra.polynomials.OdeResult
+import com.xemophon.aljabr.modules.calculus.ode.OdeResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
