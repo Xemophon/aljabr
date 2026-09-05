@@ -404,8 +404,9 @@ fun AnalysisReport(
                 ResultItemCard("Substituted Function f(x+iy, x-iy)", complex.substitutedExpr)
             }
             item {
-                val statusText = if (complex.cauchyRiemannSatisfied) "Satisfied (Holomorphic / Analytic)" else "Not Satisfied (Non-Holomorphic)"
-                ResultItemCard("Cauchy-Riemann Equations Check (df/d(z̄) == 0)", statusText)
+                val statusText = if (complex.cauchyRiemannSatisfied) "Satisfied ~ Holomorphic & Analytic" else "Not Satisfied ~ Non-Holomorphic"
+                val rawStatusText = if (complex.cauchyRiemannSatisfied) "True" else "False"
+                ResultItemCard("Cauchy-Riemann Equations Check", statusText, rawStatusText)
             }
         }
     }
@@ -447,7 +448,7 @@ fun OdeReport(
     onClear: () -> Unit
 ) {
     ReportScreen(
-        title = "Differential Equation Solution (DSolve)",
+        title = "Differential Equation Solution",
         error = result.error,
         onClear = onClear
     ) {

@@ -88,7 +88,7 @@ fun OdeContent(
                 if (odeResult == null && !isCalculating) {
                     Spacer(modifier = Modifier.height(8.dp))
                     ShortCalcButtons(
-                        modifier = Modifier.weight(1.3f),
+                        modifier = Modifier.weight(1.5f),
                         gridMode = ShortGridMode.BDE,
                         onAction = onAction
                     )

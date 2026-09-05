@@ -104,6 +104,16 @@ fun ShortCalcButtons(
                                 )
                         }
                         Button(
+                            onClick = { onAction(CalcButtonAction.Variable("x", Variables.X)) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        ) {
+                            Text(
+                                "x",
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        Button(
                             onClick = { onAction(CalcButtonAction.Variable("y", Variables.Y)) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -115,7 +125,7 @@ fun ShortCalcButtons(
                         }
                         Button(
                             onClick = { onAction(CalcButtonAction.Calculate) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1.2f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(
