@@ -81,6 +81,7 @@ object SymjaUtils {
             .replace("ⁿ", "^n")
             .replace("(-1)^n", "(-1)^n")
             .replace("(-1)ⁿ", "(-1)^n")
+            .replace("∞", "Infinity")
 
         // Convert |x| to Abs(x)
         cleaned = cleaned.replace(ABS_REGEX, "(Abs($1))")

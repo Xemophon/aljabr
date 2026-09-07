@@ -51,8 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.modules.algebra.ode.OdeResult
-import com.xemophon.aljabr.modules.algebra.ode.OdeFuncs
+import com.xemophon.aljabr.modules.algebra.bde.BDEResult
+import com.xemophon.aljabr.modules.algebra.bde.BDEFuncs
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
@@ -242,7 +242,7 @@ enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG
 class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = SettingsRepository(application)
 
-    var odeResult by mutableStateOf<OdeResult?>(null)
+    var BDEResult by mutableStateOf<BDEResult?>(null)
     val odeConditions = mutableStateListOf<String>()
     var odeConditionFocusIndex by mutableIntStateOf(-1)
 
@@ -1085,7 +1085,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                odeResult = OdeFuncs.solveOde(displayText, odeConditions)
+                BDEResult = BDEFuncs.solveOde(displayText, odeConditions)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {
@@ -1134,7 +1134,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             resultText = ""
             isShowingResult = false
             polynomialResult = null
-            odeResult = null
+            BDEResult = null
             odeConditions.clear()
             odeConditionFocusIndex = -1
             cursorIndex = displayText.length
@@ -1146,7 +1146,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         resultText = ""
         analysisResult = null
         polynomialResult = null
-        odeResult = null
+        BDEResult = null
         odeConditions.clear()
         odeConditionFocusIndex = -1
         targetText =

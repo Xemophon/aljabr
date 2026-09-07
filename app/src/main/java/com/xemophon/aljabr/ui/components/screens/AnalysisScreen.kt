@@ -33,7 +33,7 @@ import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.modules.algebra.ode.OdeResult
+import com.xemophon.aljabr.modules.algebra.bde.BDEResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -444,7 +444,7 @@ fun PolynomialReport(
 
 @Composable
 fun OdeReport(
-    result: OdeResult,
+    result: BDEResult,
     onClear: () -> Unit
 ) {
     ReportScreen(

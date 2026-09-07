@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.algebra.ode
+package com.xemophon.aljabr.modules.algebra.bde
 
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.Dispatchers
@@ -6,13 +6,13 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
-data class OdeResult(
+data class BDEResult(
     val equation: String,
     val solution: List<String>,
     val error: String? = null
 )
 
-object OdeFuncs {
+object BDEFuncs {
 
     private fun prepareOdeExpression(expression: String, isMainEquation: Boolean = true): String {
         var cleaned = SymjaUtils.prepareForSymja(expression).replace(" ", "")
@@ -42,12 +42,12 @@ object OdeFuncs {
         return cleaned
     }
 
-    suspend fun solveOde(expression: String, conditions: List<String> = emptyList()): OdeResult = withContext(Dispatchers.Default) {
+    suspend fun solveOde(expression: String, conditions: List<String> = emptyList()): BDEResult = withContext(Dispatchers.Default) {
         val timedOutResult = withTimeoutOrNull(5000L.milliseconds) {
             synchronized(SymjaUtils.evaluator) {
                 try {
                     val prepared = prepareOdeExpression(expression, isMainEquation = true)
-                    if (prepared.isBlank()) return@synchronized OdeResult(expression, emptyList(), error = "Empty expression")
+                    if (prepared.isBlank()) return@synchronized BDEResult(expression, emptyList(), error = "Empty expression")
 
                     val eq = if (!prepared.contains("==")) {
                         prepared.replace("=", "==")
@@ -81,16 +81,16 @@ object OdeFuncs {
                     }.distinct()
 
                     if (res.startsWith("DSolve") || solutions.isEmpty()) {
-                        return@synchronized OdeResult(expression, emptyList(), error = "Could not solve differential equation analytically: $res")
+                        return@synchronized BDEResult(expression, emptyList(), error = "Could not solve differential equation analytically: $res")
                     }
 
-                    OdeResult(expression, solutions)
+                    BDEResult(expression, solutions)
                 } catch (e: Exception) {
-                    OdeResult(expression, emptyList(), error = e.message ?: "ODE solution failed")
+                    BDEResult(expression, emptyList(), error = e.message ?: "ODE solution failed")
                 }
             }
         }
 
-        timedOutResult ?: OdeResult(expression, emptyList(), error = "Computation timed out (5s limit). The differential equation is too complex or cannot be solved analytically.")
+        timedOutResult ?: BDEResult(expression, emptyList(), error = "Computation timed out (5s limit). The differential equation is too complex or cannot be solved analytically.")
     }
 }

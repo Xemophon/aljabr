@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.algebra.ode
+package com.xemophon.aljabr.modules.algebra.bde
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -22,7 +22,7 @@ import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.components.screens.*
 
 @Composable
-fun OdeCalc(
+fun BDECalc(
     viewModel: CalcBoxViewModel = viewModel(),
     onOpenDrawer: () -> Unit
 ) {
@@ -30,15 +30,15 @@ fun OdeCalc(
         viewModel.calculatorMode = CalculatorMode.ODE
     }
 
-    BackHandler(enabled = viewModel.odeResult != null || viewModel.isCalculating) {
+    BackHandler(enabled = viewModel.BDEResult != null || viewModel.isCalculating) {
         viewModel.handleAction(CalcButtonAction.Clear)
     }
 
-    OdeContent(
+    BDEContent(
         displayText = viewModel.displayText,
         resultText = viewModel.resultText,
         cursorIndex = viewModel.cursorIndex,
-        odeResult = viewModel.odeResult,
+        BDEResult = viewModel.BDEResult,
         isCalculating = viewModel.isCalculating,
         odeConditions = viewModel.odeConditions,
         odeConditionFocusIndex = viewModel.odeConditionFocusIndex,
@@ -53,11 +53,11 @@ fun OdeCalc(
 }
 
 @Composable
-fun OdeContent(
+fun BDEContent(
     displayText: String,
     resultText: String,
     cursorIndex: Int,
-    odeResult: OdeResult? = null,
+    BDEResult: BDEResult? = null,
     isCalculating: Boolean = false,
     odeConditions: List<String>,
     odeConditionFocusIndex: Int,
@@ -86,8 +86,8 @@ fun OdeContent(
             ) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     if (isCalculating) {
-                        OdeLoadingReport()
-                    } else if (odeResult == null) {
+                        BdeLoadingIndicator()
+                    } else if (BDEResult == null) {
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -131,7 +131,7 @@ fun OdeContent(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         ConverterField(
-                                            label = "Condition ${index + 1} (e.g. y(0) == 1)",
+                                            label = "Condition ${index + 1}",
                                             value = condition,
                                             isFocused = odeConditionFocusIndex == index,
                                             cursorIndex = if (odeConditionFocusIndex == index) condition.length else -1,
@@ -167,13 +167,13 @@ fun OdeContent(
                         }
                     } else {
                         OdeReport(
-                            result = odeResult,
+                            result = BDEResult,
                             onClear = { onAction(CalcButtonAction.Clear) }
                         )
                     }
                 }
 
-                if (odeResult == null && !isCalculating) {
+                if (BDEResult == null && !isCalculating) {
                     Spacer(modifier = Modifier.height(8.dp))
                     ShortCalcButtons(
                         modifier = Modifier.weight(1.5f),
@@ -187,7 +187,7 @@ fun OdeContent(
 }
 
 @Composable
-fun OdeLoadingReport() {
+fun BdeLoadingIndicator() {
     Column(
         modifier = Modifier
             .fillMaxSize()

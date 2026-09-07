@@ -22,7 +22,7 @@ import com.xemophon.aljabr.modules.graphMaker.GraphMaker
 import com.xemophon.aljabr.modules.calculus.integrate.IntegCalc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
-import com.xemophon.aljabr.modules.algebra.ode.OdeCalc
+import com.xemophon.aljabr.modules.algebra.bde.BDECalc
 import com.xemophon.aljabr.modules.conversions.ConvertorPage
 import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
 import com.xemophon.aljabr.modules.misc.MiscPage
@@ -115,7 +115,7 @@ val Algebra = listOf(
         routeClass = OdeRoute::class,
         label = "Differential Equations",
         icon = R.drawable.primes,
-        content = { onOpenDrawer -> OdeCalc(onOpenDrawer = onOpenDrawer) }
+        content = { onOpenDrawer -> BDECalc(onOpenDrawer = onOpenDrawer) }
     )
 )
 
