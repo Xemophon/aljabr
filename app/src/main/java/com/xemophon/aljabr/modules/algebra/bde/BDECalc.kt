@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
@@ -86,7 +85,10 @@ fun BDEContent(
             ) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     if (isCalculating) {
-                        BdeLoadingIndicator()
+                        LoadingIndicator(
+                            modifier = Modifier.fillMaxSize(),
+                            message = "Solving Differential Equation...",
+                        )
                     } else if (BDEResult == null) {
                         LazyColumn(
                             modifier = Modifier
@@ -183,28 +185,5 @@ fun BDEContent(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun BdeLoadingIndicator() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(48.dp),
-            strokeWidth = 4.dp
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Solving Differential Equation...",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary
-        )
     }
 }
