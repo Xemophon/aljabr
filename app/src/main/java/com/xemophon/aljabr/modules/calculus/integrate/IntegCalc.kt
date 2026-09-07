@@ -487,9 +487,9 @@ fun IntegPreview() {
                 when (action) {
                     is CalcButtonAction.Symbol -> {
                         when (currentFocus) {
-                            CalculatorFocus.EXPRESSION -> displayText += action.text
-                            CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
-                            CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
+                            CalculatorFocus.EXPRESSION -> displayText += action.formula
+                            CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.formula
+                            CalculatorFocus.INTEG_UPPER -> upperLimitText += action.formula
                             else -> {}
                         }
                     }

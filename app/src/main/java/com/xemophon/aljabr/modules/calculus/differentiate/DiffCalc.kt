@@ -379,7 +379,7 @@ fun DiffPreview() {
             onAction = { action ->
                 when (action) {
                     is CalcButtonAction.Symbol -> {
-                        displayText += action.text
+                        displayText += action.formula
                         cursorIndex = displayText.length
                     }
                     is CalcButtonAction.Differentiate -> diffGridMode = "Multiple"

@@ -7,16 +7,22 @@ import kotlin.math.E
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
+import kotlin.math.acosh
 import kotlin.math.asin
+import kotlin.math.asinh
 import kotlin.math.atan
+import kotlin.math.atanh
 import kotlin.math.cos
+import kotlin.math.cosh
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sinh
 import kotlin.math.sqrt
 import kotlin.math.tan
+import kotlin.math.tanh
 
 object CalcFuncs {
     private const val PHI = 1.618033988749895
@@ -258,9 +264,19 @@ object CalcFuncs {
 
                 return when (func) {
                     "sqrt" -> sqrt(arg1)
+                    "abs" -> abs(arg1)
                     "sin" -> if (useRadians) sin(arg1) else sin(Math.toRadians(arg1))
                     "cos" -> if (useRadians) cos(arg1) else cos(Math.toRadians(arg1))
                     "tan" -> if (useRadians) tan(arg1) else tan(Math.toRadians(arg1))
+                    "asin", "arcsin" -> if (useRadians) asin(arg1) else Math.toDegrees(asin(arg1))
+                    "acos", "arccos" -> if (useRadians) acos(arg1) else Math.toDegrees(acos(arg1))
+                    "atan", "arctan" -> if (useRadians) atan(arg1) else Math.toDegrees(atan(arg1))
+                    "sinh" -> sinh(arg1)
+                    "cosh" -> cosh(arg1)
+                    "tanh" -> tanh(arg1)
+                    "asinh", "arcsinh" -> asinh(arg1)
+                    "acosh", "arccosh" -> acosh(arg1)
+                    "atanh", "arctanh" -> atanh(arg1)
                     "log", "log10" -> {
                         if (arg2 != null) {
                             log10(arg1) / log10(arg2)
@@ -268,10 +284,10 @@ object CalcFuncs {
                             log10(arg1)
                         }
                     }
-                    "asin" -> if (useRadians) asin(arg1) else Math.toDegrees(asin(arg1))
-                    "acos" -> if (useRadians) acos(arg1) else Math.toDegrees(acos(arg1))
-                    "atan" -> if (useRadians) atan(arg1) else Math.toDegrees(atan(arg1))
                     "ln" -> ln(arg1)
+                    "sec" -> 1.0 / (if (useRadians) cos(arg1) else cos(Math.toRadians(arg1)))
+                    "csc" -> 1.0 / (if (useRadians) sin(arg1) else sin(Math.toRadians(arg1)))
+                    "cot" -> 1.0 / (if (useRadians) tan(arg1) else tan(Math.toRadians(arg1)))
                     else -> throw RuntimeException("Unknown function: $func")
                 }
             }

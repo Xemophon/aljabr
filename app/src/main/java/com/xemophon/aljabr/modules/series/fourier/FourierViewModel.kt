@@ -74,10 +74,10 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
     fun handleAction(action: CalcButtonAction) {
         when (action) {
             is CalcButtonAction.Symbol -> {
-                if (action.text == "( )" || action.text == "()") {
+                if (action.formula == "( )" || action.formula == "()") {
                     handleBrackets()
                 } else {
-                    handleSymbol(action.text)
+                    handleSymbol(action.formula)
                 }
             }
             is CalcButtonAction.Scientific -> {

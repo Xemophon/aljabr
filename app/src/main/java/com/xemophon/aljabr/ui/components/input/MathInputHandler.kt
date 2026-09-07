@@ -135,10 +135,26 @@ object MathInputHandler {
         val safeCursor = if (cursorIndex == -1) currentText.length else cursorIndex.coerceIn(0, currentText.length)
         if (safeCursor == 0) return InputState(currentText, 0)
 
-        val sb = StringBuilder(currentText)
-        sb.deleteCharAt(safeCursor - 1)
-        val newText = if (sb.isEmpty()) "0" else sb.toString()
-        val newCursor = if (sb.isEmpty()) 1 else safeCursor - 1
+        val textBefore = currentText.substring(0, safeCursor)
+        val textAfter = currentText.substring(safeCursor)
+
+        val tokens = listOf(
+            " × asinh(", "asinh(", " × acosh(", "acosh(", " × atanh(", "atanh(",
+            " × sinh(", "sinh(", " × cosh(", "cosh(", " × tanh(", "tanh(",
+            " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
+            " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
+            " × log(", "log(", " × ln(", "ln(", " × abs(", "abs(", " × √(", "√(",
+            " × π", "π", " × e", "e", " × φ", "φ", " × j", "j", " × i", "i",
+            " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×",
+            " / ", " * ", "/", "*", "=="
+        )
+
+        val matchedToken = tokens.find { textBefore.endsWith(it) }
+        val dropCount = matchedToken?.length ?: 1
+
+        val newTextBefore = textBefore.dropLast(dropCount)
+        val newText = if (newTextBefore.isEmpty() && textAfter.isEmpty()) "0" else newTextBefore + textAfter
+        val newCursor = if (newTextBefore.isEmpty() && textAfter.isEmpty()) 1 else (safeCursor - dropCount).coerceAtLeast(0)
 
         return InputState(newText, newCursor)
     }

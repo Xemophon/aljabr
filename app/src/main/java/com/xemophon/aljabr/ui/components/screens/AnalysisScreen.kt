@@ -470,46 +470,47 @@ object AnalysisFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return AnalysisResult(emptyList(), emptyList(), error = "Empty expression")
 
-            val eval = SymjaUtils.evaluator
-            val substituted = cleaned
-                .replace("zc", "(x - y * I)", ignoreCase = true)
-                .replace("z̄", "(x - y * I)")
-                .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
+            SymjaUtils.evaluate { eval ->
+                val substituted = cleaned
+                    .replace("zc", "(x - y * I)", ignoreCase = true)
+                    .replace("z̄", "(x - y * I)")
+                    .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
 
-            val dfdxRaw = eval.eval("Simplify[D[$substituted, x]]").toString()
-            val dfdyRaw = eval.eval("Simplify[D[$substituted, y]]").toString()
+                val dfdxRaw = eval.eval("Simplify[D[$substituted, x]]").toString()
+                val dfdyRaw = eval.eval("Simplify[D[$substituted, y]]").toString()
 
-            val dfdzRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]").toString()
-            val dfdzbarRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] + I * D[$substituted, y])]").toString()
+                val dfdzRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]").toString()
+                val dfdzbarRaw = eval.eval("Simplify[1/2 * (D[$substituted, x] + I * D[$substituted, y])]").toString()
 
-            val crCheck = eval.eval("Simplify[D[$substituted, x] + I * D[$substituted, y] == 0]").toString()
-            val isCrSatisfied = crCheck.equals("True", ignoreCase = true) || crCheck.equals("0", ignoreCase = true)
+                val crCheck = eval.eval("Simplify[D[$substituted, x] + I * D[$substituted, y] == 0]").toString()
+                val isCrSatisfied = crCheck.equals("True", ignoreCase = true) || crCheck.equals("0", ignoreCase = true)
 
-            val formattedSubst = SymjaUtils.formatResult(substituted)
-            val formattedDfDz = SymjaUtils.formatResult(dfdzRaw)
-            val formattedDfDzBar = SymjaUtils.formatResult(dfdzbarRaw)
+                val formattedSubst = SymjaUtils.formatResult(substituted)
+                val formattedDfDz = SymjaUtils.formatResult(dfdzRaw)
+                val formattedDfDzBar = SymjaUtils.formatResult(dfdzbarRaw)
 
-            val derivatives = listOf(
-                NamedExpression("df/dz", formattedDfDz, dfdzRaw),
-                NamedExpression("df/d(z̄)", formattedDfDzBar, dfdzbarRaw),
-                NamedExpression("∂f/∂x", SymjaUtils.formatResult(dfdxRaw), dfdxRaw),
-                NamedExpression("∂f/∂y", SymjaUtils.formatResult(dfdyRaw), dfdyRaw)
-            )
+                val derivatives = listOf(
+                    NamedExpression("df/dz", formattedDfDz, dfdzRaw),
+                    NamedExpression("df/d(z̄)", formattedDfDzBar, dfdzbarRaw),
+                    NamedExpression("∂f/∂x", SymjaUtils.formatResult(dfdxRaw), dfdxRaw),
+                    NamedExpression("∂f/∂y", SymjaUtils.formatResult(dfdyRaw), dfdyRaw)
+                )
 
-            val complexInfo = ComplexAnalysisInfo(
-                substitutedExpr = formattedSubst,
-                dfdz = formattedDfDz,
-                dfdzbar = formattedDfDzBar,
-                cauchyRiemannSatisfied = isCrSatisfied,
-                dxdz = dfdxRaw,
-                dydz = dfdyRaw
-            )
+                val complexInfo = ComplexAnalysisInfo(
+                    substitutedExpr = formattedSubst,
+                    dfdz = formattedDfDz,
+                    dfdzbar = formattedDfDzBar,
+                    cauchyRiemannSatisfied = isCrSatisfied,
+                    dxdz = dfdxRaw,
+                    dydz = dfdyRaw
+                )
 
-            AnalysisResult(
-                variables = listOf("z", "z̄"),
-                derivatives = derivatives,
-                complexInfo = complexInfo
-            )
+                AnalysisResult(
+                    variables = listOf("z", "z̄"),
+                    derivatives = derivatives,
+                    complexInfo = complexInfo
+                )
+            }
         } catch (e: Exception) {
             AnalysisResult(emptyList(), emptyList(), error = e.message ?: "Complex analysis failed")
         }
@@ -520,93 +521,93 @@ object AnalysisFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return AnalysisResult(emptyList(), emptyList(), error = "Empty expression")
 
-            val eval = SymjaUtils.evaluator
-            
-            // Get variables
-            val varsExpr = eval.eval("Variables[$cleaned]")
-            val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
-            // Filter to only include simple symbols (avoiding things like "Sin(x)")
-            val vars = rawVars.filter { v -> 
-                v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
-            }
-
-            if (vars.size > 2) {
-                return AnalysisResult(vars, emptyList(), error = "Maximum 2 variables supported")
-            }
-
-            if (vars.isEmpty()) {
-                 // Constant function
-                 val firstDeriv = eval.eval("D[$cleaned, x]").toString()
-                 return AnalysisResult(
-                     listOf("x"),
-                     listOf(NamedExpression("f'(x)", SymjaUtils.formatResult(firstDeriv), firstDeriv))
-                 )
-            }
-
-            if (vars.size == 1) {
-                val v = vars[0]
-                val f1Raw = eval.eval("Simplify[D[$cleaned, $v]]").toString()
-                val f2Raw = eval.eval("Simplify[D[$cleaned, {$v, 2}]]").toString()
+            SymjaUtils.evaluate { eval ->
+                // Get variables
+                val varsExpr = eval.eval("Variables[$cleaned]")
+                val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 
-                val statPointsRes = try {
-                    eval.eval("Solve[D[$cleaned, $v] == 0, $v]").toString()
-                } catch (e: Exception) { "Could not solve" }
-                
-                val inflPointsRes = try {
-                    eval.eval("Solve[D[$cleaned, {$v, 2}] == 0, $v]").toString()
-                } catch (e: Exception) { "Could not solve" }
+                // Filter to only include simple symbols (avoiding things like "Sin(x)")
+                val vars = rawVars.filter { v -> 
+                    v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+                }
 
-                // Singular points where D[f, v] is undefined but f(v) is defined
-                val singPointsRes = try {
-                    val deriv = "D[$cleaned, $v]"
-                    eval.eval("Solve[Denominator[Together[$deriv]] == 0, $v]").toString()
-                } catch (e: Exception) { "{}" }
+                if (vars.size > 2) {
+                    return@evaluate AnalysisResult(vars, emptyList(), error = "Maximum 2 variables supported")
+                }
 
-                val (maxima, minima, others) = classifyStationaryPoints(statPointsRes, singPointsRes, cleaned, v)
+                if (vars.isEmpty()) {
+                     // Constant function
+                     val firstDeriv = eval.eval("D[$cleaned, x]").toString()
+                     return@evaluate AnalysisResult(
+                         listOf("x"),
+                         listOf(NamedExpression("f'(x)", SymjaUtils.formatResult(firstDeriv), firstDeriv))
+                     )
+                }
 
-                AnalysisResult(
-                    variables = vars,
-                    derivatives = listOf(
-                        NamedExpression("f'($v)", SymjaUtils.formatResult(f1Raw), f1Raw),
-                        NamedExpression("f''($v)", SymjaUtils.formatResult(f2Raw), f2Raw)
-                    ),
-                    localMaxima = maxima,
-                    localMinima = minima,
-                    stationaryPoints = others,
-                    inflectionPoints = calculatePoints(inflPointsRes, cleaned, vars)
-                )
-            } else {
-                // 2 variables: x and y usually
-                val x = vars.find { it == "x" } ?: vars[0]
-                val y = vars.find { it == "y" && it != x } ?: vars[1]
-                
-                val fxRaw = eval.eval("Simplify[D[$cleaned, $x]]").toString()
-                val fyRaw = eval.eval("Simplify[D[$cleaned, $y]]").toString()
-                val fxxRaw = eval.eval("Simplify[D[$cleaned, {$x, 2}]]").toString()
-                val fyyRaw = eval.eval("Simplify[D[$cleaned, {$y, 2}]]").toString()
-                val fxyRaw = eval.eval("Simplify[D[$cleaned, $x, $y]]").toString()
-                
-                val critPointsRes = try {
-                    eval.eval("Solve[{D[$cleaned, $x] == 0, D[$cleaned, $y] == 0}, {$x, $y}]").toString()
-                } catch (e: Exception) { "Could not solve" }
+                if (vars.size == 1) {
+                    val v = vars[0]
+                    val f1Raw = eval.eval("Simplify[D[$cleaned, $v]]").toString()
+                    val f2Raw = eval.eval("Simplify[D[$cleaned, {$v, 2}]]").toString()
+                    
+                    val statPointsRes = try {
+                        eval.eval("Solve[D[$cleaned, $v] == 0, $v]").toString()
+                    } catch (e: Exception) { "Could not solve" }
+                    
+                    val inflPointsRes = try {
+                        eval.eval("Solve[D[$cleaned, {$v, 2}] == 0, $v]").toString()
+                    } catch (e: Exception) { "Could not solve" }
 
-                val (maxima, minima, saddles, others) = classifyStationaryPoints2D(critPointsRes, cleaned, x, y)
+                    // Singular points where D[f, v] is undefined but f(v) is defined
+                    val singPointsRes = try {
+                        val deriv = "D[$cleaned, $v]"
+                        eval.eval("Solve[Denominator[Together[$deriv]] == 0, $v]").toString()
+                    } catch (e: Exception) { "{}" }
 
-                AnalysisResult(
-                    variables = listOf(x, y),
-                    derivatives = listOf(
-                        NamedExpression("f_$x", SymjaUtils.formatResult(fxRaw), fxRaw),
-                        NamedExpression("f_$y", SymjaUtils.formatResult(fyRaw), fyRaw),
-                        NamedExpression("f_$x$x", SymjaUtils.formatResult(fxxRaw), fxxRaw),
-                        NamedExpression("f_$y$y", SymjaUtils.formatResult(fyyRaw), fyyRaw),
-                        NamedExpression("f_$x$y", SymjaUtils.formatResult(fxyRaw), fxyRaw)
-                    ),
-                    localMaxima = maxima,
-                    localMinima = minima,
-                    saddlePoints = saddles,
-                    stationaryPoints = others
-                )
+                    val (maxima, minima, others) = classifyStationaryPoints(statPointsRes, singPointsRes, cleaned, v)
+
+                    AnalysisResult(
+                        variables = vars,
+                        derivatives = listOf(
+                            NamedExpression("f'($v)", SymjaUtils.formatResult(f1Raw), f1Raw),
+                            NamedExpression("f''($v)", SymjaUtils.formatResult(f2Raw), f2Raw)
+                        ),
+                        localMaxima = maxima,
+                        localMinima = minima,
+                        stationaryPoints = others,
+                        inflectionPoints = calculatePoints(inflPointsRes, cleaned, vars)
+                    )
+                } else {
+                    // 2 variables: x and y usually
+                    val x = vars.find { it == "x" } ?: vars[0]
+                    val y = vars.find { it == "y" && it != x } ?: vars[1]
+                    
+                    val fxRaw = eval.eval("Simplify[D[$cleaned, $x]]").toString()
+                    val fyRaw = eval.eval("Simplify[D[$cleaned, $y]]").toString()
+                    val fxxRaw = eval.eval("Simplify[D[$cleaned, {$x, 2}]]").toString()
+                    val fyyRaw = eval.eval("Simplify[D[$cleaned, {$y, 2}]]").toString()
+                    val fxyRaw = eval.eval("Simplify[D[$cleaned, $x, $y]]").toString()
+                    
+                    val critPointsRes = try {
+                        eval.eval("Solve[{D[$cleaned, $x] == 0, D[$cleaned, $y] == 0}, {$x, $y}]").toString()
+                    } catch (e: Exception) { "Could not solve" }
+
+                    val (maxima, minima, saddles, others) = classifyStationaryPoints2D(critPointsRes, cleaned, x, y)
+
+                    AnalysisResult(
+                        variables = listOf(x, y),
+                        derivatives = listOf(
+                            NamedExpression("f_$x", SymjaUtils.formatResult(fxRaw), fxRaw),
+                            NamedExpression("f_$y", SymjaUtils.formatResult(fyRaw), fyRaw),
+                            NamedExpression("f_$x$x", SymjaUtils.formatResult(fxxRaw), fxxRaw),
+                            NamedExpression("f_$y$y", SymjaUtils.formatResult(fyyRaw), fyyRaw),
+                            NamedExpression("f_$x$y", SymjaUtils.formatResult(fxyRaw), fxyRaw)
+                        ),
+                        localMaxima = maxima,
+                        localMinima = minima,
+                        saddlePoints = saddles,
+                        stationaryPoints = others
+                    )
+                }
             }
         } catch (e: Exception) {
             AnalysisResult(emptyList(), emptyList(), error = e.message ?: "Analysis failed")
@@ -619,7 +620,6 @@ object AnalysisFunc {
         xVar: String,
         yVar: String
     ): Fourth<List<String>, List<String>, List<String>, List<String>> {
-        val eval = SymjaUtils.evaluator
         val solutions = SymjaUtils.parseSolveResult(solveRes)
         
         val maxima = mutableListOf<String>()
@@ -633,46 +633,48 @@ object AnalysisFunc {
 
         for (sol in solutions) {
             try {
-                // sol is like "x -> 0, y -> 0"
-                val fValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
-                val fValStr = fValExpr.toString()
-                if (fValStr.contains("Infinity") || fValStr.contains("Indeterminate")) continue
+                SymjaUtils.evaluate { eval ->
+                    // sol is like "x -> 0, y -> 0"
+                    val fValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
+                    val fValStr = fValExpr.toString()
+                    if (fValStr.contains("Infinity") || fValStr.contains("Indeterminate")) return@evaluate
 
-                // Check for complex solutions
-                val parts = sol.split(",").map { it.trim() }
-                var isComplex = false
-                val coords = mutableListOf<String>()
-                for (part in parts) {
-                    val valStr = part.split("->").last().trim()
-                    val imPart = eval.eval("Im[N[$valStr]]").toString().toDoubleOrNull()
-                    if (imPart == null || abs(imPart) > 1e-9) {
-                        isComplex = true
-                        break
+                    // Check for complex solutions
+                    val parts = sol.split(",").map { it.trim() }
+                    var isComplex = false
+                    val coords = mutableListOf<String>()
+                    for (part in parts) {
+                        val valStr = part.split("->").last().trim()
+                        val imPart = eval.eval("Im[N[$valStr]]").toString().toDoubleOrNull()
+                        if (imPart == null || abs(imPart) > 1e-9) {
+                            isComplex = true
+                            break
+                        }
+                        coords.add(SymjaUtils.formatResult(valStr))
                     }
-                    coords.add(SymjaUtils.formatResult(valStr))
-                }
-                if (isComplex) continue
+                    if (isComplex) return@evaluate
 
-                val pointStr = "(${coords.joinToString(", ")}, ${SymjaUtils.formatResult(fValStr)})"
+                    val pointStr = "(${coords.joinToString(", ")}, ${SymjaUtils.formatResult(fValStr)})"
 
-                // Hessian components
-                val fxxVal = eval.eval("N[ReplaceAll[$fxxExpr, {$sol}]]").toString().toDoubleOrNull()
-                val fyyVal = eval.eval("N[ReplaceAll[$fyyExpr, {$sol}]]").toString().toDoubleOrNull()
-                val fxyVal = eval.eval("N[ReplaceAll[$fxyExpr, {$sol}]]").toString().toDoubleOrNull()
+                    // Hessian components
+                    val fxxVal = eval.eval("N[ReplaceAll[$fxxExpr, {$sol}]]").toString().toDoubleOrNull()
+                    val fyyVal = eval.eval("N[ReplaceAll[$fyyExpr, {$sol}]]").toString().toDoubleOrNull()
+                    val fxyVal = eval.eval("N[ReplaceAll[$fxyExpr, {$sol}]]").toString().toDoubleOrNull()
 
-                if (fxxVal != null && fyyVal != null && fxyVal != null) {
-                    val detH = fxxVal * fyyVal - fxyVal * fxyVal
-                    if (detH > 1e-9) {
-                        if (fxxVal > 1e-9) minima.add(pointStr)
-                        else if (fxxVal < -1e-9) maxima.add(pointStr)
-                        else others.add(pointStr)
-                    } else if (detH < -1e-9) {
-                        saddles.add(pointStr)
+                    if (fxxVal != null && fyyVal != null && fxyVal != null) {
+                        val detH = fxxVal * fyyVal - fxyVal * fxyVal
+                        if (detH > 1e-9) {
+                            if (fxxVal > 1e-9) minima.add(pointStr)
+                            else if (fxxVal < -1e-9) maxima.add(pointStr)
+                            else others.add(pointStr)
+                        } else if (detH < -1e-9) {
+                            saddles.add(pointStr)
+                        } else {
+                            others.add(pointStr) // Inconclusive
+                        }
                     } else {
-                        others.add(pointStr) // Inconclusive
+                        others.add(pointStr)
                     }
-                } else {
-                    others.add(pointStr)
                 }
             } catch (_: Exception) {}
         }
@@ -693,7 +695,6 @@ object AnalysisFunc {
         originalExpr: String,
         variable: String
     ): Triple<List<String>, List<String>, List<String>> {
-        val eval = SymjaUtils.evaluator
         val solutions = SymjaUtils.parseSolveResult(solveRes)
         val singulars = SymjaUtils.parseSolveResult(singularRes)
 
@@ -703,46 +704,47 @@ object AnalysisFunc {
         val minima = mutableListOf<String>()
         val others = mutableListOf<String>()
 
-        val f2Expr = eval.eval("D[$originalExpr, {$variable, 2}]")
-
         for (sol in allCandidateRules) {
             try {
-                val xValStr = sol.split("->").last().trim()
-                // Filter complex solutions
-                val imPart = eval.eval("Im[N[$xValStr]]").toString().toDoubleOrNull()
-                if (imPart == null || abs(imPart) > 1e-9) continue
+                SymjaUtils.evaluate { eval ->
+                    val f2Expr = eval.eval("D[$originalExpr, {$variable, 2}]")
+                    val xValStr = sol.split("->").last().trim()
+                    // Filter complex solutions
+                    val imPart = eval.eval("Im[N[$xValStr]]").toString().toDoubleOrNull()
+                    if (imPart == null || abs(imPart) > 1e-9) return@evaluate
 
-                // Check if f(x) exists
-                val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
-                val yValStr = yValExpr.toString()
-                if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) continue
+                    // Check if f(x) exists
+                    val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
+                    val yValStr = yValExpr.toString()
+                    if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) return@evaluate
 
-                val pointStr = "(${SymjaUtils.formatResult(xValStr)}, ${SymjaUtils.formatResult(yValStr)})"
+                    val pointStr = "(${SymjaUtils.formatResult(xValStr)}, ${SymjaUtils.formatResult(yValStr)})"
 
-                // Second derivative test
-                val d2ValExpr = eval.eval("ReplaceAll[$f2Expr, {$sol}]")
-                val d2ValStr = d2ValExpr.toString()
-                val d2Val = d2ValStr.toDoubleOrNull()
+                    // Second derivative test
+                    val d2ValExpr = eval.eval("ReplaceAll[$f2Expr, {$sol}]")
+                    val d2ValStr = d2ValExpr.toString()
+                    val d2Val = d2ValStr.toDoubleOrNull()
 
-                if (d2Val != null) {
-                    if (d2Val < -1e-9) maxima.add(pointStr)
-                    else if (d2Val > 1e-9) minima.add(pointStr)
-                    else {
-                        // d2Val == 0, use neighborhood test
+                    if (d2Val != null) {
+                        if (d2Val < -1e-9) maxima.add(pointStr)
+                        else if (d2Val > 1e-9) minima.add(pointStr)
+                        else {
+                            // d2Val == 0, use neighborhood test
+                            val type = neighborhoodTest(originalExpr, variable, xValStr)
+                            when (type) {
+                                1 -> maxima.add(pointStr)
+                                -1 -> minima.add(pointStr)
+                                else -> others.add(pointStr)
+                            }
+                        }
+                    } else {
+                        // Symbolic result or undefined d2Val, use neighborhood test
                         val type = neighborhoodTest(originalExpr, variable, xValStr)
                         when (type) {
                             1 -> maxima.add(pointStr)
                             -1 -> minima.add(pointStr)
                             else -> others.add(pointStr)
                         }
-                    }
-                } else {
-                    // Symbolic result or undefined d2Val, use neighborhood test
-                    val type = neighborhoodTest(originalExpr, variable, xValStr)
-                    when (type) {
-                        1 -> maxima.add(pointStr)
-                        -1 -> minima.add(pointStr)
-                        else -> others.add(pointStr)
                     }
                 }
             } catch (_: Exception) {
@@ -752,20 +754,21 @@ object AnalysisFunc {
     }
 
     private fun neighborhoodTest(expr: String, variable: String, xCenterStr: String): Int {
-        val eval = SymjaUtils.evaluator
-        try {
-            val xCenter = eval.eval("N[$xCenterStr]").toString().toDoubleOrNull() ?: return 0
-            val eps = 1e-5
-            
-            val yCenter = eval.eval("N[ReplaceAll[$expr, $variable -> $xCenter]]").toString().toDoubleOrNull() ?: return 0
-            val yLeft = eval.eval("N[ReplaceAll[$expr, $variable -> ${xCenter - eps}]]").toString().toDoubleOrNull() ?: return 0
-            val yRight = eval.eval("N[ReplaceAll[$expr, $variable -> ${xCenter + eps}]]").toString().toDoubleOrNull() ?: return 0
+        return SymjaUtils.evaluate { eval ->
+            try {
+                val xCenter = eval.eval("N[$xCenterStr]").toString().toDoubleOrNull() ?: return@evaluate 0
+                val eps = 1e-5
+                
+                val yCenter = eval.eval("N[ReplaceAll[$expr, $variable -> $xCenter]]").toString().toDoubleOrNull() ?: return@evaluate 0
+                val yLeft = eval.eval("N[ReplaceAll[$expr, $variable -> ${xCenter - eps}]]").toString().toDoubleOrNull() ?: return@evaluate 0
+                val yRight = eval.eval("N[ReplaceAll[$expr, $variable -> ${xCenter + eps}]]").toString().toDoubleOrNull() ?: return@evaluate 0
 
-            return if (yCenter > yLeft + 1e-11 && yCenter > yRight + 1e-11) 1 // Max
-            else if (yCenter < yLeft - 1e-11 && yCenter < yRight - 1e-11) -1 // Min
-            else 0
-        } catch (_: Exception) {
-            return 0
+                if (yCenter > yLeft + 1e-11 && yCenter > yRight + 1e-11) 1 // Max
+                else if (yCenter < yLeft - 1e-11 && yCenter < yRight - 1e-11) -1 // Min
+                else 0
+            } catch (_: Exception) {
+                0
+            }
         }
     }
 
@@ -773,35 +776,35 @@ object AnalysisFunc {
         val solutions = SymjaUtils.parseSolveResult(solveRes)
         if (solutions.isEmpty()) return emptyList()
 
-        val eval = SymjaUtils.evaluator
         val points = mutableListOf<String>()
 
         for (sol in solutions) {
             try {
-                if (variables.size == 1) {
-                    val xValStr = sol.split("->").last().trim()
-                    // Filter complex solutions
-                    val imPart = eval.eval("Im[N[$xValStr]]").toString().toDoubleOrNull()
-                    if (imPart == null || abs(imPart) > 1e-9) continue
+                SymjaUtils.evaluate { eval ->
+                    if (variables.size == 1) {
+                        val xValStr = sol.split("->").last().trim()
+                        // Filter complex solutions
+                        val imPart = eval.eval("Im[N[$xValStr]]").toString().toDoubleOrNull()
+                        if (imPart == null || abs(imPart) > 1e-9) return@evaluate
 
-                    // Check if f(x) exists
-                    val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
-                    val yValStr = yValExpr.toString()
-                    if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) continue
+                        // Check if f(x) exists
+                        val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
+                        val yValStr = yValExpr.toString()
+                        if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) return@evaluate
 
-                    points.add("(${SymjaUtils.formatResult(xValStr)}, ${SymjaUtils.formatResult(yValStr)})")
-                } else {
-                    // Expecting something like "x -> 1, y -> 2"
-                    // In multi-variable case, sol might be "x -> 1, y -> 2"
-                    val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
-                    val yValStr = yValExpr.toString()
-                    if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) continue
+                        points.add("(${SymjaUtils.formatResult(xValStr)}, ${SymjaUtils.formatResult(yValStr)})")
+                    } else {
+                        // Expecting something like "x -> 1, y -> 2"
+                        val yValExpr = eval.eval("ReplaceAll[$originalExpr, {$sol}]")
+                        val yValStr = yValExpr.toString()
+                        if (yValStr.contains("Infinity") || yValStr.contains("Indeterminate")) return@evaluate
 
-                    val parts = sol.split(",").map { it.trim() }
-                    val coords = variables.map { v ->
-                        parts.find { it.startsWith(v) }?.split("->")?.last()?.trim() ?: "?"
+                        val parts = sol.split(",").map { it.trim() }
+                        val coords = variables.map { v ->
+                            parts.find { it.startsWith(v) }?.split("->")?.last()?.trim() ?: "?"
+                        }
+                        points.add("(${coords.joinToString(", ") { SymjaUtils.formatResult(it) }}, ${SymjaUtils.formatResult(yValStr)})")
                     }
-                    points.add("(${coords.joinToString(", ") { SymjaUtils.formatResult(it) }}, ${SymjaUtils.formatResult(yValStr)})")
                 }
             } catch (e: Exception) {
                 // Fallback to formatting the raw solution if evaluation fails

@@ -357,10 +357,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             }
 
             is CalcButtonAction.Symbol -> {
-                when (action.text) {
+                when (action.formula) {
                     "( )", "()" -> handleBrackets()
                     "%" -> handlePercentage()
-                    else -> handleSymbol(action.text)
+                    else -> handleSymbol(action.formula)
                 }
                 updateInstantResult()
             }
@@ -708,6 +708,90 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         insertText(varText, applyImplicitMultiplication = true)
     }
 
+    private fun hasImaginaryUnit(input: String): Boolean {
+        return input.contains("j", ignoreCase = true) || input.contains("i", ignoreCase = true)
+    }
+
+    private fun hasEmptyFunctions(input: String): Boolean {
+        if (input.isBlank()) return false
+        val funcs = listOf(
+            "arcsinh", "arccosh", "arctanh", "asinh", "acosh", "atanh",
+            "arcsin", "arccos", "arctan", "asin", "acos", "atan",
+            "sinh", "cosh", "tanh", "sin", "cos", "tan",
+            "log10", "log", "ln", "abs", "sqrt", "√"
+        )
+
+        for (func in funcs) {
+            var index = 0
+            while (index < input.length) {
+                val found = input.indexOf(func, index, ignoreCase = true)
+                if (found == -1) break
+
+                val isStartValid = found == 0 || !input[found - 1].isLetter()
+                if (isStartValid) {
+                    var endPos = found + func.length
+                    if (endPos < input.length && input[endPos] == '(') {
+                        endPos++
+                    }
+
+                    var argString = input.substring(endPos)
+                    val closeParen = argString.indexOf(')')
+                    if (closeParen != -1) {
+                        argString = argString.substring(0, closeParen)
+                    }
+
+                    val hasOperand = argString.any { ch ->
+                        ch.isDigit() || ch in setOf('π', 'e', 'φ', 'j', 'i', 'x', 'y', 'z', 't', 's')
+                    } || listOf("pi", "phi", "inf", "infinity").any { argString.contains(it, ignoreCase = true) }
+
+                    if (!hasOperand) {
+                        return true
+                    }
+                }
+                index = found + func.length
+            }
+        }
+        return false
+    }
+
+    private fun isUnwantedFunctionOutput(res: String): Boolean {
+        if (res.isBlank()) return true
+        val lower = res.lowercase()
+        return lower.contains("sindeg") ||
+               lower.contains("cosdeg") ||
+               lower.contains("tandeg") ||
+               lower.contains("arcsindeg") ||
+               lower.contains("arccosdeg") ||
+               lower.contains("arctandeg") ||
+               lower.contains("sin()") ||
+               lower.contains("cos()") ||
+               lower.contains("tan()") ||
+               lower.contains("asin()") ||
+               lower.contains("acos()") ||
+               lower.contains("atan()") ||
+               lower.contains("sqrt()") ||
+               lower.contains("log()") ||
+               lower.contains("ln()") ||
+               lower.contains("√()")
+    }
+
+    private fun computeBasicResult(input: String): String {
+        if (hasEmptyFunctions(input)) {
+            return ""
+        }
+        val res = if (useRationalize || hasImaginaryUnit(input)) {
+            SymjaUtils.calculateNumerical(input, useRadians, useRationalize, precision)
+        } else {
+            val numResult = CalcFuncs.calculateExpression(input, useRadians = useRadians)
+            if (numResult.isNaN()) {
+                SymjaUtils.calculateNumerical(input, useRadians, useRationalize, precision)
+            } else {
+                CalcFuncs.formatResult(numResult, precision)
+            }
+        }
+        return if (isUnwantedFunctionOutput(res)) "" else res
+    }
+
     private fun updateInstantResult() {
         if (!calculationEnabled || displayText == "0" || displayText.isBlank() ||
             calculatorMode == CalculatorMode.LIMITS ||
@@ -728,12 +812,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
 
         try {
-            val result = if (useRationalize || displayText.contains("j", ignoreCase = true)) {
-                SymjaUtils.calculateNumerical(displayText, useRadians, useRationalize, precision)
-            } else {
-                val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                CalcFuncs.formatResult(numResult, precision)
-            }
+            val result = computeBasicResult(displayText)
             resultText = if (result == "Error") "" else result
         } catch (_: Exception) {
             resultText = ""
@@ -741,6 +820,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun shouldPerformInstantCalculation(input: String): Boolean {
+        if (hasEmptyFunctions(input)) {
+            return false
+        }
         val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'φ', 'j', 'i', 'x', 'y')
         val hasScientific = listOf(
             "sin",
@@ -750,7 +832,15 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             "ln",
             "asin",
             "acos",
-            "atan"
+            "atan",
+            "abs",
+            "sinh",
+            "cosh",
+            "tanh",
+            "asinh",
+            "acosh",
+            "atanh",
+            "sqrt"
         ).any { input.contains(it) }
         return input.any { it in operators } || hasScientific
     }
@@ -797,12 +887,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             cursorIndex = displayText.length
         } else {
             try {
-                val result = if (useRationalize || displayText.contains("j", ignoreCase = true)) {
-                    SymjaUtils.calculateNumerical(displayText, useRadians, useRationalize, precision)
-                } else {
-                    val numResult = CalcFuncs.calculateExpression(displayText, useRadians = useRadians)
-                    CalcFuncs.formatResult(numResult, precision)
-                }
+                val result = computeBasicResult(displayText)
                 if (result != "Error" && result.isNotEmpty()) {
                     displayText = result
                     resultText = ""
@@ -1250,9 +1335,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         val textAfter = displayText.substring(cursorIndex)
 
         val tokens = listOf(
+            " × asinh(", "asinh(", " × acosh(", "acosh(", " × atanh(", "atanh(",
+            " × sinh(", "sinh(", " × cosh(", "cosh(", " × tanh(", "tanh(",
             " × asin(", "asin(", " × acos(", "acos(", " × atan(", "atan(",
             " × sin(", "sin(", " × cos(", "cos(", " × tan(", "tan(",
-            " × log(", "log(", " × ln(", "ln(", " × √(", "√(",
+            " × log(", "log(", " × ln(", "ln(", " × abs(", "abs(", " × √(", "√(",
             " × π", "π", " × e", "e", " × φ", "φ", " × j", "j", " × i", "i",
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×"
         )

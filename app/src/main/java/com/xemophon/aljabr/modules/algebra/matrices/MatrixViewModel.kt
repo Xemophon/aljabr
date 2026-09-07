@@ -196,7 +196,7 @@ class MatrixViewModel(application: Application) : AndroidViewModel(application) 
 
     fun handleAction(action: CalcButtonAction) {
         when (action) {
-            is CalcButtonAction.Symbol -> handleSymbol(action.text)
+            is CalcButtonAction.Symbol -> handleSymbol(action.formula)
             is CalcButtonAction.Scientific -> {
                 val current = matrixData.getOrElse(selectedIndex) { "" }
                 val updated = MathInputHandler.handleScientific(current, current.length, action).text

@@ -56,6 +56,10 @@ object SymjaUtils {
     private val LOG_SINGLE_REGEX = Regex("""Log\[([^,]+)]""")
     private val LOG_DUAL_REGEX = Regex("""Log\[([^,]+),\s*(.+?)]""")
     private val I_REGEX = Regex("""(?<![a-zA-Z])I(?![a-zA-Z])""")
+    private val EULER_E_REGEX = Regex("""(?<![a-zA-Z])e(?![a-zA-Z])""")
+    private val IMAGINARY_J_REGEX = Regex("""(?<![a-zA-Z])j(?![a-zA-Z])""", RegexOption.IGNORE_CASE)
+    private val IMAGINARY_I_REGEX = Regex("""(?<![a-zA-Z])i(?![a-zA-Z])""", RegexOption.IGNORE_CASE)
+    private val DIGIT_J_OR_I_REGEX = Regex("""(\d(?:\.\d+)?)\s*([ji])\b""", RegexOption.IGNORE_CASE)
     private val LN_ABS_REGEX = Regex("""ln\(\|(.+?)\|\)""")
     private val LOG_ABS_REGEX = Regex("""log\(\|(.+?)\|\)""")
     private val ABS_BRACKET_REGEX = Regex("""Abs\((.+?)\)""")
@@ -71,16 +75,23 @@ object SymjaUtils {
             .replace("÷", "/")
             .replace("%", "/100")
             .replace("π", "Pi")
-            .replace("e", "E")
             .replace("φ", "GoldenRatio")
-            .replace("j", "I", ignoreCase = true)
-            .replace("i", "I", ignoreCase = true)
             .replace("√", "Sqrt")
             .replace("sqrt", "Sqrt", ignoreCase = true)
             .replace("ⁿ", "^n")
             .replace("(-1)^n", "(-1)^n")
             .replace("(-1)ⁿ", "(-1)^n")
             .replace("∞", "Infinity")
+
+        // Convert number followed by j or i to explicit multiplication: 2j -> 2*I, 3.5i -> 3.5*I
+        cleaned = cleaned.replace(DIGIT_J_OR_I_REGEX, "$1*I")
+
+        // Replace standalone e with Euler's E
+        cleaned = cleaned.replace(EULER_E_REGEX, "E")
+
+        // Replace standalone j and i with imaginary unit I
+        cleaned = cleaned.replace(IMAGINARY_J_REGEX, "I")
+        cleaned = cleaned.replace(IMAGINARY_I_REGEX, "I")
 
         // Convert |x| to Abs(x)
         cleaned = cleaned.replace(ABS_REGEX, "(Abs($1))")
@@ -97,14 +108,70 @@ object SymjaUtils {
 
         cleaned = replaceLogarithmsForSymja(cleaned)
 
-        return cleaned
+        cleaned = cleaned
+            .replace("arcsinh", "ArcSinh", ignoreCase = true)
+            .replace("arccosh", "ArcCosh", ignoreCase = true)
+            .replace("arctanh", "ArcTanh", ignoreCase = true)
+            .replace("arcsech", "ArcSech", ignoreCase = true)
+            .replace("arccsch", "ArcCsch", ignoreCase = true)
+            .replace("arccoth", "ArcCoth", ignoreCase = true)
             .replace("asin", "ArcSin", ignoreCase = true)
             .replace("acos", "ArcCos", ignoreCase = true)
             .replace("atan", "ArcTan", ignoreCase = true)
+            .replace("asec", "ArcSec", ignoreCase = true)
+            .replace("acsc", "ArcCsc", ignoreCase = true)
+            .replace("acot", "ArcCot", ignoreCase = true)
+            .replace("sinh", "Sinh", ignoreCase = true)
+            .replace("cosh", "Cosh", ignoreCase = true)
+            .replace("tanh", "Tanh", ignoreCase = true)
+            .replace("sech", "Sech", ignoreCase = true)
+            .replace("csch", "Csch", ignoreCase = true)
+            .replace("coth", "Coth", ignoreCase = true)
             .replace("sin", "Sin", ignoreCase = true)
             .replace("cos", "Cos", ignoreCase = true)
             .replace("tan", "Tan", ignoreCase = true)
+            .replace("sec", "Sec", ignoreCase = true)
+            .replace("csc", "Csc", ignoreCase = true)
+            .replace("cot", "Cot", ignoreCase = true)
             .replace("abs", "Abs", ignoreCase = true)
+
+        val openParens = cleaned.count { it == '(' }
+        val closeParens = cleaned.count { it == ')' }
+        if (openParens > closeParens) {
+            cleaned += ")".repeat(openParens - closeParens)
+        }
+        val openBrackets = cleaned.count { it == '[' }
+        val closeBrackets = cleaned.count { it == ']' }
+        if (openBrackets > closeBrackets) {
+            cleaned += "]".repeat(openBrackets - closeBrackets)
+        }
+
+        return cleaned
+    }
+
+    fun formatComplexNumber(real: Double, imag: Double, precision: Int = 4): String {
+        val isRealZero = Math.abs(real) < 1e-10
+        val isImagZero = Math.abs(imag) < 1e-10
+
+        if (isImagZero) {
+            return CalcFuncs.formatResult(real, precision)
+        }
+
+        val realFormatted = if (isRealZero) "" else CalcFuncs.formatResult(real, precision)
+        val absImag = Math.abs(imag)
+        val imagFormatted = if (Math.abs(absImag - 1.0) < 1e-10) "" else CalcFuncs.formatResult(absImag, precision)
+
+        return when {
+            realFormatted.isEmpty() -> {
+                if (imag < 0) "-${imagFormatted}j" else "${imagFormatted}j"
+            }
+            imag < 0 -> {
+                "$realFormatted - ${imagFormatted}j"
+            }
+            else -> {
+                "$realFormatted + ${imagFormatted}j"
+            }
+        }
     }
 
     /**
@@ -125,19 +192,47 @@ object SymjaUtils {
                 val cleaned = prepareForSymja(expression, useRadians)
                 if (cleaned.isBlank()) return@evaluate ""
 
-                val result = if (!useRationalize) {
-                    eval.eval("N($cleaned, $precision + 2)")
+                if (!useRationalize) {
+                    val realVal = eval.eval("N[Re[$cleaned], $precision + 2]").toString().toDoubleOrNull()
+                    val imagVal = eval.eval("N[Im[$cleaned], $precision + 2]").toString().toDoubleOrNull()
+
+                    if (realVal != null && imagVal != null && !realVal.isNaN() && !imagVal.isNaN()) {
+                        return@evaluate formatComplexNumber(realVal, imagVal, precision)
+                    }
                 } else {
-                    eval.eval("Rationalize($cleaned)")
+                    val realStr = eval.eval("Rationalize[Re[$cleaned]]").toString()
+                    val imagStr = eval.eval("Rationalize[Im[$cleaned]]").toString()
+                    val realVal = realStr.toDoubleOrNull()
+                    val imagVal = imagStr.toDoubleOrNull()
+
+                    if (realVal != null && imagVal != null && !realVal.isNaN() && !imagVal.isNaN()) {
+                        return@evaluate formatComplexNumber(realVal, imagVal, precision)
+                    }
+                }
+
+                val result = if (!useRationalize) {
+                    eval.eval("N[$cleaned, $precision + 2]")
+                } else {
+                    eval.eval("Rationalize[$cleaned]")
                 }
                 val resStr = result.toString()
 
                 val d = resStr.toDoubleOrNull()
-                if (d != null && !useRationalize) {
+                val formatted = if (d != null && !useRationalize) {
                     CalcFuncs.formatResult(d, precision)
                 } else {
                     formatResult(resStr)
                 }
+                if (formatted.contains("sindeg", ignoreCase = true) ||
+                    formatted.contains("cosdeg", ignoreCase = true) ||
+                    formatted.contains("tandeg", ignoreCase = true) ||
+                    formatted.contains("arcsindeg", ignoreCase = true) ||
+                    formatted.contains("arccosdeg", ignoreCase = true) ||
+                    formatted.contains("arctandeg", ignoreCase = true)
+                ) {
+                    return@evaluate ""
+                }
+                formatted
             } catch (_: Throwable) {
                 "Error"
             }
@@ -154,9 +249,9 @@ object SymjaUtils {
                 if (cleaned.isBlank()) return@evaluate ""
 
                 val evalExpr = if (assumeIntegerN) {
-                    "TeXForm(FullSimplify[$cleaned, Element[n, Integers]])"
+                    "TeXForm[FullSimplify[$cleaned, Element[n, Integers]]]"
                 } else {
-                    "TeXForm($cleaned)"
+                    "TeXForm[$cleaned]"
                 }
 
                 var result = eval.eval(evalExpr).toString()
@@ -178,6 +273,11 @@ object SymjaUtils {
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
                     .replace("\\text{DiracDelta}", "\\delta")
                     .replace("DiracDelta", "\\delta")
+
+                result = result.replace("\\log_{", "LATEX_LOG_BASE_")
+                    .replace("\\log10", "\\log_{10}")
+                    .replace("\\log", "\\ln")
+                    .replace("LATEX_LOG_BASE_", "\\log_{")
 
                 if (result.contains("\\ln") && result.contains("\\left|")) {
                     try {
@@ -273,7 +373,13 @@ object SymjaUtils {
                 .replace(LOG_DUAL_REGEX, "log($2, $1)")
         } catch (_: Exception) {}
 
-        result = result.replace("ArcSin", "asin")
+        result = result.replace("ArcSinDeg", "asin")
+            .replace("ArcCosDeg", "acos")
+            .replace("ArcTanDeg", "atan")
+            .replace("SinDeg", "sin")
+            .replace("CosDeg", "cos")
+            .replace("TanDeg", "tan")
+            .replace("ArcSin", "asin")
             .replace("ArcCos", "acos")
             .replace("ArcTan", "atan")
             .replace("Sin", "sin")
@@ -310,6 +416,10 @@ object SymjaUtils {
         } catch (_: Exception) {}
 
         result = result.replace("*", " × ")
+            .replace(Regex("""\b1\s*[*×]\s*j\b"""), "j")
+            .replace(Regex("""\b(\d+(?:\.\d+)?)\s*[*×]\s*j\b"""), "$1j")
+            .replace(Regex("""\+\s*1j\b"""), "+ j")
+            .replace(Regex("""-\s*1j\b"""), "- j")
             .replace(", ", ",")
             .replace(",", ", ")
             .replace("  ", " ")
@@ -325,7 +435,7 @@ object SymjaUtils {
                 if (cleaned.isBlank()) return@evaluate ""
                 val centerClean = if (center.isBlank()) "0" else prepareForSymja(center)
 
-                val result = eval.eval("Normal(Series($cleaned, {x, $centerClean, $order}))")
+                val result = eval.eval("Normal[Series[$cleaned, {x, $centerClean, $order}]]")
                 formatResult(result.toString())
             } catch (_: Throwable) {
                 "Error"
@@ -580,7 +690,7 @@ object SymjaUtils {
             val den = match.groupValues[4].trim()
 
             when {
-                den == "10" || den == "10.0" -> "\\log\\left($num\\right)"
+                den == "10" || den == "10.0" -> "\\log_{10}\\left($num\\right)"
                 den.equals("e", ignoreCase = true) || den == "E" -> "\\ln\\left($num\\right)"
                 num == "1" || num == "1.0" -> "0"
                 else -> "\\log_{$den}\\left($num\\right)"

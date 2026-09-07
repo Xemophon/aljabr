@@ -142,7 +142,7 @@ val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Symbol("0"),
         CalcButtonAction.Symbol("."),
-        CalcButtonAction.Symbol("^", " ^ "),
+        CalcButtonAction.Symbol("^"),
         CalcButtonAction.Symbol("+")
     ),
     listOf(
@@ -182,7 +182,7 @@ val FunctionsButtonGrid : List<List<CalcButtonAction>> = listOf(
         CalcButtonAction.Variable("x", Variables.X),
         CalcButtonAction.Symbol("("),
         CalcButtonAction.Symbol(")"),
-        CalcButtonAction.Symbol("^", " ^ "),
+        CalcButtonAction.Symbol("^"),
     ),
     listOf(
         CalcButtonAction.Backspace(R.drawable.backspace),
@@ -234,7 +234,7 @@ val ScientificButtonsGrid : List<List<CalcButtonAction>> = listOf(
         CalcButtonAction.Scientific("√", ScientificType.SQRT),
         CalcButtonAction.Constant("π", Constants.PI),
         CalcButtonAction.Constant("e", Constants.E),
-        CalcButtonAction.Symbol("^", " ^ ")
+        CalcButtonAction.Symbol("^")
     )
 )
 
@@ -254,7 +254,7 @@ val MultipleVariableGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Constant("π", Constants.PI),
         CalcButtonAction.Constant("e", Constants.E),
-        CalcButtonAction.Symbol("^", " ^ "),
+        CalcButtonAction.Symbol("^"),
         CalcButtonAction.Symbol("÷", "/")
     ),
     listOf(
@@ -298,7 +298,7 @@ val SingleVariableGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Constant("π", Constants.PI),
         CalcButtonAction.Constant("e", Constants.E),
-        CalcButtonAction.Symbol("^", " ^ "),
+        CalcButtonAction.Symbol("^"),
         CalcButtonAction.Symbol("÷", "/")
     ),
     listOf(

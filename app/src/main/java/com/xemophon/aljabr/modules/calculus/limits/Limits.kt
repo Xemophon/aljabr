@@ -239,9 +239,9 @@ fun LimitPreview() {
                 when (action) {
                     is CalcButtonAction.Symbol -> {
                         if (currentFocus == CalculatorFocus.EXPRESSION) {
-                            displayText += action.text
+                            displayText += action.formula
                         } else {
-                            targetText += action.text
+                            targetText += action.formula
                         }
                     }
                     is CalcButtonAction.Limits -> {

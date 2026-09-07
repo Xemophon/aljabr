@@ -88,7 +88,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             is CalcButtonAction.Backspace -> handleBackspace()
-            is CalcButtonAction.Symbol -> handleSymbol(action.text)
+            is CalcButtonAction.Symbol -> handleSymbol(action.formula)
             is CalcButtonAction.Scientific -> handleScientific(action)
             is CalcButtonAction.Constant -> handleConstant(action)
             is CalcButtonAction.Variable -> handleSymbol(action.text)
@@ -276,8 +276,8 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             if (cleaned.isBlank()) return null
 
             SymjaUtils.evaluate { eval ->
-                val realStr = eval.eval("N(Re($cleaned))").toString()
-                val imagStr = eval.eval("N(Im($cleaned))").toString()
+                val realStr = eval.eval("N[Re[$cleaned]]").toString()
+                val imagStr = eval.eval("N[Im[$cleaned]]").toString()
 
                 val real = realStr.toDoubleOrNull()
                 val imag = imagStr.toDoubleOrNull()
@@ -294,15 +294,6 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun formatCartesian(real: Double, imag: Double): String {
-        val rStr = CalcFuncs.formatResult(real, precision)
-        val iStr = CalcFuncs.formatResult(abs(imag), precision)
-        val isRealZero = rStr == "0" || rStr == "-0"
-        val isImagZero = iStr == "0" || iStr == "-0"
-
-        return when {
-            isImagZero -> rStr
-            isRealZero -> "${if (imag < 0) "-" else ""}${if (iStr == "1") "" else iStr}j"
-            else -> "$rStr ${if (imag < 0) "-" else "+"} ${if (iStr == "1") "" else iStr}j"
-        }
+        return SymjaUtils.formatComplexNumber(real, imag, precision)
     }
 }

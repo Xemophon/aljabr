@@ -12,7 +12,9 @@ object DiffFunc {
      */
     fun warmUp() {
         try {
-            SymjaUtils.evaluator.eval("D[x, x]")
+            SymjaUtils.evaluate { eval ->
+                eval.eval("D[x, x]")
+            }
         } catch (_: Throwable) {
         }
     }
@@ -22,27 +24,28 @@ object DiffFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return ""
 
-            val eval = SymjaUtils.evaluator
-            val varsExpr = eval.eval("Variables[$cleaned]")
-            val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            val vars = rawVars.filter { v ->
-                v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+            SymjaUtils.evaluate { eval ->
+                val varsExpr = eval.eval("Variables[$cleaned]")
+                val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                val vars = rawVars.filter { v ->
+                    v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+                }
+                val v = if (vars.size == 1) vars[0] else "x"
+
+                val command = if (useRationalize) {
+                    "Simplify[Rationalize[D[Rationalize[$cleaned], $v]]]"
+                } else {
+                    "Simplify[D[$cleaned, $v]]"
+                }
+
+                val resStr = eval.eval(command).toString()
+
+                if (resStr.contains("D", ignoreCase = true)) {
+                    return@evaluate "d/d$v($expression)"
+                }
+
+                SymjaUtils.formatResult(resStr)
             }
-            val v = if (vars.size == 1) vars[0] else "x"
-
-            val command = if (useRationalize) {
-                "Simplify[Rationalize(D[Rationalize($cleaned), $v])]"
-            } else {
-                "Simplify[D[$cleaned, $v]]"
-            }
-
-            val resStr = eval.eval(command).toString()
-
-            if (resStr.contains("D", ignoreCase = true)) {
-                return "d/d$v($expression)"
-            }
-
-            SymjaUtils.formatResult(resStr)
         } catch (_: Throwable) {
             "Error"
         }
@@ -53,13 +56,14 @@ object DiffFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return Pair("", emptyList())
 
-            val eval = SymjaUtils.evaluator
-            val varsExpr = eval.eval("Variables[$cleaned]")
-            val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            val vars = rawVars.filter { v ->
-                v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+            val vStr = SymjaUtils.evaluate { eval ->
+                val varsExpr = eval.eval("Variables[$cleaned]")
+                val rawVars = varsExpr.toString().removeSurrounding("{", "}").split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                val vars = rawVars.filter { v ->
+                    v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
+                }
+                if (vars.size == 1) vars[0] else "x"
             }
-            val vStr = if (vars.size == 1) vars[0] else "x"
 
             val steps = hybridEngine.differentiateWithSteps(expression, vStr, useHybrid)
             val finalResult = differentiate(expression)
@@ -75,16 +79,17 @@ object DiffFunc {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             if (cleaned.isBlank()) return ""
 
-            val eval = SymjaUtils.evaluator
-            val substituted = cleaned
-                .replace("zc", "(x - y * I)", ignoreCase = true)
-                .replace("z̄", "(x - y * I)")
-                .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
+            SymjaUtils.evaluate { eval ->
+                val substituted = cleaned
+                    .replace("zc", "(x - y * I)", ignoreCase = true)
+                    .replace("z̄", "(x - y * I)")
+                    .replace(Regex("""(?<![a-zA-Z])z(?![a-zA-Z])"""), "(x + y * I)")
 
-            val command = "Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]"
-            val resStr = eval.eval(command).toString()
+                val command = "Simplify[1/2 * (D[$substituted, x] - I * D[$substituted, y])]"
+                val resStr = eval.eval(command).toString()
 
-            SymjaUtils.formatResult(resStr)
+                SymjaUtils.formatResult(resStr)
+            }
         } catch (_: Throwable) {
             "Error"
         }
