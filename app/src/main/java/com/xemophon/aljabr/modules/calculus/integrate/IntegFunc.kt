@@ -155,15 +155,6 @@ object IntegFunc {
             if (resStr.contains("Integrate", ignoreCase = true)) {
                 return "∫($expression)dx"
             }
-// ...
-
-            val logRegex = Regex("""Log([\[(])([^,\])]+)([)])""", RegexOption.IGNORE_CASE)
-            resStr = resStr.replace(logRegex) { match ->
-                val open = match.groupValues[1]
-                val content = match.groupValues[2]
-                val close = match.groupValues[3]
-                "Log$open" + "Abs$open$content$close$close"
-            }
 
             if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
                 return "∫($expression)dx"
@@ -216,14 +207,6 @@ object IntegFunc {
 
                 if (resStr.contains("Integrate", ignoreCase = true)) {
                     return "∫∫($expression) dx dy"
-                }
-
-                val logRegex = Regex("""Log([\[(])([^,\])]+)([)])""", RegexOption.IGNORE_CASE)
-                resStr = resStr.replace(logRegex) { match ->
-                    val open = match.groupValues[1]
-                    val content = match.groupValues[2]
-                    val close = match.groupValues[3]
-                    "Log$open" + "Abs$open$content$close$close"
                 }
 
                 if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {

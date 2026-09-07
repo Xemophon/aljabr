@@ -9,8 +9,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.data.SettingsRepository
+import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
-import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.input.InputState
 import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import kotlinx.coroutines.flow.collectLatest
@@ -268,34 +268,25 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun parseCartesian(input: String): Pair<Double, Double>? {
-        // Simple parser for a+bj
-        val cleaned = input.replace(" ", "")
-        if (cleaned.isBlank()) return null
-        
+        val cleanedInput = input.replace(" ", "")
+        if (cleanedInput.isBlank()) return null
+
         return try {
-            if (cleaned.endsWith("j") || cleaned.endsWith("i")) {
-                val withoutJ = cleaned.dropLast(1)
-                if (withoutJ.isEmpty() || withoutJ == "+") Pair(0.0, 1.0)
-                else if (withoutJ == "-") Pair(0.0, -1.0)
-                else {
-                    val lastPlus = withoutJ.lastIndexOf('+')
-                    val lastMinus = withoutJ.lastIndexOf('-')
-                    val splitIdx = max(lastPlus, lastMinus)
-                    
-                    if (splitIdx > 0) {
-                        val a = CalcFuncs.calculateExpression(withoutJ.substring(0, splitIdx))
-                        val bStr = withoutJ.substring(splitIdx)
-                        val b = if (bStr == "+") 1.0 else if (bStr == "-") -1.0 else CalcFuncs.calculateExpression(bStr)
-                        Pair(a, b)
-                    } else {
-                        // Just bj
-                        val b = CalcFuncs.calculateExpression(withoutJ)
-                        Pair(0.0, b)
-                    }
+            val cleaned = SymjaUtils.prepareForSymja(input)
+            if (cleaned.isBlank()) return null
+
+            SymjaUtils.evaluate { eval ->
+                val realStr = eval.eval("N(Re($cleaned))").toString()
+                val imagStr = eval.eval("N(Im($cleaned))").toString()
+
+                val real = realStr.toDoubleOrNull()
+                val imag = imagStr.toDoubleOrNull()
+
+                if (real != null && imag != null && !real.isNaN() && !real.isInfinite() && !imag.isNaN() && !imag.isInfinite()) {
+                    Pair(real, imag)
+                } else {
+                    null
                 }
-            } else {
-                // Just a
-                Pair(CalcFuncs.calculateExpression(cleaned), 0.0)
             }
         } catch (_: Exception) {
             null
@@ -305,9 +296,12 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     private fun formatCartesian(real: Double, imag: Double): String {
         val rStr = CalcFuncs.formatResult(real, precision)
         val iStr = CalcFuncs.formatResult(abs(imag), precision)
+        val isRealZero = rStr == "0" || rStr == "-0"
+        val isImagZero = iStr == "0" || iStr == "-0"
+
         return when {
-            imag == 0.0 -> rStr
-            real == 0.0 -> "${if (imag < 0) "-" else ""}${if (iStr == "1") "" else iStr}j"
+            isImagZero -> rStr
+            isRealZero -> "${if (imag < 0) "-" else ""}${if (iStr == "1") "" else iStr}j"
             else -> "$rStr ${if (imag < 0) "-" else "+"} ${if (iStr == "1") "" else iStr}j"
         }
     }

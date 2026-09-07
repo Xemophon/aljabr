@@ -109,6 +109,7 @@ object MathInputHandler {
             ScientificType.COS -> "cos("
             ScientificType.TAN -> "tan("
             ScientificType.LOG -> "log("
+            ScientificType.ABS -> "abs("
             else -> "${action.text.lowercase()}("
         }
 

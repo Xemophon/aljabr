@@ -221,7 +221,7 @@ object CalcFuncs {
                     while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                     x = expression.substring(startPos, pos).toDouble()
                 } else if ((ch >= 'a'.code && ch <= 'z'.code) || (ch >= 'A'.code && ch <= 'Z'.code)) {
-                    while ((ch >= 'a'.code && ch <= 'z'.code) || (ch >= 'A'.code && ch <= 'Z'.code)) nextChar()
+                    while ((ch >= 'a'.code && ch <= 'z'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= '0'.code && ch <= '9'.code)) nextChar()
                     val func = expression.substring(startPos, pos).lowercase()
                     x = when {
                         variables.containsKey(func) -> variables[func]!!
@@ -246,17 +246,32 @@ object CalcFuncs {
             }
 
             private fun handleFunction(func: String): Double {
-                val arg = parseFactor().value
+                val hasParen = eat('('.code)
+                val arg1 = if (hasParen) parseExpression().value else parseFactor().value
+                var arg2: Double? = null
+                if (hasParen && eat(','.code)) {
+                    arg2 = parseExpression().value
+                }
+                if (hasParen) {
+                    eat(')'.code)
+                }
+
                 return when (func) {
-                    "sqrt" -> sqrt(arg)
-                    "sin" -> if (useRadians) sin(arg) else sin(Math.toRadians(arg))
-                    "cos" -> if (useRadians) cos(arg) else cos(Math.toRadians(arg))
-                    "tan" -> if (useRadians) tan(arg) else tan(Math.toRadians(arg))
-                    "log", "log10" -> log10(arg)
-                    "asin" -> if (useRadians) asin(arg) else Math.toDegrees(asin(arg))
-                    "acos" -> if (useRadians) acos(arg) else Math.toDegrees(acos(arg))
-                    "atan" -> if (useRadians) atan(arg) else Math.toDegrees(atan(arg))
-                    "ln" -> ln(arg)
+                    "sqrt" -> sqrt(arg1)
+                    "sin" -> if (useRadians) sin(arg1) else sin(Math.toRadians(arg1))
+                    "cos" -> if (useRadians) cos(arg1) else cos(Math.toRadians(arg1))
+                    "tan" -> if (useRadians) tan(arg1) else tan(Math.toRadians(arg1))
+                    "log", "log10" -> {
+                        if (arg2 != null) {
+                            log10(arg1) / log10(arg2)
+                        } else {
+                            log10(arg1)
+                        }
+                    }
+                    "asin" -> if (useRadians) asin(arg1) else Math.toDegrees(asin(arg1))
+                    "acos" -> if (useRadians) acos(arg1) else Math.toDegrees(acos(arg1))
+                    "atan" -> if (useRadians) atan(arg1) else Math.toDegrees(atan(arg1))
+                    "ln" -> ln(arg1)
                     else -> throw RuntimeException("Unknown function: $func")
                 }
             }

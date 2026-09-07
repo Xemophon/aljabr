@@ -61,9 +61,10 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
                 ScientificType.SIN -> CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN)
                 ScientificType.COS -> CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS)
                 ScientificType.TAN -> CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN)
-                ScientificType.LOG -> CalcButtonAction.Symbol("10^", "10 ^ ")
-                ScientificType.LN -> CalcButtonAction.Constant("e", Constants.E)
-                ScientificType.SQRT -> CalcButtonAction.Scientific(text = "!", ScientificType.FACTORIAL)
+                ScientificType.LOG -> CalcButtonAction.Scientific("ln", ScientificType.LN)
+                ScientificType.FACTORIAL -> CalcButtonAction.Constant("j", Constants.I)
+                ScientificType.SQRT -> CalcButtonAction.Scientific("!", ScientificType.FACTORIAL)
+                ScientificType.ABS -> CalcButtonAction.Constant("e", Constants.E)
                 else -> this
             }
         }
@@ -71,7 +72,14 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
         is CalcButtonAction.Constant -> {
             when (type) {
                 Constants.PI -> CalcButtonAction.Constant("j", Constants.I)
-                Constants.E -> CalcButtonAction.Scientific("ln", ScientificType.LN)
+                Constants.E -> CalcButtonAction.Scientific("abs", ScientificType.ABS)
+                else -> this
+            }
+        }
+
+        is CalcButtonAction.Symbol -> {
+            when (text) {
+                "^" -> CalcButtonAction.Symbol("x²", "^2")
                 else -> this
             }
         }
@@ -93,7 +101,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
             }
         }
 
-        is CalcButtonAction.Misc ->{
+        is CalcButtonAction.Misc -> {
             when (type) {
                 Misc.PRIME -> CalcButtonAction.Misc("'", Misc.PRIME)
             }
@@ -103,7 +111,7 @@ fun CalcButtonAction.toInverse(): CalcButtonAction {
     }
 }
 
-enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL }
+enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL, ABS }
 
 enum class Constants { PI, I, PHI, E, INF}
 enum class Variables { X, Y, Z, ZC, T, S}

@@ -593,6 +593,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 ScientificType.COS -> "cos("
                 ScientificType.TAN -> "tan("
                 ScientificType.LOG -> "log("
+                ScientificType.ABS -> "abs("
                 else -> "${action.text.lowercase()}("
             }
             odeConditions[odeConditionFocusIndex] += toInsert
@@ -631,6 +632,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             ScientificType.COS -> "cos("
             ScientificType.TAN -> "tan("
             ScientificType.LOG -> "log("
+            ScientificType.ABS -> "abs("
             else -> "${action.text.lowercase()}("
         }
 

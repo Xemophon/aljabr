@@ -48,7 +48,6 @@ object SymjaUtils {
 
     // Pre-compiled regexes for high performance
     private val ABS_REGEX = Regex("""\|([^|]+)\|""")
-    private val LOG10_REGEX = Regex("""(?<![a-zA-Z])log(?!10)""", RegexOption.IGNORE_CASE)
     private val LN_LATEX_REGEX = Regex("""\\ln\s*\(\s*\\left\|\s*(.+?)\s*\\right\|\s*\)""")
     private val D_REGEX = Regex("""D\[(.+?),\s*(.+?)]""")
     private val INTEGRATE_REGEX = Regex("""Integrate\[(.+?),\s*(.+?)]""")
@@ -96,6 +95,8 @@ object SymjaUtils {
                 .replace("tan(", "TanDeg(", ignoreCase = true)
         }
 
+        cleaned = replaceLogarithmsForSymja(cleaned)
+
         return cleaned
             .replace("asin", "ArcSin", ignoreCase = true)
             .replace("acos", "ArcCos", ignoreCase = true)
@@ -103,9 +104,7 @@ object SymjaUtils {
             .replace("sin", "Sin", ignoreCase = true)
             .replace("cos", "Cos", ignoreCase = true)
             .replace("tan", "Tan", ignoreCase = true)
-            .replace("log10", "Log10", ignoreCase = true)
-            .replace(LOG10_REGEX, "Log10")
-            .replace("ln", "Log", ignoreCase = true)
+            .replace("abs", "Abs", ignoreCase = true)
     }
 
     /**
@@ -166,6 +165,8 @@ object SymjaUtils {
                     result = formatSymjaTexListToMatrix(result)
                 }
 
+                result = simplifyLogRatiosInLaTeX(result)
+
                 result = result.replace("\\arcsinh", "\\operatorname{asinh}")
                     .replace("\\arccosh", "\\operatorname{acosh}")
                     .replace("\\arctanh", "\\operatorname{atanh}")
@@ -175,7 +176,6 @@ object SymjaUtils {
                     .replace("\\operatorname{arcsinh}", "\\operatorname{asinh}")
                     .replace("\\operatorname{arccosh}", "\\operatorname{acosh}")
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
-                    .replace("\\log", "\\ln")
                     .replace("\\text{DiracDelta}", "\\delta")
                     .replace("DiracDelta", "\\delta")
 
@@ -264,6 +264,8 @@ object SymjaUtils {
                 .replace(INTEGRATE_REGEX, "∫($1) d$2")
         } catch (_: Exception) {}
 
+        result = simplifyLogRatios(result)
+
         try {
             result = result.replace(LOG10_BRACKET_REGEX, "log($1)")
                 .replace(LOG10_COMMA_REGEX, "log($1)")
@@ -308,8 +310,9 @@ object SymjaUtils {
         } catch (_: Exception) {}
 
         result = result.replace("*", " × ")
-            .replace("  ", " ")
+            .replace(", ", ",")
             .replace(",", ", ")
+            .replace("  ", " ")
             .trim()
 
         return result
@@ -434,5 +437,156 @@ object SymjaUtils {
         }
 
         return results.distinct()
+    }
+
+    /**
+     * Converts logarithms in input expressions to Symja AST forms.
+     * Symja uses Log[x] for natural log (ln) and Log10[x] or Log[base, x] for common/custom base logarithms.
+     */
+    fun replaceLogarithmsForSymja(input: String): String {
+        var result = input
+
+        // 1. Subscript log notation: log_2(x) or log_{2}(x) -> Log[2, x]
+        val subscriptRegex = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*\((.+?)\)""", RegexOption.IGNORE_CASE)
+        result = result.replace(subscriptRegex) { match ->
+            val base = match.groupValues[1]
+            val arg = match.groupValues[2]
+            "Log[$base, $arg]"
+        }
+
+        // 2. log10(...) or log10|...|
+        result = replaceFuncWithBalancedParens(result, "log10") { content ->
+            "Log10[$content]"
+        }
+        val log10AbsRegex = Regex("""(?<![a-zA-Z])log10\s*\|(.+?)\|""", RegexOption.IGNORE_CASE)
+        result = result.replace(log10AbsRegex) { "Log10[Abs[${it.groupValues[1]}]]" }
+
+        // 3. log(arg, base) or log(arg)
+        result = replaceFuncWithBalancedParens(result, "log") { content ->
+            val topCommaIndex = findTopLevelComma(content)
+            if (topCommaIndex != -1) {
+                val arg = content.substring(0, topCommaIndex).trim()
+                val base = content.substring(topCommaIndex + 1).trim()
+                "Log[$base, $arg]"
+            } else {
+                "Log10[$content]"
+            }
+        }
+        val logAbsRegex = Regex("""(?<![a-zA-Z])log\s*\|(.+?)\|""", RegexOption.IGNORE_CASE)
+        result = result.replace(logAbsRegex) { "Log10[Abs[${it.groupValues[1]}]]" }
+
+        // 4. ln(...) or ln|...|
+        result = replaceFuncWithBalancedParens(result, "ln") { content ->
+            "Log[$content]"
+        }
+        val lnAbsRegex = Regex("""(?<![a-zA-Z])ln\s*\|(.+?)\|""", RegexOption.IGNORE_CASE)
+        result = result.replace(lnAbsRegex) { "Log[Abs[${it.groupValues[1]}]]" }
+
+        val standaloneLnRegex = Regex("""(?<![a-zA-Z])ln(?![a-zA-Z0-9])""", RegexOption.IGNORE_CASE)
+        result = result.replace(standaloneLnRegex, "Log")
+
+        return result
+    }
+
+    private fun replaceFuncWithBalancedParens(
+        input: String,
+        funcName: String,
+        transform: (content: String) -> String
+    ): String {
+        val pattern = "(?<![a-zA-Z])$funcName\\s*\\("
+        val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+        var result = input
+
+        while (true) {
+            val match = regex.find(result) ?: break
+            val startParen = match.range.last
+            val endParen = findMatchingParen(result, startParen)
+            if (endParen == -1) break
+
+            val content = result.substring(startParen + 1, endParen)
+            val replacement = transform(content)
+            result = result.substring(0, match.range.first) + replacement + result.substring(endParen + 1)
+        }
+        return result
+    }
+
+    private fun findMatchingParen(str: String, openPos: Int): Int {
+        var depth = 0
+        for (i in openPos until str.length) {
+            when (str[i]) {
+                '(' -> depth++
+                ')' -> {
+                    depth--
+                    if (depth == 0) return i
+                }
+            }
+        }
+        return -1
+    }
+
+    private fun findTopLevelComma(str: String): Int {
+        var depth = 0
+        for (i in str.indices) {
+            when (str[i]) {
+                '(', '[', '{' -> depth++
+                ')', ']', '}' -> depth--
+                ',' -> if (depth == 0) return i
+            }
+        }
+        return -1
+    }
+
+    /**
+     * Simplifying helper that converts logarithmic ratios like ln(x)/ln(a), log(x)/log(a), or Log[x]/Log[a]
+     * to base-a logarithm forms: log(x, a) or Log[a, x] (or log(x) / Log10[x] when a = 10).
+     */
+    fun simplifyLogRatios(expression: String): String {
+        var result = expression
+
+        // Plain text / Symja AST ratio: (ln|log|Log|log10|Log10)[num] / (ln|log|Log|log10|Log10)[den]
+        // or (ln|log|Log|log10|Log10)(num) / (ln|log|Log|log10|Log10)(den)
+        val ratioRegex = Regex(
+            """(?i)\b(ln|log10|log|Log10|Log)[\(\[]([^\(\)\[\]]+|\([^\(\)]*\)|\[[^\[\]]*\])[\)\]]\s*/\s*(ln|log10|log|Log10|Log)[\(\[]([^\(\)\[\]]+|\([^\(\)]*\)|\[[^\[\]]*\])[\)\]]"""
+        )
+
+        result = result.replace(ratioRegex) { match ->
+            val num = match.groupValues[2].trim()
+            val den = match.groupValues[4].trim()
+
+            when {
+                den == "10" || den == "10.0" -> "log($num)"
+                den.equals("e", ignoreCase = true) || den == "E" -> "ln($num)"
+                num == "1" || num == "1.0" -> "0"
+                else -> "log($num, $den)"
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Simplifies LaTeX fractions representing log ratios, e.g. \frac{\ln(x)}{\ln(a)} -> \log_{a}\left(x\right)
+     */
+    fun simplifyLogRatiosInLaTeX(texStr: String): String {
+        var result = texStr
+
+        // \frac{\ln(num)}{\ln(den)} or \frac{\log(num)}{\log(den)}
+        val latexFracRegex = Regex(
+            """\\frac\{\s*\\(ln|log)\s*(?:\(\\left\|\s*|\(|\\left\()?\s*(.+?)\s*(?:\(\\right\|\s*|\)|\\right\))?\s*\}\{\s*\\(ln|log)\s*(?:\(\\left\|\s*|\(|\\left\()?\s*(.+?)\s*(?:\(\\right\|\s*|\)|\\right\))?\s*\}"""
+        )
+
+        result = result.replace(latexFracRegex) { match ->
+            val num = match.groupValues[2].trim()
+            val den = match.groupValues[4].trim()
+
+            when {
+                den == "10" || den == "10.0" -> "\\log\\left($num\\right)"
+                den.equals("e", ignoreCase = true) || den == "E" -> "\\ln\\left($num\\right)"
+                num == "1" || num == "1.0" -> "0"
+                else -> "\\log_{$den}\\left($num\\right)"
+            }
+        }
+
+        return result
     }
 }
