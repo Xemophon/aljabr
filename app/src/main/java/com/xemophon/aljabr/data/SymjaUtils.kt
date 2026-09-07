@@ -70,6 +70,7 @@ object SymjaUtils {
             .replace(" ", "")
             .replace("×", "*")
             .replace("÷", "/")
+            .replace("%", "/100")
             .replace("π", "Pi")
             .replace("e", "E")
             .replace("φ", "GoldenRatio")

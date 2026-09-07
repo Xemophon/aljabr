@@ -51,8 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.modules.calculus.ode.OdeResult
-import com.xemophon.aljabr.modules.calculus.ode.OdeFuncs
+import com.xemophon.aljabr.modules.algebra.ode.OdeResult
+import com.xemophon.aljabr.modules.algebra.ode.OdeFuncs
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
@@ -246,6 +246,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     val odeConditions = mutableStateListOf<String>()
     var odeConditionFocusIndex by mutableIntStateOf(-1)
 
+    val isOdeConditionFocused: Boolean
+        get() = calculatorMode == CalculatorMode.ODE && odeConditionFocusIndex >= 0 && odeConditionFocusIndex in odeConditions.indices
+
     fun setOdeConditionFocus(index: Int) {
         odeConditionFocusIndex = index
     }
@@ -258,7 +261,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     fun removeOdeCondition(index: Int) {
         if (index in odeConditions.indices) {
             odeConditions.removeAt(index)
-            odeConditionFocusIndex = -1
+            if (odeConditionFocusIndex == index) {
+                odeConditionFocusIndex = -1
+            } else if (odeConditionFocusIndex > index) {
+                odeConditionFocusIndex -= 1
+            }
         }
     }
 
@@ -335,7 +342,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         // Clear mode-specific results when any input button is pressed
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
             if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || 
-                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE) {
+                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -435,6 +442,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     fun setFocus(focus: CalculatorFocus) {
         currentFocus = focus
+        odeConditionFocusIndex = -1
         if (resultText.isNotEmpty()) resultText = ""
         if (focus == CalculatorFocus.EXPRESSION) {
             cursorIndex = displayText.length
@@ -447,11 +455,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         cursorIndex = index.coerceIn(0, displayText.length)
         if (cursorIndex != -1) {
             currentFocus = CalculatorFocus.EXPRESSION
+            odeConditionFocusIndex = -1
         }
     }
 
     private fun handleSymbol(symbol: String) {
-        if (calculatorMode == CalculatorMode.ODE && odeConditionFocusIndex >= 0 && odeConditionFocusIndex in odeConditions.indices) {
+        if (isOdeConditionFocused) {
             odeConditions[odeConditionFocusIndex] += symbol
             return
         }
@@ -539,6 +548,19 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleBrackets() {
+        if (isOdeConditionFocused) {
+            val currentCond = odeConditions[odeConditionFocusIndex]
+            val openBrackets = currentCond.count { it == '(' }
+            val closedBrackets = currentCond.count { it == ')' }
+            val toInsert = if (openBrackets > closedBrackets && currentCond.isNotEmpty() && (currentCond.last().isDigit() || currentCond.last() == 'y' || currentCond.last() == '\'')) {
+                ")"
+            } else {
+                "("
+            }
+            odeConditions[odeConditionFocusIndex] += toInsert
+            return
+        }
+
         if (cursorIndex == -1) {
             cursorIndex = displayText.length
             currentFocus = CalculatorFocus.EXPRESSION
@@ -549,12 +571,34 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handlePercentage() {
-        if (displayText != "0" && displayText != "Error") {
+        if (isOdeConditionFocused) {
+            odeConditions[odeConditionFocusIndex] += "%"
+            return
+        }
+
+        if (displayText != "Error") {
             insertText("%")
         }
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
+        if (isOdeConditionFocused) {
+            val toInsert = when (action.type) {
+                ScientificType.SQRT -> "√("
+                ScientificType.ASIN -> "asin("
+                ScientificType.ACOS -> "acos("
+                ScientificType.ATAN -> "atan("
+                ScientificType.LN -> "ln("
+                ScientificType.SIN -> "sin("
+                ScientificType.COS -> "cos("
+                ScientificType.TAN -> "tan("
+                ScientificType.LOG -> "log("
+                else -> "${action.text.lowercase()}("
+            }
+            odeConditions[odeConditionFocusIndex] += toInsert
+            return
+        }
+
         if (calculatorMode == CalculatorMode.INTEGRATE && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
@@ -594,6 +638,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleConstant(action: CalcButtonAction.Constant) {
+        if (isOdeConditionFocused) {
+            val toInsert = when (action.type) {
+                Constants.PI -> "π"
+                Constants.E -> "e"
+                Constants.PHI -> "φ"
+                Constants.I -> "j"
+                Constants.INF -> "∞"
+            }
+            odeConditions[odeConditionFocusIndex] += toInsert
+            return
+        }
+
         if (calculatorMode == CalculatorMode.INTEGRATE && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
@@ -621,6 +677,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleVariable(action: CalcButtonAction.Variable) {
+        if (isOdeConditionFocused) {
+            odeConditions[odeConditionFocusIndex] += action.text
+            return
+        }
+
         if (calculatorMode == CalculatorMode.INTEGRATE && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
@@ -652,7 +713,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             calculatorMode == CalculatorMode.DIFFERENTIATE ||
             calculatorMode == CalculatorMode.TAYLOR ||
             calculatorMode == CalculatorMode.POLYNOMIALS ||
-            calculatorMode == CalculatorMode.LAPLACE
+            calculatorMode == CalculatorMode.LAPLACE ||
+            calculatorMode == CalculatorMode.ODE
         ) {
             resultText = ""
             return
@@ -1068,7 +1130,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun clearAll() {
-        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE) && isShowingResult) {
+        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) && isShowingResult) {
             resultText = ""
             isShowingResult = false
             polynomialResult = null

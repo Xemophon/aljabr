@@ -122,22 +122,30 @@ object CalcFuncs {
                     when {
                         eat('+'.code) -> {
                             val y = parseTerm()
-                            val newVal = if (y.hasPercentage) {
-                                x.value + x.value * y.value
+                            val (newVal, newHasPercentage) = if (y.hasPercentage) {
+                                if (x.hasPercentage) {
+                                    Pair(x.value + y.value, true)
+                                } else {
+                                    Pair(x.value + x.value * y.value, false)
+                                }
                             } else {
-                                x.value + y.value
+                                Pair(x.value + y.value, false)
                             }
-                            x = TermResult(newVal, false)
+                            x = TermResult(newVal, newHasPercentage)
                         }
 
                         eat('-'.code) -> {
                             val y = parseTerm()
-                            val newVal = if (y.hasPercentage) {
-                                x.value - x.value * y.value
+                            val (newVal, newHasPercentage) = if (y.hasPercentage) {
+                                if (x.hasPercentage) {
+                                    Pair(x.value - y.value, true)
+                                } else {
+                                    Pair(x.value - x.value * y.value, false)
+                                }
                             } else {
-                                x.value - y.value
+                                Pair(x.value - y.value, false)
                             }
-                            x = TermResult(newVal, false)
+                            x = TermResult(newVal, newHasPercentage)
                         }
 
                         else -> {
@@ -156,22 +164,19 @@ object CalcFuncs {
                         eat('*'.code) -> {
                             val y = parseFactor()
                             val value = x.value * y.value
-                            val hasPercentage = x.hasPercentage && !y.hasPercentage
-                            x = TermResult(value, hasPercentage)
+                            x = TermResult(value, false)
                         }
                         eat('/'.code) -> {
                             val divisor = parseFactor()
                             if (divisor.value == 0.0) throw ArithmeticException("Division by zero")
                             val value = x.value / divisor.value
-                            val hasPercentage = x.hasPercentage && !divisor.hasPercentage
-                            x = TermResult(value, hasPercentage)
+                            x = TermResult(value, false)
                         }
 
                         peekImplicit() -> {
                             val y = parseFactor()
                             val value = x.value * y.value
-                            val hasPercentage = x.hasPercentage && !y.hasPercentage
-                            x = TermResult(value, hasPercentage)
+                            x = TermResult(value, false)
                         }
                         else -> {
                             recursionDepth--
@@ -198,9 +203,10 @@ object CalcFuncs {
                     return res
                 }
                 if (eat('-'.code)) {
-                    val res = TermResult(-parseFactor().value, false)
+                    val res = parseFactor()
+                    val result = TermResult(-res.value, res.hasPercentage)
                     recursionDepth--
-                    return res
+                    return result
                 }
 
                 var x: Double

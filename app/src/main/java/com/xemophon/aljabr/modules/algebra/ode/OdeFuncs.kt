@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.calculus.ode
+package com.xemophon.aljabr.modules.algebra.ode
 
 import com.xemophon.aljabr.data.SymjaUtils
 import kotlinx.coroutines.Dispatchers
@@ -14,14 +14,29 @@ data class OdeResult(
 
 object OdeFuncs {
 
-    private fun prepareOdeExpression(expression: String): String {
+    private fun prepareOdeExpression(expression: String, isMainEquation: Boolean = true): String {
         var cleaned = SymjaUtils.prepareForSymja(expression).replace(" ", "")
 
-        // Count primes after y and transform into Derivative[count][y][x]
-        val odeRegex = Regex("""\by('+)""")
+        val odeRegex = Regex("""\by('*)""")
         cleaned = odeRegex.replace(cleaned) { matchResult ->
-            val count = matchResult.groupValues[1].length
-            "Derivative[$count][y][x]"
+            val primes = matchResult.groupValues[1]
+            val matchEnd = matchResult.range.last + 1
+            val followedByParen = matchEnd < cleaned.length && cleaned[matchEnd] == '('
+
+            if (primes.isNotEmpty()) {
+                val count = primes.length
+                if (followedByParen) {
+                    "Derivative[$count][y]"
+                } else {
+                    "Derivative[$count][y][x]"
+                }
+            } else {
+                if (isMainEquation && !followedByParen) {
+                    "Derivative[0][y][x]"
+                } else {
+                    "y"
+                }
+            }
         }
 
         return cleaned
@@ -31,7 +46,7 @@ object OdeFuncs {
         val timedOutResult = withTimeoutOrNull(5000L.milliseconds) {
             synchronized(SymjaUtils.evaluator) {
                 try {
-                    val prepared = prepareOdeExpression(expression)
+                    val prepared = prepareOdeExpression(expression, isMainEquation = true)
                     if (prepared.isBlank()) return@synchronized OdeResult(expression, emptyList(), error = "Empty expression")
 
                     val eq = if (!prepared.contains("==")) {
@@ -44,7 +59,7 @@ object OdeFuncs {
                         .map { it.trim() }
                         .filter { it.isNotEmpty() }
                         .map { cond ->
-                            val cPrep = prepareOdeExpression(cond)
+                            val cPrep = prepareOdeExpression(cond, isMainEquation = false)
                             if (!cPrep.contains("==")) {
                                 cPrep.replace("=", "==")
                             } else {
@@ -53,10 +68,10 @@ object OdeFuncs {
                         }
 
                     val dsolveCommand = if (cleanedConditions.isEmpty()) {
-                        "DSolve[$eq, y, x]"
+                        "DSolve[$eq, y(x), x]"
                     } else {
                         val allItems = listOf(eq) + cleanedConditions
-                        "DSolve[{${allItems.joinToString(", ")}}, y, x]"
+                        "DSolve[{${allItems.joinToString(", ")}}, y(x), x]"
                     }
 
                     val res = SymjaUtils.evaluator.eval(dsolveCommand).toString()

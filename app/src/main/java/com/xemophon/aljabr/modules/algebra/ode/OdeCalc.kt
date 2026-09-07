@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.calculus.ode
+package com.xemophon.aljabr.modules.algebra.ode
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -161,7 +161,7 @@ fun OdeContent(
                                 ) {
                                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Add Condition (e.g., y(0) == 1)")
+                                    Text("Add Condition...")
                                 }
                             }
                         }

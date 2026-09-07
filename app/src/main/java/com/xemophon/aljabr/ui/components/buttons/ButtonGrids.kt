@@ -95,7 +95,7 @@ fun ShortCalcButtons(
                     ShortGridMode.BDE -> {
                         Button(
                             onClick = { onAction(CalcButtonAction.Misc("'", Misc.PRIME)) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(0.8f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Text(
@@ -125,7 +125,7 @@ fun ShortCalcButtons(
                         }
                         Button(
                             onClick = { onAction(CalcButtonAction.Calculate) },
-                            modifier = Modifier.weight(1.2f),
+                            modifier = Modifier.weight(1.4f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(

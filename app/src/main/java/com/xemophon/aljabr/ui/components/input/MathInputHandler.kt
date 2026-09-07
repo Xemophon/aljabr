@@ -43,6 +43,8 @@ object MathInputHandler {
         if (currentText == "0" && !finalInsert.startsWith(" × ")) {
             return if (finalInsert == ".") {
                 InputState("0.", 2)
+            } else if (finalInsert == "%") {
+                InputState("0%", 2)
             } else {
                 InputState(finalInsert, finalInsert.length)
             }
