@@ -120,7 +120,7 @@ fun BDEContent(
                             if (odeConditions.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "Initial / Boundary Conditions",
+                                        text = "Boundary Conditions",
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(top = 8.dp)
