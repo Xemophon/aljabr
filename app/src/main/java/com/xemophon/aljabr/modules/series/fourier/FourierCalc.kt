@@ -108,21 +108,29 @@ fun FourierContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         // Mode Selector
+        Text(
+            text = "Branch Type:",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+
             ModeButton(
-                text = "Single Function",
+                text = "Single",
                 isSelected = !viewModel.isTwoBranch,
                 onClick = { viewModel.isTwoBranch = false },
                 modifier = Modifier.weight(1f)
             )
             ModeButton(
-                text = "Two Branch",
+                text = "Double",
                 isSelected = viewModel.isTwoBranch,
                 onClick = { viewModel.isTwoBranch = true },
                 modifier = Modifier.weight(1f)
@@ -257,11 +265,11 @@ fun ModeButton(
         shape = RoundedCornerShape(8.dp),
         modifier = modifier.border(
             width = 1.dp,
-            color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outline,
+            color = Color.Transparent,
             shape = RoundedCornerShape(8.dp)
         )
     ) {
-        Text(text = text, style = MaterialTheme.typography.labelLarge)
+        Text(text = text, style = MaterialTheme.typography.labelMedium)
     }
 }
 
