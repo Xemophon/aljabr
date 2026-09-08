@@ -14,7 +14,7 @@ data class BDEResult(
 
 object BDEFuncs {
 
-    private fun prepareOdeExpression(expression: String, isMainEquation: Boolean = true): String {
+    private fun prepareOdeExpression(expression: String): String {
         var cleaned = SymjaUtils.prepareForSymja(expression).replace(" ", "")
 
         val odeRegex = Regex("""\by('*)""")
@@ -31,7 +31,7 @@ object BDEFuncs {
                     "Derivative[$count][y][x]"
                 }
             } else {
-                if (isMainEquation && !followedByParen) {
+                if (!followedByParen) {
                     "Derivative[0][y][x]"
                 } else {
                     "y"
@@ -46,7 +46,7 @@ object BDEFuncs {
         val timedOutResult = withTimeoutOrNull(5000L.milliseconds) {
             synchronized(SymjaUtils.evaluator) {
                 try {
-                    val prepared = prepareOdeExpression(expression, isMainEquation = true)
+                    val prepared = prepareOdeExpression(expression)
                     if (prepared.isBlank()) return@synchronized BDEResult(expression, emptyList(), error = "Empty expression")
 
                     val eq = if (!prepared.contains("==")) {
@@ -59,7 +59,7 @@ object BDEFuncs {
                         .map { it.trim() }
                         .filter { it.isNotEmpty() }
                         .map { cond ->
-                            val cPrep = prepareOdeExpression(cond, isMainEquation = false)
+                            val cPrep = SymjaUtils.prepareForSymja(cond).replace(" ", "")
                             if (!cPrep.contains("==")) {
                                 cPrep.replace("=", "==")
                             } else {
