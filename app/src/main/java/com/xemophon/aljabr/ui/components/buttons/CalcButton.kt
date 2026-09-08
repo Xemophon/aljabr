@@ -118,7 +118,7 @@ enum class Variables { X, Y, Z, ZC, T, S}
 enum class Misc { PRIME }
 enum class Parameter { N }
 enum class LimitType { FINITE, INFINITE }
-enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE }
+enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE, CURVET1, CURVET2  }
 
 val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
     listOf(

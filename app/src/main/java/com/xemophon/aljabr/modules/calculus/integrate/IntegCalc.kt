@@ -348,45 +348,112 @@ fun IntegDisplay(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     // Expression Box
-                    Box(
-                        modifier = Modifier
-                            .clickable {
-                                onFocusChange(CalculatorFocus.EXPRESSION)
-                                onCursorIndexChange(expression.length)
-                            }
-                            .padding(8.dp)
-                    ) {
-                        val base = if (expression == "0") "" else expression
-                        val defaultPlaceholder = if (integType == IntegralType.DOUBLE || integType == IntegralType.NDOUBLE) "f(x,y)" else "f(x)"
-                        val textWithCursor =
-                            if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                                if (cursorIndex < base.length) {
-                                    StringBuilder(base).insert(cursorIndex, "|").toString()
+                    if (integType == IntegralType.CURVET2) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // P(x,y) Box (Focus: EXPRESSION)
+                            Box(
+                                modifier = Modifier
+                                    .clickable {
+                                        onFocusChange(CalculatorFocus.EXPRESSION)
+                                        onCursorIndexChange(expression.length)
+                                    }
+                                    .padding(4.dp)
+                            ) {
+                                val baseP = if (expression == "0") "" else expression
+                                val textP = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                                    if (cursorIndex < baseP.length) StringBuilder(baseP).insert(cursorIndex, "|").toString() else "$baseP|"
                                 } else {
-                                    "$base|"
+                                    baseP.ifEmpty { "P(x,y)" }
                                 }
-                            } else {
-                                base.ifEmpty { defaultPlaceholder }
+                                Text(
+                                    text = "$textP ∂x",
+                                    style = MaterialTheme.typography.displayMedium.copy(
+                                        fontSize = if (textP.length > 15) 24.sp else if (textP.length > 10) 28.sp else 36.sp
+                                    ),
+                                    color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
+                                )
                             }
 
-                        val displayText = when (integType) {
-                            IntegralType.DEFINITE, IntegralType.INDEFINITE -> "$textWithCursor dx"
-                            IntegralType.ARC -> "√[1 + ($textWithCursor)']² dx"
-                            IntegralType.XVOL -> "π[$textWithCursor]² dx"
-                            IntegralType.YVOL -> "2πx|$textWithCursor| dx"
-                            IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² dx"
-                            IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² dx"
-                            IntegralType.DOUBLE, IntegralType.NDOUBLE -> "$textWithCursor dx dy"
-                        }
+                            Text(
+                                text = " + ",
+                                style = MaterialTheme.typography.displayMedium.copy(fontSize = 32.sp),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
-                        Text(
-                            text = displayText,
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontSize = if (displayText.length > 15) 24.sp else if (displayText.length > 10) 32.sp else 48.sp
-                            ),
-                            color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
-                        )
+                            // Q(x,y) Box (Focus: INTEG_INNER_LOWER)
+                            Box(
+                                modifier = Modifier
+                                    .clickable {
+                                        onFocusChange(CalculatorFocus.INTEG_INNER_LOWER)
+                                    }
+                                    .padding(4.dp)
+                            ) {
+                                val baseQ = innerLower
+                                val textQ = if (focus == CalculatorFocus.INTEG_INNER_LOWER) {
+                                    if (baseQ.isEmpty()) "|" else "$baseQ|"
+                                } else {
+                                    baseQ.ifEmpty { "Q(x,y)" }
+                                }
+                                Text(
+                                    text = "$textQ ∂y",
+                                    style = MaterialTheme.typography.displayMedium.copy(
+                                        fontSize = if (textQ.length > 15) 24.sp else if (textQ.length > 10) 28.sp else 36.sp
+                                    ),
+                                    color = if (focus == CalculatorFocus.INTEG_INNER_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (focus == CalculatorFocus.INTEG_INNER_LOWER) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .clickable {
+                                    onFocusChange(CalculatorFocus.EXPRESSION)
+                                    onCursorIndexChange(expression.length)
+                                }
+                                .padding(8.dp)
+                        ) {
+                            val base = if (expression == "0") "" else expression
+                            val defaultPlaceholder = when (integType) {
+                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> "f(x,y)"
+                                IntegralType.CURVET1 -> "f(x,y)"
+                                else -> "f(x)"
+                            }
+                            val textWithCursor =
+                                if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                                    if (cursorIndex < base.length) {
+                                        StringBuilder(base).insert(cursorIndex, "|").toString()
+                                    } else {
+                                        "$base|"
+                                    }
+                                } else {
+                                    base.ifEmpty { defaultPlaceholder }
+                                }
+
+                            val displayText = when (integType) {
+                                IntegralType.DEFINITE, IntegralType.INDEFINITE -> "$textWithCursor ∂x"
+                                IntegralType.ARC -> "√[1 + ($textWithCursor)']² ∂x"
+                                IntegralType.XVOL -> "π[$textWithCursor]² ∂x"
+                                IntegralType.YVOL -> "2πx|$textWithCursor| ∂x"
+                                IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² ∂x"
+                                IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² ∂x"
+                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> "$textWithCursor ∂x∂y"
+                                IntegralType.CURVET1 -> "$textWithCursor ∂s"
+                                else -> "$textWithCursor ∂x"
+                            }
+
+                            Text(
+                                text = displayText,
+                                style = MaterialTheme.typography.displayMedium.copy(
+                                    fontSize = if (displayText.length > 15) 24.sp else if (displayText.length > 10) 32.sp else 48.sp
+                                ),
+                                color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             } else {

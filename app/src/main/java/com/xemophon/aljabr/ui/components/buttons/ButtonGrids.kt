@@ -295,7 +295,12 @@ fun AdvancedButtonsGrid(
 ) = CalcButtonSheet(modifier) {
     val selectedGrid = when (gridMode) {
         is AdvancedGridMode.Differentiation -> if (gridMode.currentMode == "Single") SingleVariableGrid else MultipleVariableGrid
-        is AdvancedGridMode.Integration -> if (gridMode.currentType == IntegralType.DOUBLE || gridMode.currentType == IntegralType.NDOUBLE) MultipleVariableGrid else SingleVariableGrid
+        is AdvancedGridMode.Integration -> if (
+            gridMode.currentType == IntegralType.DOUBLE ||
+            gridMode.currentType == IntegralType.NDOUBLE ||
+            gridMode.currentType == IntegralType.CURVET1 ||
+            gridMode.currentType == IntegralType.CURVET2
+        ) MultipleVariableGrid else SingleVariableGrid
         else -> SingleVariableGrid
     }
 
@@ -389,7 +394,7 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "L",
+                    label = "∮",
                     isSelected = gridMode.currentType == IntegralType.ARC,
                     onClick = { onAction(CalcButtonAction.Integrals("Arc", IntegralType.ARC)) },
                     modifier = Modifier.fillMaxWidth()
@@ -397,7 +402,7 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "V${if (gridMode.axis == "X") "ₓ" else "ᵧ"}",
+                    label = "∰${if (gridMode.axis == "X") "ₓ" else "ᵧ"}",
                     isSelected = gridMode.currentType == IntegralType.XVOL || gridMode.currentType == IntegralType.YVOL,
                     onClick = { 
                         val type = if (gridMode.axis == "X") IntegralType.XVOL else IntegralType.YVOL
@@ -408,7 +413,7 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "S${if (gridMode.axis == "X") "ₓ" else "ᵧ"}",
+                    label = "∯${if (gridMode.axis == "X") "ₓ" else "ᵧ"}",
                     isSelected = gridMode.currentType == IntegralType.XSURF || gridMode.currentType == IntegralType.YSURF,
                     onClick = { 
                         val type = if (gridMode.axis == "X") IntegralType.XSURF else IntegralType.YSURF
@@ -419,7 +424,7 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "∫∫",
+                    label = "∬",
                     isSelected = gridMode.currentType == IntegralType.DOUBLE,
                     onClick = { onAction(CalcButtonAction.Integrals("∫∫", IntegralType.DOUBLE)) },
                     modifier = Modifier.fillMaxWidth()
@@ -427,9 +432,25 @@ fun AdvancedButtonsGrid(
             }
             buttons.add {
                 ModeToggleButton(
-                    label = "∫∫d",
+                    label = if (gridMode.currentType == IntegralType.NDOUBLE) "∬d (${if (gridMode.axis == "X") "I" else "II"})" else "∬d",
                     isSelected = gridMode.currentType == IntegralType.NDOUBLE,
                     onClick = { onAction(CalcButtonAction.Integrals("∫∫d", IntegralType.NDOUBLE)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∮₁",
+                    isSelected = gridMode.currentType == IntegralType.CURVET1,
+                    onClick = { onAction(CalcButtonAction.Integrals("Curve 1", IntegralType.CURVET1)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            buttons.add {
+                ModeToggleButton(
+                    label = "∮₂",
+                    isSelected = gridMode.currentType == IntegralType.CURVET2,
+                    onClick = { onAction(CalcButtonAction.Integrals("Curve 2", IntegralType.CURVET2)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

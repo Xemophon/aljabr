@@ -393,18 +393,23 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 val isSameType = when (action.type) {
                     IntegralType.XVOL, IntegralType.YVOL -> integType == IntegralType.XVOL || integType == IntegralType.YVOL
                     IntegralType.XSURF, IntegralType.YSURF -> integType == IntegralType.XSURF || integType == IntegralType.YSURF
+                    IntegralType.DOUBLE, IntegralType.NDOUBLE -> integType == IntegralType.DOUBLE || integType == IntegralType.NDOUBLE
                     else -> action.type == integType
                 }
 
                 if (isSameType && (action.type == IntegralType.XVOL || action.type == IntegralType.YVOL ||
-                            action.type == IntegralType.XSURF || action.type == IntegralType.YSURF)) {
+                            action.type == IntegralType.XSURF || action.type == IntegralType.YSURF || action.type == IntegralType.NDOUBLE)) {
                     integrationAxis = if (integrationAxis == "X") "Y" else "X"
-                    integType = when (integType) {
-                        IntegralType.XVOL -> IntegralType.YVOL
-                        IntegralType.YVOL -> IntegralType.XVOL
-                        IntegralType.XSURF -> IntegralType.YSURF
-                        IntegralType.YSURF -> IntegralType.XSURF
-                        else -> integType
+                    if (action.type == IntegralType.DOUBLE || action.type == IntegralType.NDOUBLE) {
+                        integType = action.type
+                    } else {
+                        integType = when (integType) {
+                            IntegralType.XVOL -> IntegralType.YVOL
+                            IntegralType.YVOL -> IntegralType.XVOL
+                            IntegralType.XSURF -> IntegralType.YSURF
+                            IntegralType.YSURF -> IntegralType.XSURF
+                            else -> integType
+                        }
                     }
                 } else {
                     switchIntegMode(action.type)
@@ -488,19 +493,19 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (calculatorMode == CalculatorMode.INTEGRATE) {
             when (currentFocus) {
                 CalculatorFocus.INTEG_LOWER -> {
-                    if (symbol.matches(Regex("[0-9.-]+"))) lowerLimitText += symbol
+                    lowerLimitText += symbol
                     return
                 }
                 CalculatorFocus.INTEG_UPPER -> {
-                    if (symbol.matches(Regex("[0-9.-]+"))) upperLimitText += symbol
+                    upperLimitText += symbol
                     return
                 }
                 CalculatorFocus.INTEG_INNER_LOWER -> {
-                    if (symbol.matches(Regex("[0-9.-]+"))) innerLowerLimitText += symbol
+                    innerLowerLimitText += symbol
                     return
                 }
                 CalculatorFocus.INTEG_INNER_UPPER -> {
-                    if (symbol.matches(Regex("[0-9.-]+"))) innerUpperLimitText += symbol
+                    innerUpperLimitText += symbol
                     return
                 }
                 else -> {}
@@ -582,46 +587,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun handleScientific(action: CalcButtonAction.Scientific) {
-        if (isOdeConditionFocused) {
-            val toInsert = when (action.type) {
-                ScientificType.SQRT -> "√("
-                ScientificType.ASIN -> "asin("
-                ScientificType.ACOS -> "acos("
-                ScientificType.ATAN -> "atan("
-                ScientificType.LN -> "ln("
-                ScientificType.SIN -> "sin("
-                ScientificType.COS -> "cos("
-                ScientificType.TAN -> "tan("
-                ScientificType.LOG -> "log("
-                ScientificType.ABS -> "abs("
-                else -> "${action.text.lowercase()}("
-            }
-            odeConditions[odeConditionFocusIndex] += toInsert
-            return
-        }
-
-        if (calculatorMode == CalculatorMode.INTEGRATE && (
-                    currentFocus == CalculatorFocus.INTEG_LOWER ||
-                    currentFocus == CalculatorFocus.INTEG_UPPER ||
-                    currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
-                    currentFocus == CalculatorFocus.INTEG_INNER_UPPER)) {
-            when (currentFocus) {
-                CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.text
-                CalculatorFocus.INTEG_UPPER -> upperLimitText += action.text
-                CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.text
-                CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.text
-                else -> {}
-            }
-            return
-        }
-
-        if (action.type == ScientificType.FACTORIAL) {
-            if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
-                insertText("!")
-            }
-            return
-        }
-
         val toInsert = when (action.type) {
             ScientificType.SQRT -> "√("
             ScientificType.ASIN -> "asin("
@@ -634,6 +599,33 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             ScientificType.LOG -> "log("
             ScientificType.ABS -> "abs("
             else -> "${action.text.lowercase()}("
+        }
+
+        if (isOdeConditionFocused) {
+            odeConditions[odeConditionFocusIndex] += toInsert
+            return
+        }
+
+        if (calculatorMode == CalculatorMode.INTEGRATE && (
+                    currentFocus == CalculatorFocus.INTEG_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_UPPER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
+                    currentFocus == CalculatorFocus.INTEG_INNER_UPPER)) {
+            when (currentFocus) {
+                CalculatorFocus.INTEG_LOWER -> lowerLimitText += toInsert
+                CalculatorFocus.INTEG_UPPER -> upperLimitText += toInsert
+                CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += toInsert
+                CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += toInsert
+                else -> {}
+            }
+            return
+        }
+
+        if (action.type == ScientificType.FACTORIAL) {
+            if (displayText != "Error" && displayText != "NaN" && displayText != "Infinity") {
+                insertText("!")
+            }
+            return
         }
 
         insertText(toInsert, applyImplicitMultiplication = true)
@@ -929,6 +921,53 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         stepsList.clear()
 
         when (integType) {
+            IntegralType.CURVET2 -> {
+                val pVal = if (displayText == "0") "" else displayText
+                val qVal = innerLowerLimitText
+                val fullExpr = if (qVal.isBlank()) pVal else "$pVal, $qVal"
+                if (useRationalize) {
+                    try {
+                        val res = IntegFunc.integrateSymbolic(
+                            expression = fullExpr,
+                            lower = lowerLimitText,
+                            upper = upperLimitText,
+                            useRadians = useRadians,
+                            useRationalize = true,
+                            type = integType
+                        )
+                        resultText = res
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
+                } else {
+                    try {
+                        val lNum = lowerLimitText.toDoubleOrNull() ?: 0.0
+                        val uNum = upperLimitText.toDoubleOrNull() ?: 1.0
+                        val result = IntegFunc.integrate(
+                            expression = fullExpr,
+                            lower = lNum,
+                            upper = uNum,
+                            useRadians = useRadians,
+                            type = integType
+                        )
+                        if (result.isNaN()) {
+                            val res = IntegFunc.integrateSymbolic(
+                                expression = fullExpr,
+                                lower = lowerLimitText,
+                                upper = upperLimitText,
+                                useRadians = useRadians,
+                                useRationalize = false,
+                                type = integType
+                            )
+                            resultText = res
+                        } else {
+                            resultText = CalcFuncs.formatResult(result, precision)
+                        }
+                    } catch (e: Exception) {
+                        resultText = "Calculation Error"
+                    }
+                }
+            }
             IntegralType.DOUBLE -> {
                 try {
                     val res = IntegFunc.integrateDoubleIndefinite(
@@ -948,10 +987,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     try {
                         val res = IntegFunc.integrateDoubleDefinite(
                             expression = displayText,
-                            xLower = lowerLimitText,
-                            xUpper = upperLimitText,
-                            yLower = innerLowerLimitText,
-                            yUpper = innerUpperLimitText,
+                            lower = lowerLimitText,
+                            upper = upperLimitText,
+                            innerLower = innerLowerLimitText,
+                            innerUpper = innerUpperLimitText,
+                            axis = integrationAxis,
                             useRadians = useRadians,
                             useRationalize = true
                         )
@@ -961,40 +1001,23 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     }
                 } else {
                     try {
-                        val xLower = CalcFuncs.calculateExpression(lowerLimitText)
-                        val xUpper = CalcFuncs.calculateExpression(upperLimitText)
-                        val yLower = CalcFuncs.calculateExpression(innerLowerLimitText)
-                        val yUpper = CalcFuncs.calculateExpression(innerUpperLimitText)
-
-                        if (xLower.isNaN() || xUpper.isNaN() || yLower.isNaN() || yUpper.isNaN()) {
-                            val res = IntegFunc.integrateDoubleDefinite(
-                                expression = displayText,
-                                xLower = lowerLimitText,
-                                xUpper = upperLimitText,
-                                yLower = innerLowerLimitText,
-                                yUpper = innerUpperLimitText,
-                                useRadians = useRadians,
-                                useRationalize = false
-                            )
-                            resultText = res
-                            return
-                        }
-
                         val result = IntegFunc.integrateDoubleNumerical(
                             expression = displayText,
-                            xLower = xLower,
-                            xUpper = xUpper,
-                            yLower = yLower,
-                            yUpper = yUpper,
+                            lower = lowerLimitText,
+                            upper = upperLimitText,
+                            innerLower = innerLowerLimitText,
+                            innerUpper = innerUpperLimitText,
+                            axis = integrationAxis,
                             useRadians = useRadians
                         )
                         if (result.isNaN()) {
                             val res = IntegFunc.integrateDoubleDefinite(
                                 expression = displayText,
-                                xLower = lowerLimitText,
-                                xUpper = upperLimitText,
-                                yLower = innerLowerLimitText,
-                                yUpper = innerUpperLimitText,
+                                lower = lowerLimitText,
+                                upper = upperLimitText,
+                                innerLower = innerLowerLimitText,
+                                innerUpper = innerUpperLimitText,
+                                axis = integrationAxis,
                                 useRadians = useRadians,
                                 useRationalize = false
                             )
@@ -1291,7 +1314,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         if (type == IntegralType.DEFINITE || type == IntegralType.ARC ||
             type == IntegralType.XVOL || type == IntegralType.YVOL ||
             type == IntegralType.XSURF || type == IntegralType.YSURF ||
-            type == IntegralType.NDOUBLE) {
+            type == IntegralType.NDOUBLE || type == IntegralType.CURVET1 || type == IntegralType.CURVET2) {
             currentFocus = CalculatorFocus.INTEG_LOWER
         } else {
             currentFocus = CalculatorFocus.EXPRESSION
