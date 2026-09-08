@@ -19,12 +19,14 @@ object LimitsFunc {
             }
 
             val command = if (useRationalize) {
-                "Simplify[Rationalize(Limit[Rationalize($cleanedExpr), $variable -> Rationalize($cleanedTarget)])]"
+                "Simplify[Limit[Rationalize[$cleanedExpr], $variable -> Rationalize[$cleanedTarget]]]"
             } else {
-                "Simplify[Limit($cleanedExpr, $variable -> $cleanedTarget)]"
+                "Simplify[Limit[$cleanedExpr, $variable -> $cleanedTarget]]"
             }
 
-            val result = SymjaUtils.evaluator.eval(command).toString()
+            val result = SymjaUtils.evaluate { eval ->
+                eval.eval(command).toString()
+            }
 
             if (result.contains("Limit") || result.contains("Indeterminate")) {
                 "DNE"

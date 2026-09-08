@@ -15,19 +15,21 @@ object LaplaceFunc {
 
             val command = if (isInverse) {
                 if (useRationalize) {
-                    "Simplify[Rationalize(InverseLaplaceTransform[Rationalize($cleanedExpr), s, t])]"
+                    "Simplify[InverseLaplaceTransform[Rationalize[$cleanedExpr], s, t]]"
                 } else {
                     "Simplify[InverseLaplaceTransform[$cleanedExpr, s, t]]"
                 }
             } else {
                 if (useRationalize) {
-                    "Simplify[Rationalize(LaplaceTransform[Rationalize($cleanedExpr), t, s])]"
+                    "Simplify[LaplaceTransform[Rationalize[$cleanedExpr], t, s]]"
                 } else {
                     "Simplify[LaplaceTransform[$cleanedExpr, t, s]]"
                 }
             }
 
-            val result = SymjaUtils.evaluator.eval(command).toString()
+            val result = SymjaUtils.evaluate { eval ->
+                eval.eval(command).toString()
+            }
 
             if (result.contains("LaplaceTransform") || result.contains("InverseLaplaceTransform") || result.contains("Indeterminate")) {
                 "Error"

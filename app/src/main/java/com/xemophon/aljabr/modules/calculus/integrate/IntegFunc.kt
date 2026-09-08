@@ -14,7 +14,9 @@ object IntegFunc {
      */
     fun warmUp() {
         try {
-            SymjaUtils.evaluator.eval("Integrate[x, x]")
+            SymjaUtils.evaluate { eval ->
+                eval.eval("Integrate[x, x]")
+            }
         } catch (_: Throwable) {
         }
     }
@@ -51,19 +53,19 @@ object IntegFunc {
         useRationalize: Boolean = false,
         type: IntegralType = IntegralType.DEFINITE
     ): String {
-        return synchronized(SymjaUtils.evaluator) {
-            try {
+        return try {
+            SymjaUtils.evaluate { eval ->
                 val formula = constructFormula(expression, useRadians, type)
                 val lStr = if (lower.isBlank()) "a" else SymjaUtils.prepareForSymja(lower)
                 val uStr = if (upper.isBlank()) "b" else SymjaUtils.prepareForSymja(upper)
 
                 val command = if (useRationalize) {
-                    "Rationalize(Integrate[Rationalize($formula), {x, Rationalize($lStr), Rationalize($uStr)}])"
+                    "Integrate[Rationalize[$formula], {x, Rationalize[$lStr], Rationalize[$uStr]}]"
                 } else {
                     "Integrate[$formula, {x, $lStr, $uStr}]"
                 }
 
-                val res = SymjaUtils.evaluator.eval(command).toString()
+                val res = eval.eval(command).toString()
                 
                 if (res.contains("Integrate")) {
                     // Fallback to numerical if symbolic fails
@@ -71,15 +73,15 @@ object IntegFunc {
                     val uNum = upper.toDoubleOrNull() ?: Double.NaN
                     if (!lNum.isNaN() && !uNum.isNaN()) {
                         val num = integrate(expression, lNum, uNum, useRadians, type)
-                        if (!num.isNaN()) return num.toString()
+                        if (!num.isNaN()) return@evaluate num.toString()
                     }
-                    return "∫($expression)dx"
+                    return@evaluate "∫($expression)dx"
                 }
 
                 SymjaUtils.formatResult(res)
-            } catch (_: Exception) {
-                "Error"
             }
+        } catch (_: Exception) {
+            "Error"
         }
     }
 
@@ -91,12 +93,14 @@ object IntegFunc {
         type: IntegralType
     ): Double {
         return try {
-            val formula = constructFormula(expression, useRadians, type)
-            val lStr = formatLimit(lower)
-            val uStr = formatLimit(upper)
+            SymjaUtils.evaluate { eval ->
+                val formula = constructFormula(expression, useRadians, type)
+                val lStr = formatLimit(lower)
+                val uStr = formatLimit(upper)
 
-            val res = SymjaUtils.evaluator.eval("NIntegrate[$formula, {x, $lStr, $uStr}]").toString()
-            res.toDouble()
+                val res = eval.eval("NIntegrate[$formula, {x, $lStr, $uStr}]").toString()
+                res.toDouble()
+            }
         } catch (_: Throwable) {
             Double.NaN
         }
@@ -110,13 +114,15 @@ object IntegFunc {
         type: IntegralType
     ): Double {
         return try {
-            val formula = constructFormula(expression, useRadians, type)
-            val lStr = formatLimit(lower)
-            val uStr = formatLimit(upper)
+            SymjaUtils.evaluate { eval ->
+                val formula = constructFormula(expression, useRadians, type)
+                val lStr = formatLimit(lower)
+                val uStr = formatLimit(upper)
 
-            // Evaluate symbolically then force numerical conversion with N()
-            val res = SymjaUtils.evaluator.eval("Integrate[$formula, {x, $lStr, $uStr}]").toString()
-            res.toDouble()
+                // Evaluate symbolically then force numerical conversion with N()
+                val res = eval.eval("Integrate[$formula, {x, $lStr, $uStr}]").toString()
+                res.toDouble()
+            }
         } catch (_: Throwable) {
             Double.NaN
         }
@@ -146,11 +152,13 @@ object IntegFunc {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
             val command = if (useRationalize) {
-                "Simplify[Rationalize(Integrate[Rationalize($cleaned), x])]"
+                "Simplify[Integrate[Rationalize[$cleaned], x]]"
             } else {
                 "Simplify[Integrate[$cleaned, x]]"
             }
-            var resStr = SymjaUtils.evaluator.eval(command).toString()
+            var resStr = SymjaUtils.evaluate { eval ->
+                eval.eval(command).toString()
+            }
 
             if (resStr.contains("Integrate", ignoreCase = true)) {
                 return "∫($expression)dx"
@@ -195,28 +203,28 @@ object IntegFunc {
         useRadians: Boolean = true,
         useRationalize: Boolean = false
     ): String {
-        return synchronized(SymjaUtils.evaluator) {
-            try {
+        return try {
+            SymjaUtils.evaluate { eval ->
                 val cleaned = SymjaUtils.prepareForSymja(expression, useRadians)
                 val command = if (useRationalize) {
-                    "Simplify[Rationalize(Integrate[Rationalize($cleaned), x, y])]"
+                    "Simplify[Integrate[Rationalize[$cleaned], x, y]]"
                 } else {
                     "Simplify[Integrate[$cleaned, x, y]]"
                 }
-                var resStr = SymjaUtils.evaluator.eval(command).toString()
+                var resStr = eval.eval(command).toString()
 
                 if (resStr.contains("Integrate", ignoreCase = true)) {
-                    return "∫∫($expression) dx dy"
+                    return@evaluate "∫∫($expression) dx dy"
                 }
 
                 if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
-                    return "∫∫($expression) dx dy"
+                    return@evaluate "∫∫($expression) dx dy"
                 }
 
                 formatResult(resStr)
-            } catch (_: Exception) {
-                "∫∫($expression) dx dy"
             }
+        } catch (_: Exception) {
+            "∫∫($expression) dx dy"
         }
     }
 
@@ -233,8 +241,8 @@ object IntegFunc {
         useRadians: Boolean = true,
         useRationalize: Boolean = false
     ): String {
-        return synchronized(SymjaUtils.evaluator) {
-            try {
+        return try {
+            SymjaUtils.evaluate { eval ->
                 val formula = SymjaUtils.prepareForSymja(expression, useRadians)
                 val xL = if (xLower.isBlank()) "a" else SymjaUtils.prepareForSymja(xLower, useRadians)
                 val xU = if (xUpper.isBlank()) "b" else SymjaUtils.prepareForSymja(xUpper, useRadians)
@@ -242,12 +250,12 @@ object IntegFunc {
                 val yU = if (yUpper.isBlank()) "d" else SymjaUtils.prepareForSymja(yUpper, useRadians)
 
                 val command = if (useRationalize) {
-                    "Rationalize(Integrate[Rationalize($formula), {x, Rationalize($xL), Rationalize($xU)}, {y, Rationalize($yL), Rationalize($yU)}])"
+                    "Integrate[Rationalize[$formula], {x, Rationalize[$xL], Rationalize[$xU]}, {y, Rationalize[$yL], Rationalize[$yU]}]"
                 } else {
                     "Integrate[$formula, {x, $xL, $xU}, {y, $yL, $yU}]"
                 }
 
-                val res = SymjaUtils.evaluator.eval(command).toString()
+                val res = eval.eval(command).toString()
 
                 if (res.contains("Integrate", ignoreCase = true)) {
                     val xLNum = xLower.toDoubleOrNull() ?: Double.NaN
@@ -256,15 +264,15 @@ object IntegFunc {
                     val yUNum = yUpper.toDoubleOrNull() ?: Double.NaN
                     if (!xLNum.isNaN() && !xUNum.isNaN() && !yLNum.isNaN() && !yUNum.isNaN()) {
                         val num = integrateDoubleNumerical(expression, xLNum, xUNum, yLNum, yUNum, useRadians)
-                        if (!num.isNaN()) return num.toString()
+                        if (!num.isNaN()) return@evaluate num.toString()
                     }
-                    return "∫∫($expression) dx dy"
+                    return@evaluate "∫∫($expression) dx dy"
                 }
 
                 SymjaUtils.formatResult(res)
-            } catch (_: Exception) {
-                "Error"
             }
+        } catch (_: Exception) {
+            "Error"
         }
     }
 
@@ -283,15 +291,17 @@ object IntegFunc {
         if (xLower == xUpper || yLower == yUpper) return 0.0
 
         return try {
-            val formula = SymjaUtils.prepareForSymja(expression, useRadians)
-            val xLStr = formatLimit(xLower)
-            val xUStr = formatLimit(xUpper)
-            val yLStr = formatLimit(yLower)
-            val yUStr = formatLimit(yUpper)
+            SymjaUtils.evaluate { eval ->
+                val formula = SymjaUtils.prepareForSymja(expression, useRadians)
+                val xLStr = formatLimit(xLower)
+                val xUStr = formatLimit(xUpper)
+                val yLStr = formatLimit(yLower)
+                val yUStr = formatLimit(yUpper)
 
-            val command = "NIntegrate[$formula, {x, $xLStr, $xUStr}, {y, $yLStr, $yUStr}]"
-            val res = SymjaUtils.evaluator.eval(command).toString()
-            res.toDouble()
+                val command = "NIntegrate[$formula, {x, $xLStr, $xUStr}, {y, $yLStr, $yUStr}]"
+                val res = eval.eval(command).toString()
+                res.toDouble()
+            }
         } catch (_: Throwable) {
             Double.NaN
         }
