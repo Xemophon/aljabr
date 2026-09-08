@@ -904,17 +904,22 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun runLimitCalculation() {
         if (displayText.isBlank() || targetText.isBlank()) return
         stepsList.clear()
-
-        try {
-            val res = LimitsFunc.calculateLimit(displayText, "x", targetText, useRationalize)
-
-            lastExpression = displayText
-            resultText = res
-            cursorIndex = -1
-            isShowingResult = true
-        } catch (e: Exception) {
-            resultText = "Error"
-            isShowingResult = false
+        isCalculating = true
+        viewModelScope.launch {
+            try {
+                val res = withContext(Dispatchers.Default) {
+                    LimitsFunc.calculateLimit(displayText, "x", targetText, useRationalize)
+                }
+                lastExpression = displayText
+                resultText = res
+                cursorIndex = -1
+                isShowingResult = true
+            } catch (e: Exception) {
+                resultText = "Error"
+                isShowingResult = false
+            } finally {
+                isCalculating = false
+            }
         }
     }
 
@@ -1115,29 +1120,37 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         } else {
-            try {
-                if (diffGridMode == "Complex") {
-                    analysisResult = AnalysisFunc.complexAnalysis(displayText)
-                    val res = DiffFunc.differentiateComplex(displayText)
+            isCalculating = true
+            viewModelScope.launch {
+                try {
+                    val (res, analysis) = withContext(Dispatchers.Default) {
+                        if (diffGridMode == "Complex") {
+                            val an = AnalysisFunc.complexAnalysis(displayText)
+                            val r = DiffFunc.differentiateComplex(displayText)
+                            Pair(r, an)
+                        } else {
+                            val an = AnalysisFunc.fullAnalysis(displayText)
+                            val r = DiffFunc.differentiate(displayText, useRationalize)
+                            Pair(r, an)
+                        }
+                    }
+                    analysisResult = analysis
                     if (res.isNotEmpty()) {
                         resultText = res
                     }
-                } else {
-                    analysisResult = AnalysisFunc.fullAnalysis(displayText)
-                    val res = DiffFunc.differentiate(displayText, useRationalize)
-                    if (res.isNotEmpty()) {
-                        resultText = res
-                    }
+                    isShowingResult = true
+                } catch (e: Exception) {
+                    resultText = "Error"
+                } finally {
+                    isCalculating = false
                 }
-                isShowingResult = true
-            } catch (e: Exception) {
-                resultText = "Error"
             }
         }
     }
 
     fun runFullAnalysis() {
         if (displayText.isEmpty() || displayText == "0") return
+        isCalculating = true
         viewModelScope.launch {
             try {
                 analysisResult = withContext(Dispatchers.Default) {
@@ -1149,6 +1162,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             } catch (e: Exception) {
                 // Handle error if needed
+            } finally {
+                isCalculating = false
             }
         }
     }
@@ -1184,35 +1199,45 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun runTaylorCalculation() {
         if (displayText.isBlank()) return
         stepsList.clear()
-
-        try {
-            val ord = orderText.toIntOrNull() ?: 5
-            val res = SymjaUtils.calculateTaylor(displayText, targetText, ord)
-
-            if (res != "Error" && res.isNotEmpty()) {
-                resultText = res
-                isShowingResult = true
+        isCalculating = true
+        viewModelScope.launch {
+            try {
+                val ord = orderText.toIntOrNull() ?: 5
+                val res = withContext(Dispatchers.Default) {
+                    SymjaUtils.calculateTaylor(displayText, targetText, ord)
+                }
+                if (res != "Error" && res.isNotEmpty()) {
+                    resultText = res
+                    isShowingResult = true
+                }
+            } catch (e: Exception) {
+                resultText = "Error"
+            } finally {
+                isCalculating = false
             }
-        } catch (e: Exception) {
-            resultText = "Error"
         }
     }
 
     private fun runLaplaceCalculation() {
         if (displayText.isBlank() || displayText == "0") return
         stepsList.clear()
-
-        try {
-            val isInverse = laplaceMode == "Reverse"
-            val res = LaplaceFunc.calculateLaplace(displayText, isInverse = isInverse, useRationalize = useRationalize)
-
-            lastExpression = displayText
-            resultText = res
-            cursorIndex = -1
-            isShowingResult = true
-        } catch (e: Exception) {
-            resultText = "Error"
-            isShowingResult = false
+        isCalculating = true
+        viewModelScope.launch {
+            try {
+                val isInverse = laplaceMode == "Reverse"
+                val res = withContext(Dispatchers.Default) {
+                    LaplaceFunc.calculateLaplace(displayText, isInverse = isInverse, useRationalize = useRationalize)
+                }
+                lastExpression = displayText
+                resultText = res
+                cursorIndex = -1
+                isShowingResult = true
+            } catch (e: Exception) {
+                resultText = "Error"
+                isShowingResult = false
+            } finally {
+                isCalculating = false
+            }
         }
     }
 

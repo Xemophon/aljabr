@@ -44,7 +44,10 @@ data class ComplexAnalysisInfo(
     val dfdzbar: String,
     val cauchyRiemannSatisfied: Boolean,
     val dxdz: String,
-    val dydz: String
+    val dydz: String,
+    val poles: List<String> = emptyList(),
+    val residues: List<String> = emptyList(),
+    val contourIntegral: String = ""
 )
 
 data class AnalysisResult(
@@ -408,6 +411,24 @@ fun AnalysisReport(
                 val rawStatusText = if (complex.cauchyRiemannSatisfied) "True" else "False"
                 ResultItemCard("Cauchy-Riemann Equations Check", statusText, rawStatusText)
             }
+            if (complex.poles.isNotEmpty()) {
+                item { AnalysisSectionHeader("Singular Points (z₀)") }
+                items(complex.poles) { pole ->
+                    ResultItemCard("Pole z₀", pole)
+                }
+            }
+            if (complex.residues.isNotEmpty()) {
+                item { AnalysisSectionHeader("Residues") }
+                items(complex.residues) { res ->
+                    ResultItemCard("Residue", res)
+                }
+            }
+            if (complex.contourIntegral.isNotEmpty()) {
+                item { AnalysisSectionHeader("Contour Integral ∮") }
+                item {
+                    ResultItemCard("Result", complex.contourIntegral)
+                }
+            }
         }
     }
 }
@@ -485,13 +506,42 @@ object AnalysisFunc {
                 val crCheck = eval.eval("Simplify[D[$substituted, x] + I * D[$substituted, y] == 0]").toString()
                 val isCrSatisfied = crCheck.equals("True", ignoreCase = true) || crCheck.equals("0", ignoreCase = true)
 
+                // Poles / Singular Points: Solve Denominator == 0 for z
+                val polesList = mutableListOf<String>()
+                val residuesList = mutableListOf<String>()
+                try {
+                    val solveRes = eval.eval("Solve[Denominator[$cleaned] == 0, z]").toString()
+                    val solutions = SymjaUtils.parseSolveResult(solveRes)
+                    for (sol in solutions) {
+                        val z0Str = sol.split("->").last().trim()
+                        if (z0Str.isNotEmpty() && z0Str != "{}") {
+                            polesList.add(SymjaUtils.formatResult(z0Str))
+                            val residueExpr = "Simplify[Limit[(z - ($z0Str)) * ($cleaned), z -> $z0Str]]"
+                            val resVal = eval.eval(residueExpr).toString()
+                            residuesList.add(SymjaUtils.formatResult(resVal))
+                        }
+                    }
+                } catch (_: Exception) {}
+
+                val contourIntegral = try {
+                    if (residuesList.isNotEmpty()) {
+                        val sumRes = residuesList.joinToString(" + ") { "($it)" }
+                        val integralRes = eval.eval("Simplify[2 * Pi * I * ($sumRes)]").toString()
+                        SymjaUtils.formatResult(integralRes)
+                    } else {
+                        "0 (No poles found / Integral is 0)"
+                    }
+                } catch (_: Exception) {
+                    "Could not evaluate contour integral"
+                }
+
                 val formattedSubst = SymjaUtils.formatResult(substituted)
                 val formattedDfDz = SymjaUtils.formatResult(dfdzRaw)
                 val formattedDfDzBar = SymjaUtils.formatResult(dfdzbarRaw)
 
                 val derivatives = listOf(
-                    NamedExpression("df/dz", formattedDfDz, dfdzRaw),
-                    NamedExpression("df/d(z̄)", formattedDfDzBar, dfdzbarRaw),
+                    NamedExpression("∂f/∂z", formattedDfDz, dfdzRaw),
+                    NamedExpression("∂f/∂z̄", formattedDfDzBar, dfdzbarRaw),
                     NamedExpression("∂f/∂x", SymjaUtils.formatResult(dfdxRaw), dfdxRaw),
                     NamedExpression("∂f/∂y", SymjaUtils.formatResult(dfdyRaw), dfdyRaw)
                 )
@@ -502,7 +552,10 @@ object AnalysisFunc {
                     dfdzbar = formattedDfDzBar,
                     cauchyRiemannSatisfied = isCrSatisfied,
                     dxdz = dfdxRaw,
-                    dydz = dfdyRaw
+                    dydz = dfdyRaw,
+                    poles = polesList.distinct(),
+                    residues = residuesList,
+                    contourIntegral = contourIntegral
                 )
 
                 AnalysisResult(

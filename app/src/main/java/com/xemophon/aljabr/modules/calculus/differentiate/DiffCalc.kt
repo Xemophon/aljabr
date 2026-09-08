@@ -57,6 +57,7 @@ import com.xemophon.aljabr.ui.components.screens.CalculatorFocus
 import com.xemophon.aljabr.ui.components.screens.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.screens.StepsBottomSheet
+import com.xemophon.aljabr.ui.components.screens.LoadingIndicator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -90,6 +91,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
         diffGridMode = viewModel.diffGridMode,
         analysisResult = viewModel.analysisResult,
         steps = viewModel.stepsList,
+        isCalculating = viewModel.isCalculating,
         isCalculatingSteps = viewModel.isCalculatingSteps,
         onShowStepsClick = { viewModel.showStepsSheet = true },
         onFocusChange = { viewModel.setFocus(it) },
@@ -108,6 +110,7 @@ fun DiffCalcContent(
     diffGridMode: String,
     analysisResult: AnalysisResult?,
     steps: List<CalculusStep> = emptyList(),
+    isCalculating: Boolean = false,
     isCalculatingSteps: Boolean = false,
     onShowStepsClick: () -> Unit = {},
     onFocusChange: (CalculatorFocus) -> Unit,
@@ -138,7 +141,14 @@ fun DiffCalcContent(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    if (analysisResult == null) {
+                    if (isCalculating || isCalculatingSteps) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            LoadingIndicator(
+                                modifier = Modifier.fillMaxSize(),
+                                message = if (diffGridMode == "Complex") "Computing Complex Derivative..." else "Calculating Derivative..."
+                            )
+                        }
+                    } else if (analysisResult == null) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             DiffDisplay(
                                 expression = displayText,
@@ -163,7 +173,7 @@ fun DiffCalcContent(
                     }
                 }
                 
-                if (analysisResult == null) {
+                if (analysisResult == null && !isCalculating && !isCalculatingSteps) {
                     AdvancedButtonsGrid(
                         isInverse = isInverse,
                         gridMode = AdvancedGridMode.Differentiation(diffGridMode),
