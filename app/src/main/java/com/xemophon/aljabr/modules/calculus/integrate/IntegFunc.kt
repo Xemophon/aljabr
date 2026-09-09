@@ -21,14 +21,41 @@ object IntegFunc {
         }
     }
 
+    /**
+     * Splits string by top-level commas, respecting parenthetical / bracket depth.
+     */
+    fun splitTopLevelCommas(input: String): List<String> {
+        val result = mutableListOf<String>()
+        var depth = 0
+        val sb = StringBuilder()
+        for (ch in input) {
+            when (ch) {
+                '(', '[', '{' -> depth++
+                ')', ']', '}' -> if (depth > 0) depth--
+                ',' -> {
+                    if (depth == 0) {
+                        result.add(sb.toString().trim())
+                        sb.clear()
+                        continue
+                    }
+                }
+            }
+            sb.append(ch)
+        }
+        if (sb.isNotEmpty() || result.isNotEmpty()) {
+            result.add(sb.toString().trim())
+        }
+        return result
+    }
+
     private fun getIntegrationVariable(expression: String, type: IntegralType): String {
         return when (type) {
             IntegralType.CURVET1 -> {
-                val parts = expression.split(",")
+                val parts = splitTopLevelCommas(expression)
                 if (parts.size == 3) "t" else "x"
             }
             IntegralType.CURVET2 -> {
-                val parts = expression.split(",")
+                val parts = splitTopLevelCommas(expression)
                 if (parts.size == 4) "t" else "x"
             }
             else -> "x"
@@ -71,29 +98,37 @@ object IntegFunc {
             SymjaUtils.evaluate { eval ->
                 val formula = constructFormula(expression, useRadians, type)
                 val v = getIntegrationVariable(expression, type)
-                val lStr = if (lower.isBlank()) "a" else SymjaUtils.prepareForSymja(lower)
-                val uStr = if (upper.isBlank()) "b" else SymjaUtils.prepareForSymja(upper)
 
-                val command = if (useRationalize) {
-                    "Integrate[Rationalize[$formula], {$v, Rationalize[$lStr], Rationalize[$uStr]}]"
+                val isIndefinite = lower.isBlank() && upper.isBlank()
+
+                val command = if (isIndefinite) {
+                    if (useRationalize) "Simplify[Integrate[Rationalize[$formula], $v]]" else "Simplify[Integrate[$formula, $v]]"
                 } else {
-                    "Integrate[$formula, {$v, $lStr, $uStr}]"
+                    val lStr = SymjaUtils.prepareForSymja(lower)
+                    val uStr = SymjaUtils.prepareForSymja(upper)
+                    if (useRationalize) {
+                        "Integrate[Rationalize[$formula], {$v, Rationalize[$lStr], Rationalize[$uStr]}]"
+                    } else {
+                        "Integrate[$formula, {$v, $lStr, $uStr}]"
+                    }
                 }
 
                 val res = eval.eval(command).toString()
-                
-                if (res.contains("Integrate")) {
-                    // Fallback to numerical if symbolic fails
-                    val lNum = lower.toDoubleOrNull() ?: Double.NaN
-                    val uNum = upper.toDoubleOrNull() ?: Double.NaN
-                    if (!lNum.isNaN() && !uNum.isNaN()) {
-                        val num = integrate(expression, lNum, uNum, useRadians, type)
-                        if (!num.isNaN()) return@evaluate num.toString()
+
+                if (res.contains("Integrate", ignoreCase = true) || res == "\$Failed") {
+                    if (!isIndefinite) {
+                        val lNum = lower.toDoubleOrNull() ?: Double.NaN
+                        val uNum = upper.toDoubleOrNull() ?: Double.NaN
+                        if (!lNum.isNaN() && !uNum.isNaN()) {
+                            val num = integrate(expression, lNum, uNum, useRadians, type)
+                            if (!num.isNaN()) return@evaluate num.toString()
+                        }
                     }
-                    return@evaluate "∫($expression)d$v"
+                    return@evaluate categorizeIntegralResult(res, false, "∫($expression)d$v")
                 }
 
-                SymjaUtils.formatResult(res)
+                val formatted = SymjaUtils.formatResult(res)
+                if (isIndefinite) "$formatted + C" else formatted
             }
         } catch (_: Exception) {
             "Error"
@@ -115,7 +150,7 @@ object IntegFunc {
                 val uStr = formatLimit(upper)
 
                 val res = eval.eval("NIntegrate[$formula, {$v, $lStr, $uStr}]").toString()
-                res.toDouble()
+                res.toDoubleOrNull() ?: Double.NaN
             }
         } catch (_: Throwable) {
             Double.NaN
@@ -137,8 +172,8 @@ object IntegFunc {
                 val uStr = formatLimit(upper)
 
                 // Evaluate symbolically then force numerical conversion with N()
-                val res = eval.eval("Integrate[$formula, {$v, $lStr, $uStr}]").toString()
-                res.toDouble()
+                val res = eval.eval("N[Integrate[$formula, {$v, $lStr, $uStr}]]").toString()
+                res.toDoubleOrNull() ?: Double.NaN
             }
         } catch (_: Throwable) {
             Double.NaN
@@ -175,7 +210,7 @@ object IntegFunc {
     }
 
     private fun constructCurve1Formula(expression: String, useRadians: Boolean): String {
-        val parts = expression.split(",").map { it.trim() }
+        val parts = splitTopLevelCommas(expression)
         return when (parts.size) {
             3 -> {
                 // f(x,y), x(t), y(t) -> \int_a^b f(x(t), y(t)) \sqrt{x'(t)^2 + y'(t)^2} dt
@@ -194,7 +229,8 @@ object IntegFunc {
                 // f(x,y) or f(x)
                 val f = SymjaUtils.prepareForSymja(expression, useRadians)
                 if (f.contains("y")) {
-                    "ReplaceAll[($f), {y -> x}] * Sqrt(2)"
+                    // Explicitly treat default path as y = x when y is present without an explicit curve
+                    "ReplaceAll[($f), {y -> x}] * Sqrt(1 + (D(x, x))^2)"
                 } else {
                     "($f) * Sqrt(1 + (D($f, x))^2)"
                 }
@@ -203,7 +239,7 @@ object IntegFunc {
     }
 
     private fun constructCurve2Formula(expression: String, useRadians: Boolean): String {
-        val parts = expression.split(",").map { it.trim() }
+        val parts = splitTopLevelCommas(expression)
         return when (parts.size) {
             4 -> {
                 // P(x,y), Q(x,y), x(t), y(t) -> \int_a^b [P(x(t), y(t)) x'(t) + Q(x(t), y(t)) y'(t)] dt
@@ -221,10 +257,10 @@ object IntegFunc {
                 "ReplaceAll[$p, {y -> ($yx)}] + ReplaceAll[$q, {y -> ($yx)}] * D($yx, x)"
             }
             2 -> {
-                // P(x,y), Q(x,y) along y=x
+                // P(x,y), Q(x,y) along explicit default path y = x (y'(x) = 1)
                 val p = SymjaUtils.prepareForSymja(parts[0], useRadians)
                 val q = SymjaUtils.prepareForSymja(parts[1], useRadians)
-                "ReplaceAll[$p, {y -> x}] + ReplaceAll[$q, {y -> x}]"
+                "ReplaceAll[$p, {y -> x}] + ReplaceAll[$q, {y -> x}] * D(x, x)"
             }
             else -> {
                 // f(x)
@@ -249,16 +285,12 @@ object IntegFunc {
             } else {
                 "Simplify[Integrate[$cleaned, x]]"
             }
-            var resStr = SymjaUtils.evaluate { eval ->
+            val resStr = SymjaUtils.evaluate { eval ->
                 eval.eval(command).toString()
             }
 
-            if (resStr.contains("Integrate", ignoreCase = true)) {
-                return "∫($expression)dx"
-            }
-
-            if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
-                return "∫($expression)dx"
+            if (resStr.contains("Integrate", ignoreCase = true) || resStr == "\$Failed") {
+                return categorizeIntegralResult(resStr, false, "∫($expression)dx")
             }
 
             formatResult(resStr)
@@ -290,6 +322,7 @@ object IntegFunc {
     /**
      * Performs symbolic indefinite double integration over two variables (x and y).
      * Symja command: Integrate[expr, x, y]
+     * Formats constants as + C₁(x) + C₂(y)
      */
     fun integrateDoubleIndefinite(
         expression: String,
@@ -304,17 +337,14 @@ object IntegFunc {
                 } else {
                     "Simplify[Integrate[$cleaned, x, y]]"
                 }
-                var resStr = eval.eval(command).toString()
+                val resStr = eval.eval(command).toString()
 
-                if (resStr.contains("Integrate", ignoreCase = true)) {
-                    return@evaluate "∫∫($expression) dx dy"
+                if (resStr.contains("Integrate", ignoreCase = true) || resStr == "\$Failed") {
+                    return@evaluate categorizeIntegralResult(resStr, false, "∫∫($expression) dx dy")
                 }
 
-                if (resStr == "0" && (cleaned != "0") && (cleaned != "0.0")) {
-                    return@evaluate "∫∫($expression) dx dy"
-                }
-
-                formatResult(resStr)
+                val formatted = SymjaUtils.formatResult(resStr)
+                "$formatted + C₁(x) + C₂(y)"
             }
         } catch (_: Exception) {
             "∫∫($expression) dx dy"
@@ -323,7 +353,8 @@ object IntegFunc {
 
     /**
      * Performs symbolic definite double integration over x and y.
-     * Symja command: Integrate[expr, {x, xLower, xUpper}, {y, yLower, yUpper}]
+     * Region I (axis == "X"): outer x (a to b), inner y (c(x) to d(x)). Symja: Integrate[expr, {x, a, b}, {y, c, d}]
+     * Region II (axis == "Y"): outer y (a to b), inner x (c(y) to d(y)). Symja: Integrate[expr, {y, a, b}, {x, c, d}]
      */
     fun integrateDoubleDefinite(
         expression: String,
@@ -344,12 +375,14 @@ object IntegFunc {
                 val u2 = if (innerUpper.isBlank()) "d" else SymjaUtils.prepareForSymja(innerUpper, useRadians)
 
                 val command = if (axis == "Y") {
+                    // Region II: outer y (l1..u1), inner x (l2..u2)
                     if (useRationalize) {
                         "Integrate[Rationalize[$formula], {y, Rationalize[$l1], Rationalize[$u1]}, {x, Rationalize[$l2], Rationalize[$u2]}]"
                     } else {
                         "Integrate[$formula, {y, $l1, $u1}, {x, $l2, $u2}]"
                     }
                 } else {
+                    // Region I: outer x (l1..u1), inner y (l2..u2)
                     if (useRationalize) {
                         "Integrate[Rationalize[$formula], {x, Rationalize[$l1], Rationalize[$u1]}, {y, Rationalize[$l2], Rationalize[$u2]}]"
                     } else {
@@ -359,10 +392,11 @@ object IntegFunc {
 
                 val res = eval.eval(command).toString()
 
-                if (res.contains("Integrate", ignoreCase = true) || (res == "0" && formula != "0" && formula != "0.0")) {
+                if (res.contains("Integrate", ignoreCase = true) || res == "\$Failed") {
                     val num = integrateDoubleNumerical(expression, lower, upper, innerLower, innerUpper, axis, useRadians)
-                    if (!num.isNaN()) return@evaluate num.toString()
-                    return@evaluate "∫∫($expression) dx dy"
+                    if (!num.isNaN()) return@evaluate SymjaUtils.formatResult(num.toString())
+                    val diffs = if (axis == "Y") "dx dy" else "dy dx"
+                    return@evaluate categorizeIntegralResult(res, false, "∫∫($expression) $diffs")
                 }
 
                 SymjaUtils.formatResult(res)
@@ -394,17 +428,39 @@ object IntegFunc {
                 val u2 = if (innerUpper.isBlank()) "1" else SymjaUtils.prepareForSymja(innerUpper, useRadians)
 
                 val command = if (axis == "Y") {
-                    // Region II: outer y, inner x
+                    // Region II: outer y (l1..u1), inner x (l2..u2)
                     "NIntegrate[$formula, {y, $l1, $u1}, {x, $l2, $u2}]"
                 } else {
-                    // Region I: outer x, inner y
+                    // Region I: outer x (l1..u1), inner y (l2..u2)
                     "NIntegrate[$formula, {x, $l1, $u1}, {y, $l2, $u2}]"
                 }
                 val res = eval.eval(command).toString()
-                res.toDouble()
+                res.toDoubleOrNull() ?: Double.NaN
             }
         } catch (_: Throwable) {
             Double.NaN
+        }
+    }
+
+    /**
+     * Categorizes CAS output into explicit mathematical results (divergence, undefined, numerical failure, no closed form).
+     */
+    fun categorizeIntegralResult(resStr: String, isNumerical: Boolean = false, defaultFallback: String = "Error"): String {
+        return when {
+            resStr.contains("Infinity", ignoreCase = true) ||
+            resStr.contains("ComplexInfinity", ignoreCase = true) ||
+            resStr.contains("DirectedInfinity", ignoreCase = true) ||
+            resStr.contains("idiv", ignoreCase = true) -> "Diverges (∞)"
+
+            resStr.contains("Indeterminate", ignoreCase = true) -> "Undefined"
+
+            resStr.contains("Integrate", ignoreCase = true) || resStr == "\$Failed" -> {
+                if (isNumerical) "Numerical integration failed" else "No closed form solution"
+            }
+
+            resStr.contains("NIntegrate", ignoreCase = true) -> "Numerical integration failed"
+
+            else -> defaultFallback
         }
     }
 }

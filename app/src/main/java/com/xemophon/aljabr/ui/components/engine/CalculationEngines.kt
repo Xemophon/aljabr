@@ -163,7 +163,15 @@ object IntegrationEngine {
                 type = integType
             )
             return if (result.isNaN()) {
-                "No convergence"
+                val symRes = IntegFunc.integrateSymbolic(
+                    expression = displayText,
+                    lower = lowerLimitText,
+                    upper = upperLimitText,
+                    useRadians = useRadians,
+                    useRationalize = false,
+                    type = integType
+                )
+                if (symRes.contains("∫")) "Numerical integration failed" else symRes
             } else {
                 CalcFuncs.formatResult(result, precision)
             }

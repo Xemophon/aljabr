@@ -145,6 +145,7 @@ fun IntegCalcContent(
                         result = resultText,
                         focus = currentFocus,
                         integType = integType,
+                        integrationAxis = integrationAxis,
                         cursorIndex = cursorIndex,
                         onFocusChange = onFocusChange,
                         onCursorIndexChange = onCursorIndexChange,
@@ -171,6 +172,7 @@ fun IntegDisplay(
     result: String,
     focus: CalculatorFocus,
     integType: IntegralType,
+    integrationAxis: String = "X",
     cursorIndex: Int,
     onFocusChange: (CalculatorFocus) -> Unit,
     onCursorIndexChange: (Int) -> Unit,
@@ -436,7 +438,7 @@ fun IntegDisplay(
                                 IntegralType.YVOL -> "2πx|$textWithCursor| ∂x"
                                 IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² ∂x"
                                 IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² ∂x"
-                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> "$textWithCursor ∂x∂y"
+                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> if (integrationAxis == "Y") "$textWithCursor ∂x∂y" else "$textWithCursor ∂y∂x"
                                 IntegralType.CURVET1 -> "$textWithCursor ∂s"
                                 else -> "$textWithCursor ∂x"
                             }
