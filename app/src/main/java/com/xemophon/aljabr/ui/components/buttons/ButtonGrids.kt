@@ -77,11 +77,37 @@ fun ShortCalcButtons(
     modifier: Modifier = Modifier,
     gridMode: ShortGridMode,
     letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
+    hexRowNeeded: Boolean = false,
     onAction: (CalcButtonAction) -> Unit,
 ) {
     CalcButtonSheet(modifier.fillMaxHeight()) {
         val isFunctions = gridMode == ShortGridMode.Functions
         val selectedGrid = if (isFunctions) FunctionsButtonGrid else ShortButtonGrid
+
+        if (hexRowNeeded) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+            ) {
+                listOf("A", "B", "C", "D", "E", "F").forEach { hexChar ->
+                    Button(
+                        onClick = { onAction(CalcButtonAction.Symbol(hexChar)) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = hexChar,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+        }
 
         val isPolyOrOde = gridMode == ShortGridMode.Polynomials || gridMode == ShortGridMode.BDE
         if (isPolyOrOde) {

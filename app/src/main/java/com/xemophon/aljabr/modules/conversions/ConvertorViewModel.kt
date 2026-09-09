@@ -15,15 +15,14 @@ import com.xemophon.aljabr.ui.components.input.InputState
 import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.math.BigInteger
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-enum class ConversionMode { ANGLE, COMPLEX }
+enum class ConversionMode { ANGLE, COMPLEX, NUMSYS }
 enum class SelectedField { PRIMARY, SECONDARY }
 enum class SubField { MAIN, EXTRA }
 
@@ -57,6 +56,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             primaryCursor2 = 0
             secondaryCursor = 0
             secondaryCursor2 = 0
+            selectedField = SelectedField.PRIMARY
             selectedSubField = SubField.MAIN
         }
     }
@@ -150,6 +150,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         val base = when (mode) {
             ConversionMode.ANGLE -> "Degrees" to "Radians"
             ConversionMode.COMPLEX -> "Cartesian" to "Polar"
+            ConversionMode.NUMSYS -> "Decimal" to "HEX / BIN"
         }
         return if (isSwapped) base.second to base.first else base
     }
@@ -158,10 +159,13 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         val cart = "Expression" to ""
         val polar = "Modulus" to "Angle"
         val angle = "Value" to ""
+        val dec = "Decimal" to ""
+        val hexBin = "Hex" to "Binary"
 
         val base = when (mode) {
             ConversionMode.ANGLE -> angle to angle
             ConversionMode.COMPLEX -> cart to polar
+            ConversionMode.NUMSYS -> dec to hexBin
         }
         return if (isSwapped) base.second to base.first else base
     }
@@ -186,6 +190,11 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun performInstantConversion() {
+        if (mode == ConversionMode.NUMSYS) {
+            performNumSysConversion()
+            return
+        }
+
         if (selectedField == SelectedField.PRIMARY) {
             if (primaryValue.isBlank() && primaryValue2.isBlank()) {
                 secondaryValue = ""
@@ -217,6 +226,118 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    private fun performNumSysConversion() {
+        val isDecimalSelected = if (!isSwapped) {
+            selectedField == SelectedField.PRIMARY
+        } else {
+            selectedField == SelectedField.SECONDARY
+        }
+
+        val isHexSelected = if (!isSwapped) {
+            selectedField == SelectedField.SECONDARY && selectedSubField == SubField.MAIN
+        } else {
+            selectedField == SelectedField.PRIMARY && selectedSubField == SubField.MAIN
+        }
+
+        val isBinSelected = if (!isSwapped) {
+            selectedField == SelectedField.SECONDARY && selectedSubField == SubField.EXTRA
+        } else {
+            selectedField == SelectedField.PRIMARY && selectedSubField == SubField.EXTRA
+        }
+
+        if (isDecimalSelected) {
+            val decInput = if (!isSwapped) primaryValue else secondaryValue
+            if (decInput.isBlank()) {
+                if (!isSwapped) { secondaryValue = ""; secondaryValue2 = "" }
+                else { primaryValue = ""; primaryValue2 = "" }
+                return
+            }
+            val (hexRes, binRes) = convertDecimalToHexAndBin(decInput)
+            if (!isSwapped) {
+                secondaryValue = hexRes
+                secondaryValue2 = binRes
+            } else {
+                primaryValue = hexRes
+                primaryValue2 = binRes
+            }
+        } else if (isHexSelected) {
+            val hexInput = if (!isSwapped) secondaryValue else primaryValue
+            if (hexInput.isBlank()) {
+                if (!isSwapped) { primaryValue = ""; secondaryValue2 = "" }
+                else { secondaryValue = ""; primaryValue2 = "" }
+                return
+            }
+            val (decRes, binRes) = convertHexToDecAndBin(hexInput)
+            if (!isSwapped) {
+                primaryValue = decRes
+                secondaryValue2 = binRes
+            } else {
+                secondaryValue = decRes
+                primaryValue2 = binRes
+            }
+        } else if (isBinSelected) {
+            val binInput = if (!isSwapped) secondaryValue2 else primaryValue2
+            if (binInput.isBlank()) {
+                if (!isSwapped) { primaryValue = ""; secondaryValue = "" }
+                else { secondaryValue = ""; primaryValue = "" }
+                return
+            }
+            val (decRes, hexRes) = convertBinToDecAndHex(binInput)
+            if (!isSwapped) {
+                primaryValue = decRes
+                secondaryValue = hexRes
+            } else {
+                secondaryValue = decRes
+                primaryValue = hexRes
+            }
+        }
+    }
+
+    private fun convertDecimalToHexAndBin(input: String): Pair<String, String> {
+        val clean = input.trim()
+        if (clean.isBlank()) return "" to ""
+        val bigInt = try {
+            BigInteger(clean)
+        } catch (_: Exception) {
+            val exprVal = CalcFuncs.calculateExpression(clean)
+            if (exprVal.isNaN() || exprVal.isInfinite()) return "Error" to ""
+            try {
+                BigInteger.valueOf(exprVal.toLong())
+            } catch (_: Exception) {
+                return "Error" to ""
+            }
+        }
+        val hex = bigInt.toString(16).uppercase()
+        val bin = bigInt.toString(2)
+        return hex to bin
+    }
+
+    private fun convertHexToDecAndBin(input: String): Pair<String, String> {
+        val clean = input.trim().removePrefix("0x").removePrefix("0X").replace(" ", "")
+        if (clean.isBlank()) return "" to ""
+        val bigInt = try {
+            BigInteger(clean, 16)
+        } catch (_: Exception) {
+            return "Error" to ""
+        }
+        val dec = bigInt.toString(10)
+        val bin = bigInt.toString(2)
+        return dec to bin
+    }
+
+    private fun convertBinToDecAndHex(input: String): Pair<String, String> {
+        val clean = input.trim().removePrefix("0b").removePrefix("0B").replace(" ", "")
+        if (clean.isBlank()) return "" to ""
+        val bigInt = try {
+            BigInteger(clean, 2)
+        } catch (_: Exception) {
+            return "Error" to ""
+        }
+        val dec = bigInt.toString(10)
+        val hex = bigInt.toString(16).uppercase()
+        return dec to hex
+    }
+
     private fun performConversion() {
         performInstantConversion()
     }
@@ -225,6 +346,7 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
         return when (mode) {
             ConversionMode.ANGLE -> convertAngle(val1, fromPrimary) to ""
             ConversionMode.COMPLEX -> convertComplexCartPolar(val1, val2, fromPrimary)
+            ConversionMode.NUMSYS -> "" to ""
         }
     }
 

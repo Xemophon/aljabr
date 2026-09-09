@@ -67,6 +67,7 @@ fun ConvertorPage(
                     text = when (viewModel.mode) {
                         ConversionMode.ANGLE -> "Angle Convertor"
                         ConversionMode.COMPLEX -> "Complex Convertor"
+                        ConversionMode.NUMSYS -> "Number System Convertor"
                     }
                 )
 
@@ -136,16 +137,17 @@ fun ConvertorPage(
                     }
                 }
 
-                val letterMode = if (viewModel.mode == ConversionMode.ANGLE) {
-                    CalcButtonAction.Constant("e", Constants.E)
-                } else {
-                    CalcButtonAction.Constant("j", Constants.I)
+                val letterMode = when (viewModel.mode) {
+                    ConversionMode.ANGLE -> CalcButtonAction.Constant("e", Constants.E)
+                    ConversionMode.COMPLEX -> CalcButtonAction.Constant("j", Constants.I)
+                    ConversionMode.NUMSYS -> CalcButtonAction.Symbol("0x")
                 }
 
                 ShortCalcButtons(
                     modifier = Modifier.weight(1.3f),
                     gridMode = ShortGridMode.Convertor,
                     letterNeeded = letterMode,
+                    hexRowNeeded = viewModel.mode == ConversionMode.NUMSYS,
                     onAction = { viewModel.handleAction(it) }
                 )
             }
