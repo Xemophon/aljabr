@@ -73,9 +73,6 @@ fun LimitsContent(
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    var isInverse by remember { mutableStateOf(false) }
-
-
     CalculatorScaffold(
         title = { Text("Limits") },
         onOpenDrawer = onOpenDrawer
@@ -107,9 +104,7 @@ fun LimitsContent(
                     )
                 }
                 AdvancedButtonsGrid(
-                    isInverse = isInverse,
                     gridMode = AdvancedGridMode.Limits(limitType),
-                    onToggleInverse = { isInverse = !isInverse },
                     onAction = onAction
                 )
             }

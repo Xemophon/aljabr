@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE, ODE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
-class CalcBoxViewModel(
+class CalcBoxViewModel @JvmOverloads constructor(
     application: Application,
     odeStateHolder: OdeStateHolder = DefaultOdeStateHolder()
 ) : AndroidViewModel(application), OdeStateHolder by odeStateHolder {

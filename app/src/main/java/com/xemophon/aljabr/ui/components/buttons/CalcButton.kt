@@ -5,8 +5,10 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -14,23 +16,40 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import com.xemophon.aljabr.R
 import com.xemophon.aljabr.ui.theme.Dimens
 
@@ -54,60 +73,50 @@ sealed interface CalcButtonAction {
     data class Backspace(@param:DrawableRes val iconRes: Int) : CalcButtonAction
 }
 
-fun CalcButtonAction.toInverse(): CalcButtonAction {
+fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
     return when (this) {
         is CalcButtonAction.Scientific -> {
             when (type) {
-                ScientificType.SIN -> CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN)
-                ScientificType.COS -> CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS)
-                ScientificType.TAN -> CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN)
-                ScientificType.LOG -> CalcButtonAction.Scientific("ln", ScientificType.LN)
-                ScientificType.FACTORIAL -> CalcButtonAction.Constant("j", Constants.I)
-                ScientificType.SQRT -> CalcButtonAction.Scientific("!", ScientificType.FACTORIAL)
-                ScientificType.ABS -> CalcButtonAction.Constant("e", Constants.E)
-                else -> this
+                ScientificType.SIN -> listOf(CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN))
+                ScientificType.COS -> listOf(CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS))
+                ScientificType.TAN -> listOf(CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN))
+                ScientificType.LOG -> listOf(CalcButtonAction.Scientific("ln", ScientificType.LN))
+                ScientificType.SQRT -> listOf(
+                    CalcButtonAction.Symbol("x²", "^2"),
+                    CalcButtonAction.Scientific("Abs", ScientificType.ABS)
+                )
+                else -> emptyList()
             }
         }
 
         is CalcButtonAction.Constant -> {
             when (type) {
-                Constants.PI -> CalcButtonAction.Constant("j", Constants.I)
-                Constants.E -> CalcButtonAction.Scientific("abs", ScientificType.ABS)
-                else -> this
+                Constants.PI -> listOf(
+                    CalcButtonAction.Constant("j", Constants.I),
+                    CalcButtonAction.Constant("φ", Constants.PHI)
+                )
+                else -> emptyList()
             }
         }
 
         is CalcButtonAction.Symbol -> {
             when (text) {
-                "^" -> CalcButtonAction.Symbol("x²", "^2")
-                else -> this
+                "^" -> listOf(
+                    CalcButtonAction.Symbol("x²", "^2"),
+                    CalcButtonAction.Symbol("x³", "^3")
+                )
+                else -> emptyList()
             }
         }
 
-        is CalcButtonAction.Variable -> {
+        is CalcButtonAction.Variable ->{
             when (type) {
-                Variables.X -> CalcButtonAction.Variable(text = "x", Variables.X)
-                Variables.Y -> CalcButtonAction.Variable(text = "y", Variables.Y)
-                Variables.Z -> CalcButtonAction.Variable(text = "z", Variables.Z)
-                Variables.ZC -> CalcButtonAction.Variable(text = "z̄", Variables.ZC)
-                Variables.T -> CalcButtonAction.Variable(text = "t", Variables.T)
-                Variables.S -> CalcButtonAction.Variable(text = "s", Variables.S)
+                Variables.X -> listOf(CalcButtonAction.Constant("∞", Constants.INF))
+                else -> emptyList()
             }
         }
 
-        is CalcButtonAction.Parameter -> {
-            when (type) {
-                Parameter.N -> CalcButtonAction.Parameter(text = "n", Parameter.N)
-            }
-        }
-
-        is CalcButtonAction.Misc -> {
-            when (type) {
-                Misc.PRIME -> CalcButtonAction.Misc("'", Misc.PRIME)
-            }
-        }
-
-        else -> this
+        else -> emptyList()
     }
 }
 
@@ -328,25 +337,178 @@ val SingleVariableGrid : List<List<CalcButtonAction>> = listOf(
 )
 
 @Composable
+fun CalcButtonContent(
+    action: CalcButtonAction,
+    textStyle: TextStyle,
+    contentColor: Color,
+    iconSize: Dp = 24.dp,
+    isExpanded: Boolean = false
+) {
+    when (action) {
+        is CalcButtonAction.Backspace -> {
+            Icon(
+                painter = painterResource(id = action.iconRes),
+                contentDescription = "Backspace",
+                modifier = Modifier.size(iconSize),
+                tint = contentColor
+            )
+        }
+
+        is CalcButtonAction.Symbol -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Misc -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Scientific -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Constant -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Integrals -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Differentiate -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.DifferentiateSingle -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.DifferentiateComplex -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Laplace -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Variable -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Parameter -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        is CalcButtonAction.Limits -> {
+            Text(
+                text = action.text,
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        CalcButtonAction.Calculate -> {
+            Text(
+                text = "=",
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        CalcButtonAction.Done -> {
+            Text(
+                text = "✔",
+                style = textStyle,
+                color = contentColor
+            )
+        }
+
+        CalcButtonAction.Graph -> {
+            Text(
+                text = "Graph",
+                style = textStyle.copy(
+                    fontSize = if (isExpanded) Dimens.GraphButtonTextSizeExpanded else Dimens.GraphButtonTextSizeStandard
+                ),
+                color = contentColor
+            )
+        }
+
+        CalcButtonAction.Clear -> {
+            Text(
+                text = "C",
+                style = textStyle,
+                color = contentColor
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun CalcButton(
     action: CalcButtonAction,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     isExpanded: Boolean = false,
+    onActionSelected: ((CalcButtonAction) -> Unit)? = null,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    var showPopup by remember { mutableStateOf(false) }
 
-    // Animate scale on press
+    val extraActions = remember(action) { action.getAdditionalActions() }
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f, // Slightly less aggressive
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f), // Snappier
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
         label = "ButtonScale"
     )
 
-    // Values based on isExpanded from Theme Dimens
     val targetCornerRadius =
         if (isExpanded) Dimens.ButtonCornerRadiusExpanded else Dimens.ButtonCornerRadiusStandard
     val animatedCornerRadius by animateDpAsState(
@@ -380,152 +542,107 @@ fun CalcButton(
             }
             .clip(RoundedCornerShape(animatedCornerRadius))
             .background(animatedContainerColor)
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(),
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = {
+                    if (extraActions.isNotEmpty()) {
+                        showPopup = true
+                    }
+                }
             )
     ) {
-        // Explicit pattern matching via our sealed interface
-        when (action) {
-            is CalcButtonAction.Backspace -> {
-                Icon(
-                    painter = painterResource(id = action.iconRes),
-                    contentDescription = "Backspace",
-                    modifier = Modifier.size(animatedIconSize),
-                    tint = animatedContentColor
-                )
-            }
+        if (extraActions.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 8.dp)
+                    .size(6.dp)
+                    .background(
+                        color = animatedContentColor.copy(alpha = 0.6f),
+                        shape = CircleShape
+                    )
+            )
+        }
 
-            is CalcButtonAction.Symbol -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
+        CalcButtonContent(
+            action = action,
+            textStyle = textStyle,
+            contentColor = animatedContentColor,
+            iconSize = animatedIconSize,
+            isExpanded = isExpanded
+        )
 
-            is CalcButtonAction.Misc -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
+        if (showPopup && extraActions.isNotEmpty()) {
+            Popup(
+                popupPositionProvider = remember {
+                    object : PopupPositionProvider {
+                        override fun calculatePosition(
+                            anchorBounds: IntRect,
+                            windowSize: IntSize,
+                            layoutDirection: LayoutDirection,
+                            popupContentSize: IntSize
+                        ): IntOffset {
+                            val margin = 16 // Margin in pixels from screen edges
 
-            is CalcButtonAction.Scientific -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
+                            // Try positioning above anchor
+                            var y = anchorBounds.top - popupContentSize.height - margin
+                            if (y < margin) {
+                                // If too close to top edge, flip to below anchor
+                                y = anchorBounds.bottom + margin
+                            }
 
-            is CalcButtonAction.Constant -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
+                            // Center horizontally over anchor
+                            val preferredX = anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
+                            val maxX = windowSize.width - popupContentSize.width - margin
+                            val x = preferredX.coerceIn(margin, maxOf(margin, maxX))
 
-            is CalcButtonAction.Integrals -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
+                            return IntOffset(x, y)
+                        }
+                    }
+                },
+                onDismissRequest = { showPopup = false },
+                properties = PopupProperties(
+                    focusable = true,
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true
                 )
-            }
-
-            is CalcButtonAction.Differentiate -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            is CalcButtonAction.DifferentiateSingle -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            is CalcButtonAction.DifferentiateComplex -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            is CalcButtonAction.Laplace -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            is CalcButtonAction.Variable -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            is CalcButtonAction.Parameter -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-
-            is CalcButtonAction.Limits -> {
-                Text(
-                    text = action.text,
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            CalcButtonAction.Calculate -> {
-                Text(
-                    text = "=",
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            CalcButtonAction.Done -> {
-                Text(
-                    text = "✔",
-                    style = textStyle,
-                    color = animatedContentColor
-                )
-            }
-
-            CalcButtonAction.Graph -> {
-                Text(
-                    text = "Graph",
-                    style = textStyle.copy(
-                        fontSize = if (isExpanded) Dimens.GraphButtonTextSizeExpanded else Dimens.GraphButtonTextSizeStandard
-                    ),
-                    color = animatedContentColor
-                )
-            }
-
-            CalcButtonAction.Clear -> {
-                Text(
-                    text = "C",
-                    style = textStyle,
-                    color = animatedContentColor
-                )
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        extraActions.forEach { extraAction ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(width = 74.dp, height = 64.dp) //Controls the button size
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .clickable {
+                                        showPopup = false
+                                        (onActionSelected ?: { _ -> onClick() }).invoke(extraAction)
+                                    }
+                            ) {
+                                CalcButtonContent(
+                                    action = extraAction,
+                                    textStyle = MaterialTheme.typography.labelLarge,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    iconSize = 40.dp,
+                                    isExpanded = true
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

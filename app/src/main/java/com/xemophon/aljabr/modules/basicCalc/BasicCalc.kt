@@ -58,7 +58,6 @@ fun BasicCalcContent(
     onOpenDrawer: () -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    var isInverse by remember { mutableStateOf(false) }
 
     CalculatorScaffold(
         title = { Text("Basic Calculator") },
@@ -86,10 +85,8 @@ fun BasicCalcContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 CalcButtons(
                     isExpanded = isExpanded,
-                    isInverse = isInverse,
                     useRadians = useRadians,
                     onToggleExpand = { isExpanded = !isExpanded },
-                    onToggleInverse = { isInverse = !isInverse },
                     onToggleAngleUnit = onToggleAngleUnit,
                     modifier = Modifier.fillMaxWidth(),
                     onAction = onAction

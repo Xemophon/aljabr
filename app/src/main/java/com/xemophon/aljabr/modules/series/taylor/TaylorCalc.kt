@@ -33,8 +33,6 @@ fun TaylorCalc(
     viewModel: CalcBoxViewModel = viewModel(),
     onOpenDrawer: () -> Unit
 ) {
-    var isInverse by remember { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.TAYLOR
         if (viewModel.displayText == "0" || viewModel.displayText.isEmpty()) {
@@ -100,8 +98,6 @@ fun TaylorCalc(
 
                 AdvancedButtonsGrid(
                     gridMode = AdvancedGridMode.Taylor,
-                    isInverse = isInverse,
-                    onToggleInverse = { isInverse = !isInverse },
                     onAction = { viewModel.handleAction(it) }
                 )
             }

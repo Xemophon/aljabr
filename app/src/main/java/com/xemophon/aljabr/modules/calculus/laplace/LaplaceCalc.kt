@@ -70,8 +70,6 @@ fun LaplaceCalcContent(
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    var isInverse by remember { mutableStateOf(false) }
-
     CalculatorScaffold(
         title = { Text(if (laplaceMode == "Reverse") "Reverse Laplace Transform" else "Laplace Transform") },
         onOpenDrawer = onOpenDrawer
@@ -104,8 +102,6 @@ fun LaplaceCalcContent(
 
                 AdvancedButtonsGrid(
                     gridMode = AdvancedGridMode.Laplace(laplaceMode),
-                    isInverse = isInverse,
-                    onToggleInverse = { isInverse = !isInverse },
                     onAction = onAction
                 )
             }

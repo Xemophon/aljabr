@@ -159,10 +159,8 @@ fun ShortCalcButtons(
 fun CalcButtons(
     modifier: Modifier = Modifier,
     isExpanded: Boolean = false,
-    isInverse: Boolean = false,
     useRadians: Boolean = false,
     onToggleExpand: () -> Unit,
-    onToggleInverse: () -> Unit,
     onToggleAngleUnit: () -> Unit,
     onAction: (CalcButtonAction) -> Unit
 ) {
@@ -212,29 +210,11 @@ fun CalcButtons(
                 }
             }
             AnimatedVisibility(visible = isExpanded) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-                ) {
-                    Button(
-                        onClick = onToggleInverse,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isInverse) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Text(
-                            text = "Inverse",
-                            color = if (isInverse) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    AngleUnitSwitch(
-                        modifier = Modifier.padding(start = Dimens.SpacingSmall),
-                        useRadians = useRadians,
-                        onToggleAngleUnit = onToggleAngleUnit
-                    )
-                }
+                AngleUnitSwitch(
+                    modifier = Modifier.padding(start = Dimens.SpacingSmall),
+                    useRadians = useRadians,
+                    onToggleAngleUnit = onToggleAngleUnit
+                )
             }
         }
 
@@ -249,7 +229,6 @@ fun CalcButtons(
                         ButtonGrid(
                             gridData = ScientificButtonsGrid,
                             isExpanded = true,
-                            isInverse = isInverse,
                             onAction = onAction,
                             buttonModifier = Modifier.aspectRatio(1.5f)
                         )
@@ -288,8 +267,6 @@ sealed class AdvancedGridMode {
 fun AdvancedButtonsGrid(
     modifier: Modifier = Modifier,
     gridMode: AdvancedGridMode,
-    isInverse: Boolean = false,
-    onToggleInverse: () -> Unit,
     onSecondaryAction: (() -> Unit)? = null,
     onAction: (CalcButtonAction) -> Unit
 ) = CalcButtonSheet(modifier) {
@@ -305,16 +282,6 @@ fun AdvancedButtonsGrid(
     }
 
     val buttons = mutableListOf<@Composable () -> Unit>()
-    if(gridMode !is AdvancedGridMode.Taylor) {
-        buttons.add {
-            ModeToggleButton(
-                label = "Inv",
-                isSelected = isInverse,
-                onClick = onToggleInverse,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
 
     when (gridMode) {
         is AdvancedGridMode.Graph -> {
@@ -379,18 +346,6 @@ fun AdvancedButtonsGrid(
                     onClick = { onAction(CalcButtonAction.Integrals("∫ab", IntegralType.DEFINITE)) },
                     modifier = Modifier.fillMaxWidth()
                 )
-            }
-            buttons.add {
-                Button(
-                    onClick = { onAction(CalcButtonAction.Constant("∞", Constants.INF)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(text = "∞", style = MaterialTheme.typography.labelLarge)
-                }
             }
             buttons.add {
                 ModeToggleButton(
@@ -509,7 +464,6 @@ fun AdvancedButtonsGrid(
     ButtonGrid(
         gridData = selectedGrid,
         isExpanded = true,
-        isInverse = isInverse,
         onAction = onAction,
         buttonModifier = Modifier.aspectRatio(Dimens.ButtonAspectRatioExpanded),
         overrides = when (gridMode) {
@@ -555,7 +509,6 @@ private fun ModeToggleButton(
 private fun ButtonGrid(
     gridData: List<List<CalcButtonAction>>,
     modifier: Modifier = Modifier,
-    isInverse: Boolean = false,
     isExpanded: Boolean,
     onAction: (CalcButtonAction) -> Unit,
     buttonModifier: Modifier = Modifier,
@@ -571,18 +524,18 @@ private fun ButtonGrid(
         ) {
             row.forEachIndexed { colIndex, action ->
                 val baseAction = overrides[rowIndex to colIndex] ?: action
-                val displayAction = if (isInverse) baseAction.toInverse() else baseAction
-                val colors = remember(displayAction, colorScheme) { getButtonColors(displayAction, colorScheme) }
+                val colors = remember(baseAction, colorScheme) { getButtonColors(baseAction, colorScheme) }
 
                 CalcButton(
-                    action = displayAction,
+                    action = baseAction,
                     isExpanded = isExpanded,
                     containerColor = colors.containerColor,
                     contentColor = colors.contentColor,
                     modifier = Modifier
                         .weight(1f)
                         .then(buttonModifier),
-                    onClick = { onAction(displayAction) }
+                    onActionSelected = onAction,
+                    onClick = { onAction(baseAction) }
                 )
             }
         }

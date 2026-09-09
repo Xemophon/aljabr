@@ -68,7 +68,6 @@ fun GraphMaker(
         viewModel.calculationEnabled = false
     }
 
-    var isInverse by remember { mutableStateOf(false) }
     var showGraph by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showGraph) {
@@ -110,8 +109,6 @@ fun GraphMaker(
                     Spacer(modifier = Modifier.height(8.dp))
                     AdvancedButtonsGrid(
                         gridMode = AdvancedGridMode.Graph,
-                        isInverse = isInverse,
-                        onToggleInverse = { isInverse = !isInverse },
                         onSecondaryAction = { showGraph = true },
                         modifier = Modifier.fillMaxWidth(),
                         onAction = { action ->

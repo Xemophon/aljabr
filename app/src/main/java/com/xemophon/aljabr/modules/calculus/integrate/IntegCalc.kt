@@ -116,8 +116,6 @@ fun IntegCalcContent(
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    var isInverse by remember { mutableStateOf(false) }
-
     CalculatorScaffold(
         title = { Text("Integrate") },
         onOpenDrawer = onOpenDrawer
@@ -155,9 +153,7 @@ fun IntegCalcContent(
                     )
                 }
                 AdvancedButtonsGrid(
-                    isInverse = isInverse,
                     gridMode = AdvancedGridMode.Integration(integType, integrationAxis),
-                    onToggleInverse = { isInverse = !isInverse },
                     onAction = onAction
                 )
             }

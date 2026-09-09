@@ -119,8 +119,6 @@ fun DiffCalcContent(
     onAction: (CalcButtonAction) -> Unit,
     onOpenDrawer: () -> Unit
 ) {
-    var isInverse by remember { mutableStateOf(false) }
-
     CalculatorScaffold(
         title = { Text("Differentiate") },
         onOpenDrawer = onOpenDrawer
@@ -175,9 +173,7 @@ fun DiffCalcContent(
                 
                 if (analysisResult == null && !isCalculating && !isCalculatingSteps) {
                     AdvancedButtonsGrid(
-                        isInverse = isInverse,
                         gridMode = AdvancedGridMode.Differentiation(diffGridMode),
-                        onToggleInverse = { isInverse = !isInverse },
                         onAction = onAction
                     )
                 }
