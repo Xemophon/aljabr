@@ -11,6 +11,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
+import com.xemophon.aljabr.ui.components.engine.CalcBox
+import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.*
 
 @Composable

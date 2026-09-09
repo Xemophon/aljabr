@@ -1,273 +1,42 @@
-package com.xemophon.aljabr.ui.components.screens
+package com.xemophon.aljabr.ui.components.engine
 
 import android.app.Application
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.modules.algebra.bde.BDEResult
-import com.xemophon.aljabr.modules.algebra.bde.BDEFuncs
-import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
-import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.modules.calculus.laplace.LaplaceFunc
-import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
-import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
-import com.xemophon.aljabr.modules.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
+import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import com.xemophon.aljabr.ui.components.buttons.LimitType
 import com.xemophon.aljabr.ui.components.buttons.ScientificType
 import com.xemophon.aljabr.ui.components.input.MathInputHandler
-import kotlinx.coroutines.Dispatchers
+import com.xemophon.aljabr.ui.components.screens.AnalysisResult
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
+import com.xemophon.aljabr.ui.components.screens.PolynomialResult
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-@Composable
-fun CalcBox(
-    expression: String,
-    result: String,
-    modifier: Modifier = Modifier,
-    cursorIndex: Int = -1,
-    onCursorIndexChange: (Int) -> Unit = {},
-    showStepsButton: Boolean = false,
-    onShowStepsClick: () -> Unit = {}
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "Cursor")
-    val cursorAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "CursorAlpha"
-    )
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.End,
-    ) {
-        if (showStepsButton) {
-            IconButton(
-                onClick = onShowStepsClick,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Show Steps",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.End
-            ) {
-                val expressionFontSize by animateFloatAsState(
-                    targetValue = if (expression.length > 12) 32f else 40f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "ExpressionFontSize"
-                )
-
-                val textStyle = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = expressionFontSize.sp,
-                    fontWeight = FontWeight.Light,
-                    textAlign = TextAlign.End
-                )
-
-                val annotatedExpression = buildAnnotatedString {
-                    if (cursorIndex != -1 && cursorIndex <= expression.length) {
-                        append(expression.substring(0, cursorIndex))
-                        withStyle(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary.copy(
-                                    alpha = cursorAlpha
-                                )
-                            )
-                        ) {
-                            append("|")
-                        }
-                        append(expression.substring(cursorIndex))
-                    } else {
-                        append(expression)
-                    }
-                }
-
-                Text(
-                    text = annotatedExpression,
-                    style = textStyle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    lineHeight = expressionFontSize.sp * 1.1f,
-                    modifier = Modifier.clickable { onCursorIndexChange(expression.length) }
-                )
-            }
-        }
-
-        AnimatedContent(
-            targetState = result,
-            transitionSpec = {
-                val isAppearing = targetState.isNotEmpty() && initialState.isEmpty()
-                val isDisappearing = targetState.isEmpty() && initialState.isNotEmpty()
-
-                if (isAppearing) {
-                    (slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 3 } +
-                            fadeIn(animationSpec = tween(220)) +
-                            scaleIn(initialScale = 0.92f))
-                        .togetherWith(fadeOut(animationSpec = tween(90)))
-                } else if (isDisappearing) {
-                    fadeIn(animationSpec = tween(90))
-                        .togetherWith(
-                            slideOutVertically { it / 3 } +
-                                    fadeOut(animationSpec = tween(180)) +
-                                    scaleOut(targetScale = 0.92f)
-                        )
-                } else {
-                    // Directional scroll based on numerical change
-                    val isIncreasing = (targetState.toDoubleOrNull() ?: 0.0) >= (initialState.toDoubleOrNull() ?: 0.0)
-                    val slideOffset = { height: Int -> if (isIncreasing) height else -height }
-
-                    (slideInVertically(
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
-                        initialOffsetY = slideOffset
-                    ) + fadeIn(animationSpec = tween(150)))
-                        .togetherWith(
-                            slideOutVertically(
-                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                                targetOffsetY = { -slideOffset(it) }
-                            ) + fadeOut(animationSpec = tween(150))
-                        )
-                } using SizeTransform(clip = false)
-            },
-            label = "ResultAnimation",
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.CenterEnd
-        ) { targetResult ->
-            if (targetResult.isNotEmpty()) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val resultFontSize by animateFloatAsState(
-                        targetValue = if (targetResult.length > 8) 48f else 64f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "ResultFontSize"
-                    )
-
-                    Text(
-                        text = targetResult,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontSize = resultFontSize.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.End
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-    }
-}
 
 enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE, ODE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
-class CalcBoxViewModel(application: Application) : AndroidViewModel(application) {
+class CalcBoxViewModel(
+    application: Application,
+    odeStateHolder: OdeStateHolder = DefaultOdeStateHolder()
+) : AndroidViewModel(application), OdeStateHolder by odeStateHolder {
+
     private val settingsRepository = SettingsRepository(application)
 
-    var BDEResult by mutableStateOf<BDEResult?>(null)
-    val odeConditions = mutableStateListOf<String>()
-    var odeConditionFocusIndex by mutableIntStateOf(-1)
-
     val isOdeConditionFocused: Boolean
-        get() = calculatorMode == CalculatorMode.ODE && odeConditionFocusIndex >= 0 && odeConditionFocusIndex in odeConditions.indices
-
-    fun setOdeConditionFocus(index: Int) {
-        odeConditionFocusIndex = index
-    }
-
-    fun addOdeCondition() {
-        odeConditions.add("")
-        odeConditionFocusIndex = odeConditions.size - 1
-    }
-
-    fun removeOdeCondition(index: Int) {
-        if (index in odeConditions.indices) {
-            odeConditions.removeAt(index)
-            if (odeConditionFocusIndex == index) {
-                odeConditionFocusIndex = -1
-            } else if (odeConditionFocusIndex > index) {
-                odeConditionFocusIndex -= 1
-            }
-        }
-    }
+        get() = isOdeConditionFocused(calculatorMode)
 
     var precision by mutableIntStateOf(4)
         private set
@@ -339,10 +108,10 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private var isShowingResult = false
 
     fun handleAction(action: CalcButtonAction) {
-        // Clear mode-specific results when any input button is pressed
         if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
-            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS || 
-                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) {
+            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS ||
+                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR ||
+                calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -416,8 +185,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
 
-            is CalcButtonAction.Graph -> { /* Handled in UI */
-            }
+            is CalcButtonAction.Graph -> { /* Handled in UI */ }
 
             is CalcButtonAction.Differentiate -> {
                 diffGridMode = "Multiple"
@@ -433,7 +201,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             is CalcButtonAction.Laplace -> {
                 laplaceMode = action.text
             }
-            CalcButtonAction.Done -> { /* TODO */ }
+            CalcButtonAction.Done -> { /* Handled in UI */ }
 
             else -> {}
         }
@@ -447,12 +215,12 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
     fun setFocus(focus: CalculatorFocus) {
         currentFocus = focus
-        odeConditionFocusIndex = -1
+        setOdeConditionFocus(-1)
         if (resultText.isNotEmpty()) resultText = ""
         if (focus == CalculatorFocus.EXPRESSION) {
             cursorIndex = displayText.length
         } else {
-            cursorIndex = -1 // Hide cursor in main expression when target/limit is focused
+            cursorIndex = -1
         }
     }
 
@@ -460,7 +228,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         cursorIndex = index.coerceIn(0, displayText.length)
         if (cursorIndex != -1) {
             currentFocus = CalculatorFocus.EXPRESSION
-            odeConditionFocusIndex = -1
+            setOdeConditionFocus(-1)
         }
     }
 
@@ -523,9 +291,9 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         val isDigitOrDot = symbol.all { it.isDigit() || it == '.' }
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
         val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
-        
+
         val applyImplicit = isDigitOrDot && isImplicitMultiplicationNeeded() && !isLastCharDigitOrDot
-        
+
         insertText(symbol, applyImplicitMultiplication = applyImplicit)
         isShowingResult = false
     }
@@ -817,22 +585,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         }
         val operators = setOf('+', '-', '×', '÷', '*', '/', '^', '%', '(', '√', 'π', 'e', 'φ', 'j', 'i', 'x', 'y')
         val hasScientific = listOf(
-            "sin",
-            "cos",
-            "tan",
-            "log",
-            "ln",
-            "asin",
-            "acos",
-            "atan",
-            "abs",
-            "sinh",
-            "cosh",
-            "tanh",
-            "asinh",
-            "acosh",
-            "atanh",
-            "sqrt"
+            "sin", "cos", "tan", "log", "ln", "asin", "acos", "atan",
+            "abs", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "sqrt"
         ).any { input.contains(it) }
         return input.any { it in operators } || hasScientific
     }
@@ -844,7 +598,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             runLimitCalculation()
             return
         }
-
         if (calculatorMode == CalculatorMode.INTEGRATE) {
             runIntegrationCalculation()
             return
@@ -872,7 +625,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         stepsList.clear()
 
-        // Standard calculation logic - No steps needed
         if (resultText.isNotEmpty() && resultText != "Error") {
             displayText = resultText
             resultText = ""
@@ -899,9 +651,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                val res = withContext(Dispatchers.Default) {
-                    LimitsFunc.calculateLimit(displayText, "x", targetText, useRationalize)
-                }
+                val res = LimitsEngine.calculateLimit(displayText, targetText, useRationalize)
                 lastExpression = displayText
                 resultText = res
                 cursorIndex = -1
@@ -922,56 +672,25 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
 
         when (integType) {
             IntegralType.CURVET2 -> {
-                val pVal = if (displayText == "0") "" else displayText
-                val qVal = innerLowerLimitText
-                val fullExpr = if (qVal.isBlank()) pVal else "$pVal, $qVal"
-                if (useRationalize) {
-                    try {
-                        val res = IntegFunc.integrateSymbolic(
-                            expression = fullExpr,
-                            lower = lowerLimitText,
-                            upper = upperLimitText,
-                            useRadians = useRadians,
-                            useRationalize = true,
-                            type = integType
-                        )
-                        resultText = res
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
-                } else {
-                    try {
-                        val lNum = lowerLimitText.toDoubleOrNull() ?: 0.0
-                        val uNum = upperLimitText.toDoubleOrNull() ?: 1.0
-                        val result = IntegFunc.integrate(
-                            expression = fullExpr,
-                            lower = lNum,
-                            upper = uNum,
-                            useRadians = useRadians,
-                            type = integType
-                        )
-                        if (result.isNaN()) {
-                            val res = IntegFunc.integrateSymbolic(
-                                expression = fullExpr,
-                                lower = lowerLimitText,
-                                upper = upperLimitText,
-                                useRadians = useRadians,
-                                useRationalize = false,
-                                type = integType
-                            )
-                            resultText = res
-                        } else {
-                            resultText = CalcFuncs.formatResult(result, precision)
-                        }
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
+                try {
+                    resultText = IntegrationEngine.integrateCurve(
+                        displayText = displayText,
+                        innerLowerLimitText = innerLowerLimitText,
+                        lowerLimitText = lowerLimitText,
+                        upperLimitText = upperLimitText,
+                        useRadians = useRadians,
+                        useRationalize = useRationalize,
+                        precision = precision,
+                        integType = integType
+                    )
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
                 }
             }
             IntegralType.DOUBLE -> {
                 try {
-                    val res = IntegFunc.integrateDoubleIndefinite(
-                        expression = displayText,
+                    val res = IntegrationEngine.integrateDoubleIndefinite(
+                        displayText = displayText,
                         useRadians = useRadians,
                         useRationalize = useRationalize
                     )
@@ -983,51 +702,20 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
             IntegralType.NDOUBLE -> {
-                if (useRationalize) {
-                    try {
-                        val res = IntegFunc.integrateDoubleDefinite(
-                            expression = displayText,
-                            lower = lowerLimitText,
-                            upper = upperLimitText,
-                            innerLower = innerLowerLimitText,
-                            innerUpper = innerUpperLimitText,
-                            axis = integrationAxis,
-                            useRadians = useRadians,
-                            useRationalize = true
-                        )
-                        resultText = res
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
-                } else {
-                    try {
-                        val result = IntegFunc.integrateDoubleNumerical(
-                            expression = displayText,
-                            lower = lowerLimitText,
-                            upper = upperLimitText,
-                            innerLower = innerLowerLimitText,
-                            innerUpper = innerUpperLimitText,
-                            axis = integrationAxis,
-                            useRadians = useRadians
-                        )
-                        if (result.isNaN()) {
-                            val res = IntegFunc.integrateDoubleDefinite(
-                                expression = displayText,
-                                lower = lowerLimitText,
-                                upper = upperLimitText,
-                                innerLower = innerLowerLimitText,
-                                innerUpper = innerUpperLimitText,
-                                axis = integrationAxis,
-                                useRadians = useRadians,
-                                useRationalize = false
-                            )
-                            resultText = res
-                        } else {
-                            resultText = CalcFuncs.formatResult(result, precision)
-                        }
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
+                try {
+                    resultText = IntegrationEngine.integrateDoubleDefinite(
+                        displayText = displayText,
+                        lowerLimitText = lowerLimitText,
+                        upperLimitText = upperLimitText,
+                        innerLowerLimitText = innerLowerLimitText,
+                        innerUpperLimitText = innerUpperLimitText,
+                        axis = integrationAxis,
+                        useRadians = useRadians,
+                        useRationalize = useRationalize,
+                        precision = precision
+                    )
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
                 }
             }
             IntegralType.INDEFINITE -> {
@@ -1035,10 +723,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     viewModelScope.launch {
                         isCalculatingSteps = true
                         try {
-                            val resultAndSteps = withContext(Dispatchers.Default) {
-                                IntegFunc.integrateIndefiniteWithSteps(displayText, showSteps)
-                            }
-
+                            val resultAndSteps = IntegrationEngine.integrateIndefiniteWithSteps(displayText, showSteps)
                             if (resultAndSteps != null) {
                                 val (result, steps) = resultAndSteps
                                 if (result.isNotEmpty()) {
@@ -1049,7 +734,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                                     }
                                 }
                             } else {
-                                val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
+                                val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize)
                                 if (res.isNotEmpty()) {
                                     resultText = res
                                 }
@@ -1062,7 +747,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                     }
                 } else {
                     try {
-                        val res = IntegFunc.integrateIndefinite(displayText, useRationalize)
+                        val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize)
                         if (res.isNotEmpty()) {
                             resultText = res
                         }
@@ -1072,45 +757,18 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
             else -> {
-                if (useRationalize) {
-                    try {
-                        val res = IntegFunc.integrateSymbolic(
-                            expression = displayText,
-                            lower = lowerLimitText,
-                            upper = upperLimitText,
-                            useRadians = useRadians,
-                            useRationalize = true,
-                            type = integType
-                        )
-                        resultText = res
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
-                } else {
-                    try {
-                        val lower = CalcFuncs.calculateExpression(lowerLimitText)
-                        val upper = CalcFuncs.calculateExpression(upperLimitText)
-
-                        if (lower.isNaN() || upper.isNaN()) {
-                            resultText = "Invalid Limits"
-                            return
-                        }
-
-                        val result = IntegFunc.integrate(
-                            expression = displayText,
-                            lower = lower,
-                            upper = upper,
-                            useRadians = useRadians,
-                            type = integType
-                        )
-                        if (result.isNaN()) {
-                            resultText = "No convergence"
-                        } else {
-                            resultText = CalcFuncs.formatResult(result, precision)
-                        }
-                    } catch (e: Exception) {
-                        resultText = "Calculation Error"
-                    }
+                try {
+                    resultText = IntegrationEngine.integrateStandard(
+                        displayText = displayText,
+                        lowerLimitText = lowerLimitText,
+                        upperLimitText = upperLimitText,
+                        useRadians = useRadians,
+                        useRationalize = useRationalize,
+                        precision = precision,
+                        integType = integType
+                    )
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
                 }
             }
         }
@@ -1119,15 +777,13 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     private fun runDifferentiateCalculation() {
         if (displayText.isEmpty() || displayText == "0") return
         stepsList.clear()
-        
+
         if (showSteps) {
             viewModelScope.launch {
                 isCalculatingSteps = true
                 showStepsSheet = true
                 try {
-                    val (result, steps) = withContext(Dispatchers.Default) {
-                        DiffFunc.differentiateWithSteps(displayText, showSteps)
-                    }
+                    val (result, steps) = DifferentiationEngine.differentiateWithSteps(displayText, showSteps)
                     if (result.isNotEmpty()) {
                         resultText = result
                         if (steps.isNotEmpty()) {
@@ -1146,17 +802,11 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
             isCalculating = true
             viewModelScope.launch {
                 try {
-                    val (res, analysis) = withContext(Dispatchers.Default) {
-                        if (diffGridMode == "Complex") {
-                            val an = AnalysisFunc.complexAnalysis(displayText)
-                            val r = DiffFunc.differentiateComplex(displayText)
-                            Pair(r, an)
-                        } else {
-                            val an = AnalysisFunc.fullAnalysis(displayText)
-                            val r = DiffFunc.differentiate(displayText, useRationalize)
-                            Pair(r, an)
-                        }
-                    }
+                    val (res, analysis) = DifferentiationEngine.differentiateWithAnalysis(
+                        displayText,
+                        diffGridMode,
+                        useRationalize
+                    )
                     analysisResult = analysis
                     if (res.isNotEmpty()) {
                         resultText = res
@@ -1176,15 +826,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                analysisResult = withContext(Dispatchers.Default) {
-                    if (diffGridMode == "Complex") {
-                        AnalysisFunc.complexAnalysis(displayText)
-                    } else {
-                        AnalysisFunc.fullAnalysis(displayText)
-                    }
-                }
-            } catch (e: Exception) {
-                // Handle error if needed
+                analysisResult = DifferentiationEngine.fullAnalysis(displayText, diffGridMode)
+            } catch (_: Exception) {
             } finally {
                 isCalculating = false
             }
@@ -1196,7 +839,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                polynomialResult = PolyFuncs.analyzePolynomial(displayText, useRationalize)
+                polynomialResult = PolynomialEngine.analyzePolynomial(displayText, useRationalize)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {
@@ -1210,7 +853,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                BDEResult = BDEFuncs.solveOde(displayText, odeConditions)
+                BDEResult = OdeEngine.solveOde(displayText, odeConditions)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {
@@ -1225,10 +868,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                val ord = orderText.toIntOrNull() ?: 5
-                val res = withContext(Dispatchers.Default) {
-                    SymjaUtils.calculateTaylor(displayText, targetText, ord)
-                }
+                val res = TaylorEngine.calculateTaylor(displayText, targetText, orderText)
                 if (res != "Error" && res.isNotEmpty()) {
                     resultText = res
                     isShowingResult = true
@@ -1247,10 +887,7 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         isCalculating = true
         viewModelScope.launch {
             try {
-                val isInverse = laplaceMode == "Reverse"
-                val res = withContext(Dispatchers.Default) {
-                    LaplaceFunc.calculateLaplace(displayText, isInverse = isInverse, useRationalize = useRationalize)
-                }
+                val res = LaplaceEngine.calculateLaplace(displayText, laplaceMode, useRationalize)
                 lastExpression = displayText
                 resultText = res
                 cursorIndex = -1
@@ -1265,13 +902,13 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun clearAll() {
-        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) && isShowingResult) {
+        if ((calculatorMode == CalculatorMode.LIMITS || calculatorMode == CalculatorMode.POLYNOMIALS ||
+                    calculatorMode == CalculatorMode.TAYLOR || calculatorMode == CalculatorMode.LAPLACE ||
+                    calculatorMode == CalculatorMode.ODE) && isShowingResult) {
             resultText = ""
             isShowingResult = false
             polynomialResult = null
-            BDEResult = null
-            odeConditions.clear()
-            odeConditionFocusIndex = -1
+            clearOdeState()
             cursorIndex = displayText.length
             return
         }
@@ -1281,11 +918,8 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         resultText = ""
         analysisResult = null
         polynomialResult = null
-        BDEResult = null
-        odeConditions.clear()
-        odeConditionFocusIndex = -1
-        targetText =
-            if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
+        clearOdeState()
+        targetText = if (calculatorMode == CalculatorMode.LIMITS && limitType == LimitType.INFINITE) "∞" else ""
         lowerLimitText = ""
         upperLimitText = ""
         innerLowerLimitText = ""
@@ -1293,7 +927,6 @@ class CalcBoxViewModel(application: Application) : AndroidViewModel(application)
         orderText = "5"
         isShowingResult = false
 
-        // Clear App Cache and Graph Cache if enabled
         GraphGenerator.clearCache()
         if (autoClearCache) {
             StorageUtils.clearAppCache(getApplication())

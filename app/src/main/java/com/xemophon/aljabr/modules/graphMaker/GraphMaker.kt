@@ -48,8 +48,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.screens.CalcBox
-import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.engine.CalcBox
+import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction

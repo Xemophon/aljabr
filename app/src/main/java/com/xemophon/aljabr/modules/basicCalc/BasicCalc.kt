@@ -22,8 +22,8 @@ import androidx.compose.ui.tooling.preview.AndroidUiModes.UI_MODE_NIGHT_YES
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.screens.CalcBox
-import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.engine.CalcBox
+import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.CalcButtons
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold

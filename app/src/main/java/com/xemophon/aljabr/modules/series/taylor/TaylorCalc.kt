@@ -20,9 +20,9 @@ import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
-import com.xemophon.aljabr.ui.components.screens.CalcBoxViewModel
-import com.xemophon.aljabr.ui.components.screens.CalculatorFocus
-import com.xemophon.aljabr.ui.components.screens.CalculatorMode
+import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
+import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
+import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.screens.ConverterField
 import kotlinx.coroutines.Dispatchers
