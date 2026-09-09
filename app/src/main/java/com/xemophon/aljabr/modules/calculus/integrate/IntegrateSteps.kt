@@ -534,7 +534,7 @@ class IntegrationSolver(
         ): IntegrationDerivation? {
 
             /*
-             * ∫ 1/x dx = log(x)
+             * ∫ 1/x dx = ln|x|
              *
              * This is represented structurally as x^-1.
              */
@@ -544,7 +544,7 @@ class IntegrationSolver(
                 isNegativeOne(expr.get(2))
             ) {
 
-                val result = F.Log(variable)
+                val result = F.Log(F.Abs(variable))
 
                 if (!verify(expr, result, variable)) {
                     return null
@@ -558,33 +558,34 @@ class IntegrationSolver(
             }
 
             /*
-             * ∫ Log(x) dx
+             * ∫ Log(x) dx  or  ∫ Log(|x|) dx
              *
-             * ∫ log(x) dx = x log(x) - x
+             * ∫ log|x| dx = x log|x| - x
              */
-            if (expr.isASTHead(F.Log) &&
-                expr.get(1) == variable
-            ) {
+            if (expr.isASTHead(F.Log)) {
+                val arg = expr.get(1)
+                if (arg == variable || (arg.isASTHead(F.Abs) && (arg as IAST).arg1() == variable)) {
 
-                val result = engine.evaluate(
-                    F.Subtract(
-                        F.Times(
-                            variable,
-                            F.Log(variable)
-                        ),
-                        variable
+                    val result = engine.evaluate(
+                        F.Subtract(
+                            F.Times(
+                                variable,
+                                F.Log(F.Abs(variable))
+                            ),
+                            variable
+                        )
                     )
-                )
 
-                if (!verify(expr, result, variable)) {
-                    return null
+                    if (!verify(expr, result, variable)) {
+                        return null
+                    }
+
+                    return RuleDerivation(
+                        rule = RuleType.LOGARITHMIC,
+                        input = expr,
+                        result = result
+                    )
                 }
-
-                return RuleDerivation(
-                    rule = RuleType.LOGARITHMIC,
-                    input = expr,
-                    result = result
-                )
             }
 
             return null

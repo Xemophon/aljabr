@@ -48,21 +48,14 @@ object SymjaUtils {
 
     // Pre-compiled regexes for high performance
     private val ABS_REGEX = Regex("""\|([^|]+)\|""")
-    private val LN_LATEX_REGEX = Regex("""\\ln\s*\(\s*\\left\|\s*(.+?)\s*\\right\|\s*\)""")
+    private val LN_LATEX_REGEX = Regex("""\\ln\s*(?:\\left\()?\s*(?:\\left\||\|)\s*(.+?)\s*(?:\\right\||\|)\s*(?:\\right\)?|\))""")
     private val D_REGEX = Regex("""D[\(\[](.+?),\s*(.+?)[\)\]]""")
     private val INTEGRATE_REGEX = Regex("""Integrate[\(\[](.+?),\s*(.+?)[\)\]]""")
-    private val LOG10_BRACKET_REGEX = Regex("""Log10[\(\[](.+?)[\)\]]""")
-    private val LOG10_COMMA_REGEX = Regex("""Log[\(\[]10,\s*(.+?)[\)\]]""")
-    private val LOG_SINGLE_REGEX = Regex("""Log[\(\[]([^\(\)\[\],]+)[\)\]]""")
-    private val LOG_DUAL_REGEX = Regex("""Log[\(\[]([^\(\)\[\],]+),\s*(.+?)[\)\]]""")
     private val I_REGEX = Regex("""(?<![a-zA-Z])I(?![a-zA-Z])""")
     private val EULER_E_REGEX = Regex("""(?<![a-zA-Z])e(?![a-zA-Z])""")
     private val IMAGINARY_J_REGEX = Regex("""(?<![a-zA-Z])j(?![a-zA-Z])""", RegexOption.IGNORE_CASE)
     private val IMAGINARY_I_REGEX = Regex("""(?<![a-zA-Z])i(?![a-zA-Z])""", RegexOption.IGNORE_CASE)
     private val DIGIT_J_OR_I_REGEX = Regex("""(\d(?:\.\d+)?)\s*([ji])\b""", RegexOption.IGNORE_CASE)
-    private val LN_ABS_REGEX = Regex("""ln\(\|(.+?)\|\)""")
-    private val LOG_ABS_REGEX = Regex("""log\(\|(.+?)\|\)""")
-    private val ABS_BRACKET_REGEX = Regex("""Abs\((.+?)\)""")
     private val TRIG_REGEX = Regex("""(cos|sin|Cos|Sin)\s*[( \[]([^()\[\]]*n[^()\[\]]*)[)\]]""", RegexOption.IGNORE_CASE)
 
     // Thread-safe LRU Cache for LaTeX string outputs
@@ -368,10 +361,7 @@ object SymjaUtils {
         result = simplifyLogRatios(result)
 
         try {
-            result = result.replace(LOG10_BRACKET_REGEX, "log($1)")
-                .replace(LOG10_COMMA_REGEX, "log($1)")
-                .replace(LOG_SINGLE_REGEX, "ln($1)")
-                .replace(LOG_DUAL_REGEX, "log($2, $1)")
+            result = formatSymjaLogsAndAbs(result)
         } catch (_: Exception) {}
 
         result = result.replace("ArcSinDeg", "asin")
@@ -408,12 +398,6 @@ object SymjaUtils {
 
         try {
             result = tryRecognizeTrigPatterns(result)
-        } catch (_: Exception) {}
-
-        try {
-            result = result.replace(LN_ABS_REGEX, "ln|$1|")
-                .replace(LOG_ABS_REGEX, "log|$1|")
-                .replace(ABS_BRACKET_REGEX, "|$1|")
         } catch (_: Exception) {}
 
         result = result.replace("*", " × ")
@@ -551,24 +535,165 @@ object SymjaUtils {
     }
 
     /**
+     * Formats Symja logarithm and absolute value expressions cleanly before general bracket formatting.
+     * Log[Abs[x]] -> ln|x|
+     * Log[x] -> ln(x)
+     * Log[a, Abs[x]] -> log_a|x|
+     * Log[a, x] -> log_a(x)
+     * Log10[Abs[x]] -> log|x|
+     * Log10[x] -> log(x)
+     * Abs[x] -> |x|
+     */
+    fun formatSymjaLogsAndAbs(input: String): String {
+        var result = input
+
+        val heads = listOf("Log10", "Log", "Abs")
+        while (true) {
+            val match = heads.mapNotNull { head ->
+                val idxSquare = result.indexOf("$head[")
+                val idxParen = result.indexOf("$head(")
+                val idx = when {
+                    idxSquare != -1 && idxParen != -1 -> Math.min(idxSquare, idxParen)
+                    idxSquare != -1 -> idxSquare
+                    else -> idxParen
+                }
+                if (idx != -1) idx to head else null
+            }.minByOrNull { it.first } ?: break
+
+            val (startIndex, head) = match
+            val openBracketIndex = startIndex + head.length
+            val isSquare = result[openBracketIndex] == '['
+            val closeBracketIndex = if (isSquare) findMatchingBracket(result, openBracketIndex) else findMatchingParen(result, openBracketIndex)
+            if (closeBracketIndex == -1) break
+
+            val content = result.substring(openBracketIndex + 1, closeBracketIndex)
+            val formattedContent = formatSymjaLogsAndAbs(content)
+
+            val replacement = when (head) {
+                "Log10" -> {
+                    if (formattedContent.startsWith("|") && formattedContent.endsWith("|")) {
+                        "log$formattedContent"
+                    } else {
+                        "log($formattedContent)"
+                    }
+                }
+                "Log" -> {
+                    val topComma = findTopLevelCommaInBrackets(formattedContent)
+                    if (topComma != -1) {
+                        val base = formattedContent.substring(0, topComma).trim()
+                        val arg = formattedContent.substring(topComma + 1).trim()
+                        if (arg.startsWith("|") && arg.endsWith("|")) {
+                            "log_$base$arg"
+                        } else {
+                            "log_$base($arg)"
+                        }
+                    } else {
+                        if (formattedContent.startsWith("|") && formattedContent.endsWith("|")) {
+                            "ln$formattedContent"
+                        } else {
+                            "ln($formattedContent)"
+                        }
+                    }
+                }
+                "Abs" -> {
+                    if (formattedContent.startsWith("|") && formattedContent.endsWith("|")) {
+                        formattedContent
+                    } else {
+                        "|$formattedContent|"
+                    }
+                }
+                else -> content
+            }
+
+            result = result.substring(0, startIndex) + replacement + result.substring(closeBracketIndex + 1)
+        }
+
+        return result
+    }
+
+    /**
+     * Strips Abs inside logarithms for differentiation, since (ln|u|)' = (ln u)' = u'/u.
+     * Log[Abs[u]] -> Log[u]
+     * Log[a, Abs[u]] -> Log[u]/Log[a]
+     * Log10[Abs[u]] -> Log10[u]
+     */
+    fun stripAbsFromLogsInSymja(input: String): String {
+        var result = input
+        val log10AbsRegex = Regex("""Log10[\(\[]\s*\(?\s*Abs[\(\[](.+?)[\)\]]\s*\)?\s*[\)\]]""", RegexOption.IGNORE_CASE)
+        result = result.replace(log10AbsRegex, "Log10[$1]")
+
+        val logDualAbsRegex = Regex("""Log[\(\[]\s*([^,\]\)]+)\s*,\s*\(?\s*Abs[\(\[](.+?)[\)\]]\s*\)?\s*[\)\]]""", RegexOption.IGNORE_CASE)
+        result = result.replace(logDualAbsRegex, "Log[$2]/Log[$1]")
+
+        val logDualRegex = Regex("""Log\[\s*([^,\]]+)\s*,\s*([^,\]]+)\s*\]""")
+        result = result.replace(logDualRegex, "Log[$2]/Log[$1]")
+
+        val logSingleAbsRegex = Regex("""Log[\(\[]\s*\(?\s*Abs[\(\[](.+?)[\)\]]\s*\)?\s*[\)\]]""", RegexOption.IGNORE_CASE)
+        result = result.replace(logSingleAbsRegex, "Log[$1]")
+
+        return result
+    }
+
+    private fun findMatchingBracket(str: String, openPos: Int): Int {
+        var depth = 0
+        for (i in openPos until str.length) {
+            when (str[i]) {
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) return i
+                }
+            }
+        }
+        return -1
+    }
+
+    private fun findTopLevelCommaInBrackets(str: String): Int {
+        var parenDepth = 0
+        var bracketDepth = 0
+        var braceDepth = 0
+        var pipeDepth = 0
+        for (i in str.indices) {
+            when (str[i]) {
+                '(' -> parenDepth++
+                ')' -> if (parenDepth > 0) parenDepth--
+                '[' -> bracketDepth++
+                ']' -> if (bracketDepth > 0) bracketDepth--
+                '{' -> braceDepth++
+                '}' -> if (braceDepth > 0) braceDepth--
+                '|' -> pipeDepth = if (pipeDepth == 0) 1 else 0
+                ',' -> if (parenDepth == 0 && bracketDepth == 0 && braceDepth == 0 && pipeDepth == 0) return i
+            }
+        }
+        return -1
+    }
+
+    /**
      * Converts logarithms in input expressions to Symja AST forms.
      * Symja uses Log[x] for natural log (ln) and Log10[x] or Log[base, x] for common/custom base logarithms.
      */
     fun replaceLogarithmsForSymja(input: String): String {
         var result = input
 
-        // 1. Subscript log notation: log_2(x) or log_{2}(x) -> Log[2, x] or log_2 x -> Log[2, x]
-        val subscriptWithParens = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*\((.+?)\)""", RegexOption.IGNORE_CASE)
-        result = result.replace(subscriptWithParens) { match ->
+        // 1. Subscript log notation: log_2(...) or log_{2}(...)
+        val subscriptPattern = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s|]+)\}?\s*\(""", RegexOption.IGNORE_CASE)
+        while (true) {
+            val match = subscriptPattern.find(result) ?: break
             val base = match.groupValues[1]
-            val arg = match.groupValues[2]
-            "Log[$base, $arg]"
+            val startParen = match.range.last
+            val endParen = findMatchingParen(result, startParen)
+            if (endParen == -1) break
+
+            val arg = result.substring(startParen + 1, endParen)
+            val replacement = "(Log[$arg]/Log[$base])"
+            result = result.substring(0, match.range.first) + replacement + result.substring(endParen + 1)
         }
-        val subscriptNoParens = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*([a-zA-Z0-9]+)""", RegexOption.IGNORE_CASE)
+
+        val subscriptNoParens = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s|]+)\}?\s*([a-zA-Z0-9]+)""", RegexOption.IGNORE_CASE)
         result = result.replace(subscriptNoParens) { match ->
             val base = match.groupValues[1]
             val arg = match.groupValues[2]
-            "Log[$base, $arg]"
+            "(Log[$arg]/Log[$base])"
         }
 
         // 2. log10(...) or log10|...|

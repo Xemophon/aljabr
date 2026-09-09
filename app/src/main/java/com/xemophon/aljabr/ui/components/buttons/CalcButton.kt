@@ -133,6 +133,8 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
             }
         }
 
+        is CalcButtonAction.Backspace -> listOf(CalcButtonAction.Clear)
+
         else -> emptyList()
     }
 }

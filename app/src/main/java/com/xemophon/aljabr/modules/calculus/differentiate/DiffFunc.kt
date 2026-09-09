@@ -30,7 +30,7 @@ object DiffFunc {
 
     fun differentiate(expression: String, useRationalize: Boolean = false): String {
         return try {
-            val cleaned = SymjaUtils.prepareForSymja(expression)
+            val cleaned = SymjaUtils.stripAbsFromLogsInSymja(SymjaUtils.prepareForSymja(expression))
             if (cleaned.isBlank()) return ""
 
             SymjaUtils.evaluate { eval ->

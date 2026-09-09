@@ -853,7 +853,7 @@ class DerivativeSolver(
                 return null
             }
 
-            val argument =
+            val rawArgument =
                 when {
                     expr.isASTHead(F.Log) -> {
                         if (expr.size() == 3) expr.arg2() else expr.arg1()
@@ -886,6 +886,13 @@ class DerivativeSolver(
                             return null
                     }
                 }
+
+            // For logarithms, extract inner u from Abs[u] so (ln|u|)' = u'/u
+            val argument = if ((expr.isASTHead(F.Log) || expr.isASTHead(F.Log10)) && rawArgument.isASTHead(F.Abs)) {
+                (rawArgument as IAST).arg1()
+            } else {
+                rawArgument
+            }
 
             val outerDerivative =
                 elementaryOuterDerivative(
