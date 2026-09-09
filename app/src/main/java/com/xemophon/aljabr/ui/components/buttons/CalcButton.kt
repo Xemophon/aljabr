@@ -9,6 +9,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -662,7 +664,9 @@ fun AdditionalButtons(
     HorizontalPager(
         state = pagerState,
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        pageSize = PageSize.Fill,
+        snapPosition = SnapPosition.Center
     ) { page ->
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -670,6 +674,13 @@ fun AdditionalButtons(
         ) {
             val startIndex = page * 3
             val endIndex = minOf(startIndex + 3, buttons.size)
+            val itemCount = endIndex - startIndex
+            val missingItems = 3 - itemCount
+
+            if (missingItems > 0) {
+                Spacer(modifier = Modifier.weight(missingItems / 2f))
+            }
+
             for (i in startIndex until endIndex) {
                 Box(
                     modifier = Modifier.weight(1f),
@@ -678,8 +689,9 @@ fun AdditionalButtons(
                     buttons[i]()
                 }
             }
-            repeat(3 - (endIndex - startIndex)) {
-                Spacer(modifier = Modifier.weight(1f))
+
+            if (missingItems > 0) {
+                Spacer(modifier = Modifier.weight(missingItems / 2f))
             }
         }
     }
