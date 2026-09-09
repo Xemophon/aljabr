@@ -274,10 +274,11 @@ object SymjaUtils {
                     .replace("\\text{DiracDelta}", "\\delta")
                     .replace("DiracDelta", "\\delta")
 
-                result = result.replace("\\log_{", "LATEX_LOG_BASE_")
-                    .replace("\\log10", "\\log_{10}")
+                val logBaseRegex = Regex("""\\log_(\{?[^{}\s\(\)]+\}?)""")
+                result = result.replace(logBaseRegex, "LATEX_LOG_BASE_$1")
+                    .replace("\\log10", "LATEX_LOG_BASE_{10}")
                     .replace("\\log", "\\ln")
-                    .replace("LATEX_LOG_BASE_", "\\log_{")
+                    .replace("LATEX_LOG_BASE_", "\\log_")
 
                 if (result.contains("\\ln") && result.contains("\\left|")) {
                     try {
@@ -556,9 +557,15 @@ object SymjaUtils {
     fun replaceLogarithmsForSymja(input: String): String {
         var result = input
 
-        // 1. Subscript log notation: log_2(x) or log_{2}(x) -> Log[2, x]
-        val subscriptRegex = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*\((.+?)\)""", RegexOption.IGNORE_CASE)
-        result = result.replace(subscriptRegex) { match ->
+        // 1. Subscript log notation: log_2(x) or log_{2}(x) -> Log[2, x] or log_2 x -> Log[2, x]
+        val subscriptWithParens = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*\((.+?)\)""", RegexOption.IGNORE_CASE)
+        result = result.replace(subscriptWithParens) { match ->
+            val base = match.groupValues[1]
+            val arg = match.groupValues[2]
+            "Log[$base, $arg]"
+        }
+        val subscriptNoParens = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*([a-zA-Z0-9]+)""", RegexOption.IGNORE_CASE)
+        result = result.replace(subscriptNoParens) { match ->
             val base = match.groupValues[1]
             val arg = match.groupValues[2]
             "Log[$base, $arg]"
@@ -579,11 +586,11 @@ object SymjaUtils {
                 val base = content.substring(topCommaIndex + 1).trim()
                 "Log[$base, $arg]"
             } else {
-                "Log10[$content]"
+                "Log[$content]"
             }
         }
         val logAbsRegex = Regex("""(?<![a-zA-Z])log\s*\|(.+?)\|""", RegexOption.IGNORE_CASE)
-        result = result.replace(logAbsRegex) { "Log10[Abs[${it.groupValues[1]}]]" }
+        result = result.replace(logAbsRegex) { "Log[Abs[${it.groupValues[1]}]]" }
 
         // 4. ln(...) or ln|...|
         result = replaceFuncWithBalancedParens(result, "ln") { content ->

@@ -854,38 +854,42 @@ class DerivativeSolver(
             }
 
             val argument =
-                when (expr.head()) {
+                when {
+                    expr.isASTHead(F.Log) -> {
+                        if (expr.size() == 3) expr.arg2() else expr.arg1()
+                    }
+                    expr.isASTHead(F.Log10) -> expr.arg1()
+                    else -> when (expr.head()) {
+                        F.Sin,
+                        F.Cos,
+                        F.Tan,
+                        F.Sec,
+                        F.Csc,
+                        F.Cot,
 
-                    F.Sin,
-                    F.Cos,
-                    F.Tan,
-                    F.Sec,
-                    F.Csc,
-                    F.Cot,
+                        F.ArcSin,
+                        F.ArcCos,
+                        F.ArcTan,
 
-                    F.ArcSin,
-                    F.ArcCos,
-                    F.ArcTan,
+                        F.Sinh,
+                        F.Cosh,
+                        F.Tanh,
 
-                    F.Sinh,
-                    F.Cosh,
-                    F.Tanh,
+                        F.ArcSinh,
+                        F.ArcCosh,
+                        F.ArcTanh,
 
-                    F.ArcSinh,
-                    F.ArcCosh,
-                    F.ArcTanh,
+                        F.Exp ->
+                            expr.arg1()
 
-                    F.Log,
-                    F.Exp ->
-                        expr.arg1()
-
-                    else ->
-                        return null
+                        else ->
+                            return null
+                    }
                 }
 
             val outerDerivative =
                 elementaryOuterDerivative(
-                    expr.head(),
+                    expr,
                     argument
                 ) ?: return null
 
@@ -942,16 +946,43 @@ class DerivativeSolver(
     // =========================================================================
 
     private fun elementaryOuterDerivative(
-        head: IExpr,
+        expr: IAST,
         u: IExpr
     ): IExpr? {
 
-        return when (head) {
+        val head = expr.head()
+        return when {
+            head == F.Log10 ->
+                engine.evaluate(
+                    F.Power(
+                        F.Times(u, F.Log(F.C10)),
+                        F.CN1
+                    )
+                )
 
-            F.Sin ->
+            head == F.Log -> {
+                if (expr.size() == 3) {
+                    val base = expr.arg1()
+                    engine.evaluate(
+                        F.Power(
+                            F.Times(u, F.Log(base)),
+                            F.CN1
+                        )
+                    )
+                } else {
+                    engine.evaluate(
+                        F.Power(
+                            u,
+                            F.CN1
+                        )
+                    )
+                }
+            }
+
+            head == F.Sin ->
                 F.Cos(u)
 
-            F.Cos ->
+            head == F.Cos ->
                 engine.evaluate(
                     F.Times(
                         F.CN1,
@@ -959,7 +990,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Tan ->
+            head == F.Tan ->
                 engine.evaluate(
                     F.Power(
                         F.Cos(u),
@@ -967,7 +998,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Sec ->
+            head == F.Sec ->
                 engine.evaluate(
                     F.Times(
                         F.Sec(u),
@@ -975,7 +1006,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Csc ->
+            head == F.Csc ->
                 engine.evaluate(
                     F.Times(
                         F.CN1,
@@ -984,7 +1015,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Cot ->
+            head == F.Cot ->
                 engine.evaluate(
                     F.Times(
                         F.CN1,
@@ -995,7 +1026,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcSin ->
+            head == F.ArcSin ->
                 engine.evaluate(
                     F.Power(
                         F.Subtract(
@@ -1009,7 +1040,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcCos ->
+            head == F.ArcCos ->
                 engine.evaluate(
                     F.Times(
                         F.CN1,
@@ -1026,7 +1057,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcTan ->
+            head == F.ArcTan ->
                 engine.evaluate(
                     F.Power(
                         F.Plus(
@@ -1037,13 +1068,13 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Sinh ->
+            head == F.Sinh ->
                 F.Cosh(u)
 
-            F.Cosh ->
+            head == F.Cosh ->
                 F.Sinh(u)
 
-            F.Tanh ->
+            head == F.Tanh ->
                 engine.evaluate(
                     F.Power(
                         F.Cosh(u),
@@ -1051,7 +1082,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcSinh ->
+            head == F.ArcSinh ->
                 engine.evaluate(
                     F.Power(
                         F.Plus(
@@ -1065,7 +1096,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcCosh ->
+            head == F.ArcCosh ->
                 engine.evaluate(
                     F.Power(
                         F.Subtract(
@@ -1079,7 +1110,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.ArcTanh ->
+            head == F.ArcTanh ->
                 engine.evaluate(
                     F.Power(
                         F.Subtract(
@@ -1090,15 +1121,7 @@ class DerivativeSolver(
                     )
                 )
 
-            F.Log ->
-                engine.evaluate(
-                    F.Power(
-                        u,
-                        F.CN1
-                    )
-                )
-
-            F.Exp ->
+            head == F.Exp ->
                 F.Exp(u)
 
             else ->
@@ -1131,7 +1154,8 @@ class DerivativeSolver(
             F.ArcCosh -> RuleType.ARCCOSH
             F.ArcTanh -> RuleType.ARCTANH
 
-            F.Log -> RuleType.LOG
+            F.Log,
+            F.Log10 -> RuleType.LOG
             F.Exp -> RuleType.EXPONENTIAL
 
             else -> RuleType.CHAIN
@@ -1305,7 +1329,8 @@ class DerivativeSolver(
                 listOf(
                     CalculusStep(
                         functionRuleTitle(
-                            derivation.rule
+                            derivation.rule,
+                            derivation.input
                         ),
                         derivativeNotation(
                             derivation.input,
@@ -1913,7 +1938,8 @@ class DerivativeSolver(
     }
 
     private fun functionRuleTitle(
-        rule: RuleType
+        rule: RuleType,
+        input: IExpr? = null
     ): String {
 
         return when (rule) {
@@ -1963,8 +1989,19 @@ class DerivativeSolver(
             RuleType.ARCTANH ->
                 "Derivative of Arctanh"
 
-            RuleType.LOG ->
-                "Derivative of Natural Logarithm"
+            RuleType.LOG -> {
+                if (input is IAST) {
+                    if (input.isASTHead(F.Log10)) {
+                        "Derivative of Common Logarithm"
+                    } else if (input.isASTHead(F.Log) && input.size() == 3) {
+                        "Derivative of Logarithm (Base ${input.arg1().toLaTeX()})"
+                    } else {
+                        "Derivative of Natural Logarithm"
+                    }
+                } else {
+                    "Derivative of Natural Logarithm"
+                }
+            }
 
             RuleType.EXPONENTIAL ->
                 "Derivative of Exponential"
@@ -1977,6 +2014,12 @@ class DerivativeSolver(
     // =========================================================================
     // SYMJA HELPERS
     // =========================================================================
+
+    private fun IExpr.isASTHead(
+        head: IExpr
+    ): Boolean {
+        return this is IAST && this.head() == head
+    }
 
     private fun IExpr.isDivide(): Boolean {
 

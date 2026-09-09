@@ -19,6 +19,15 @@ object DiffFunc {
         }
     }
 
+    private fun selectDifferentiationVariable(vars: List<String>): String {
+        if (vars.isEmpty()) return "x"
+        if (vars.size == 1) return vars[0]
+        for (preferred in listOf("x", "t", "z", "y", "u", "v", "w", "s")) {
+            if (vars.contains(preferred)) return preferred
+        }
+        return vars.last()
+    }
+
     fun differentiate(expression: String, useRationalize: Boolean = false): String {
         return try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
@@ -30,7 +39,7 @@ object DiffFunc {
                 val vars = rawVars.filter { v ->
                     v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
                 }
-                val v = if (vars.size == 1) vars[0] else "x"
+                val v = selectDifferentiationVariable(vars)
 
                 val command = if (useRationalize) {
                     "Simplify[Rationalize[D[Rationalize[$cleaned], $v]]]"
@@ -62,7 +71,7 @@ object DiffFunc {
                 val vars = rawVars.filter { v ->
                     v.all { it.isLetter() || it.isDigit() } && !v.contains("(") && !v.contains("[")
                 }
-                if (vars.size == 1) vars[0] else "x"
+                selectDifferentiationVariable(vars)
             }
 
             val steps = hybridEngine.differentiateWithSteps(expression, vStr, useHybrid)
