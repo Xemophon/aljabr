@@ -473,34 +473,41 @@ fun SettingsContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            AnimatedVisibility(visible = !autoClearCache) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                ElevatedButton(
-                    onClick = {
-                        scope.launch {
-                            StorageUtils.clearAppData(viewModel.getApplication())
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        ElevatedButton(
+                            onClick = {
+                                scope.launch {
+                                    StorageUtils.clearAppData(viewModel.getApplication())
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteSweep,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Clear All App Data & Cache",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear All App Data & Cache")
+                        Text(
+                            text = "Resets all temporary data. Settings are preserved.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
-                Text(
-                    text = "Resets all temporary data. Settings are preserved.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
