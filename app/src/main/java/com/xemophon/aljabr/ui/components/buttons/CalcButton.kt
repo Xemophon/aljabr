@@ -79,10 +79,25 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
     return when (this) {
         is CalcButtonAction.Scientific -> {
             when (type) {
-                ScientificType.SIN -> listOf(CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN))
-                ScientificType.COS -> listOf(CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS))
-                ScientificType.TAN -> listOf(CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN))
-                ScientificType.LOG -> listOf(CalcButtonAction.Scientific("ln", ScientificType.LN))
+                ScientificType.SIN -> listOf(
+                    CalcButtonAction.Scientific("sin⁻¹", ScientificType.ASIN),
+                    CalcButtonAction.Scientific("sinh", ScientificType.SINH),
+                    CalcButtonAction.Scientific("sinh⁻¹", ScientificType.ASINH)
+                )
+                ScientificType.COS -> listOf(
+                    CalcButtonAction.Scientific("cos⁻¹", ScientificType.ACOS),
+                    CalcButtonAction.Scientific("cosh", ScientificType.COSH),
+                    CalcButtonAction.Scientific("cosh⁻¹", ScientificType.ACOSH)
+                )
+                ScientificType.TAN -> listOf(
+                    CalcButtonAction.Scientific("tan⁻¹", ScientificType.ATAN),
+                    CalcButtonAction.Scientific("tanh", ScientificType.TANH),
+                    CalcButtonAction.Scientific("tanh⁻¹", ScientificType.ATANH)
+                )
+                ScientificType.LOG -> listOf(
+                    CalcButtonAction.Scientific("ln", ScientificType.LN),
+                    CalcButtonAction.Symbol(",", " , ")
+                )
                 ScientificType.SQRT -> listOf(
                     CalcButtonAction.Symbol("x²", "^2"),
                     CalcButtonAction.Scientific("Abs", ScientificType.ABS)
@@ -122,7 +137,7 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
     }
 }
 
-enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, LN, FACTORIAL, ABS }
+enum class ScientificType { SQRT, SIN, COS, TAN, LOG, ASIN, ACOS, ATAN, SINH, COSH, TANH, ASINH, ACOSH, ATANH, LN, FACTORIAL, ABS }
 
 enum class Constants { PI, I, PHI, E, INF}
 enum class Variables { X, Y, Z, ZC, T, S}

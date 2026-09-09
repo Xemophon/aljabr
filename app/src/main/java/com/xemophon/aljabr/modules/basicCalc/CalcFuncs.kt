@@ -1,6 +1,5 @@
 package com.xemophon.aljabr.modules.basicCalc
 
-import com.xemophon.aljabr.data.SymjaUtils
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.math.E
@@ -39,6 +38,8 @@ object CalcFuncs {
         "i" to "i"
     )
 
+    private val subscriptLogRegex = Regex("""(?<![a-zA-Z])log_\{?([^{}()+*-/,\s]+)\}?\s*\((.+?)\)""", RegexOption.IGNORE_CASE)
+
     fun calculateExpression(
         input: String,
         variables: Map<String, Double> = emptyMap(),
@@ -50,37 +51,14 @@ object CalcFuncs {
             visualToMathMap.forEach { (visual, math) ->
                 cleanedInput = cleanedInput.replace(visual, math)
             }
+            cleanedInput = cleanedInput.replace(subscriptLogRegex) { match ->
+                val base = match.groupValues[1]
+                val arg = match.groupValues[2]
+                "log($arg, $base)"
+            }
             evaluate(cleanedInput, variables, useRadians)
         } catch (e: Throwable) {
             Double.NaN
-        }
-    }
-
-    fun calculateSymbolic(
-        input: String,
-        precision: Int = 4
-    ): String {
-        if (input.isBlank()) return ""
-        return try {
-            val cleaned = SymjaUtils.prepareForSymja(input)
-            
-            SymjaUtils.evaluate { eval ->
-                val result = eval.eval(cleaned)
-                val resStr = result.toString()
-
-                if (resStr.contains("I") || resStr.contains("GoldenRatio") || resStr.contains("Pi") || resStr.contains("E")) {
-                    SymjaUtils.formatResult(resStr)
-                } else {
-                    val d = resStr.toDoubleOrNull()
-                    if (d != null) {
-                        formatResult(d, precision)
-                    } else {
-                        SymjaUtils.formatResult(resStr)
-                    }
-                }
-            }
-        } catch (e: Throwable) {
-            "Error"
         }
     }
 
@@ -277,7 +255,14 @@ object CalcFuncs {
                     "asinh", "arcsinh" -> asinh(arg1)
                     "acosh", "arccosh" -> acosh(arg1)
                     "atanh", "arctanh" -> atanh(arg1)
-                    "log", "log10" -> {
+                    "log10" -> {
+                        if (arg2 != null) {
+                            log10(arg1) / log10(arg2)
+                        } else {
+                            log10(arg1)
+                        }
+                    }
+                    "log" -> {
                         if (arg2 != null) {
                             log10(arg1) / log10(arg2)
                         } else {

@@ -146,7 +146,7 @@ object MathInputHandler {
             " × log(", "log(", " × ln(", "ln(", " × abs(", "abs(", " × √(", "√(",
             " × π", "π", " × e", "e", " × φ", "φ", " × j", "j", " × i", "i",
             " ÷ ", " × ", " + ", " - ", " ^ ", "( )", "!", "÷", "×",
-            " / ", " * ", "/", "*", "=="
+            " / ", " * ", "/", "*", "==", " , ", ", "
         )
 
         val matchedToken = tokens.find { textBefore.endsWith(it) }
