@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable
-fun ConverterField(
+fun InputFieldSmall(
     label: String,
     value: String,
     isFocused: Boolean,

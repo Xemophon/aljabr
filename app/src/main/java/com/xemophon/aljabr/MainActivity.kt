@@ -50,6 +50,7 @@ import com.xemophon.aljabr.navigation.Calculus
 import com.xemophon.aljabr.navigation.Misc
 import com.xemophon.aljabr.navigation.ReferenceSheets
 import com.xemophon.aljabr.navigation.Series
+import com.xemophon.aljabr.navigation.Statistics
 import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +114,7 @@ class MainActivity : ComponentActivity() {
                                 DrawerSection(title = "Calculus", items = Calculus, currentDestination = currentDestination, onNavigate = onNavigate)
                                 DrawerSection(title = "Algebra", items = Algebra, currentDestination = currentDestination, onNavigate = onNavigate)
                                 DrawerSection(title = "Series Expansion", items = Series, currentDestination = currentDestination, onNavigate = onNavigate)
+                                DrawerSection(title = "Statistics", items = Statistics, currentDestination = currentDestination, onNavigate = onNavigate)
                                 DrawerSection(title = "Utilities", items = ReferenceSheets, currentDestination = currentDestination, onNavigate = onNavigate)
                             }
                         }
@@ -163,6 +165,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         ReferenceSheets.forEach { variant ->
+                            composable(variant.routeClass) {
+                                variant.content { scope.launch { drawerState.open() } }
+                            }
+                        }
+                        Statistics.forEach { variant ->
                             composable(variant.routeClass) {
                                 variant.content { scope.launch { drawerState.open() } }
                             }

@@ -28,6 +28,7 @@ import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
 import com.xemophon.aljabr.modules.misc.MiscPage
 import com.xemophon.aljabr.modules.series.fourier.FourierCalc
 import com.xemophon.aljabr.modules.series.taylor.TaylorCalc
+import com.xemophon.aljabr.modules.statistics.distributions.DistCalc
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -58,6 +59,8 @@ object TaylorRoute
 object LaplaceRoute
 @Serializable
 object OdeRoute
+@Serializable
+object DistributionsRoute
 val Calculus = listOf(
     CalculatorVariant(
         route = LimitsRoute,
@@ -174,5 +177,15 @@ val ReferenceSheets = listOf(
         label = "Reference Sheets",
         icon = Icons.AutoMirrored.Filled.Article,
         content = { onOpenDrawer -> UtilitiesScreen(onOpenDrawer = onOpenDrawer)}
+    )
+)
+
+val Statistics = listOf(
+    CalculatorVariant(
+        route = DistributionsRoute,
+        routeClass = DistributionsRoute::class,
+        label = "Distributions",
+        icon = R.drawable.distributions,
+        content = { onOpenDrawer -> DistCalc(onOpenDrawer = onOpenDrawer) }
     )
 )

@@ -69,7 +69,7 @@ sealed class ShortGridMode{
     data object Polynomials : ShortGridMode()
     data object BDE: ShortGridMode()
     data object Functions : ShortGridMode()
-    data object None : ShortGridMode()
+    data object Distributions : ShortGridMode()
 }
 
 @Composable
@@ -175,6 +175,7 @@ fun ShortCalcButtons(
                 ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
                 ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("( )"), (3 to 2) to CalcButtonAction.Symbol("^"))
                 ShortGridMode.BDE -> mapOf((4 to 3) to CalcButtonAction.Symbol("=", "="),(4 to 2) to CalcButtonAction.Symbol("( )"))
+                ShortGridMode.Distributions -> mapOf((4 to 3) to CalcButtonAction.Done, (4 to 2) to CalcButtonAction.Symbol("%"))
                 else -> emptyMap()
             }
         )
