@@ -31,7 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.buttons.Constants
-import com.xemophon.aljabr.ui.components.screens.ConverterField
+import com.xemophon.aljabr.ui.components.screens.InputFieldSmall
 import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
@@ -180,7 +180,7 @@ fun ConvertorSide(
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        ConverterField(
+        InputFieldSmall(
             label = subLabels.first,
             value = values.first,
             isFocused = isSideFocused && selectedSubField == SubField.MAIN,
@@ -194,7 +194,7 @@ fun ConvertorSide(
         )
 
         if (subLabels.second.isNotEmpty()) {
-            ConverterField(
+            InputFieldSmall(
                 label = subLabels.second,
                 value = values.second,
                 isFocused = isSideFocused && selectedSubField == SubField.EXTRA,

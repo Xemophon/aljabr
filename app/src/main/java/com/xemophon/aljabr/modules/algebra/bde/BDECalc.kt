@@ -135,7 +135,7 @@ fun BDEContent(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        ConverterField(
+                                        InputFieldSmall(
                                             label = "Condition ${index + 1}",
                                             value = condition,
                                             isFocused = odeConditionFocusIndex == index,

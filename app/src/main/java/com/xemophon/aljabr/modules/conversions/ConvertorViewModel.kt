@@ -32,6 +32,22 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
     var precision by mutableIntStateOf(4)
         private set
 
+    var mode by mutableStateOf(ConversionMode.ANGLE)
+    var isSwapped by mutableStateOf(false)
+
+    var selectedField by mutableStateOf(SelectedField.PRIMARY)
+    var selectedSubField by mutableStateOf(SubField.MAIN)
+
+    var primaryValue by mutableStateOf("")
+    var primaryValue2 by mutableStateOf("")
+    var secondaryValue by mutableStateOf("")
+    var secondaryValue2 by mutableStateOf("")
+
+    var primaryCursor by mutableIntStateOf(0)
+    var primaryCursor2 by mutableIntStateOf(0)
+    var secondaryCursor by mutableIntStateOf(0)
+    var secondaryCursor2 by mutableIntStateOf(0)
+
     init {
         viewModelScope.launch {
             settingsRepository.precisionFlow.collectLatest {
@@ -40,9 +56,6 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
     }
-
-    var mode by mutableStateOf(ConversionMode.ANGLE)
-    var isSwapped by mutableStateOf(false)
 
     fun onModeChanged(newMode: ConversionMode) {
         if (mode != newMode) {
@@ -60,19 +73,6 @@ class ConvertorViewModel(application: Application) : AndroidViewModel(applicatio
             selectedSubField = SubField.MAIN
         }
     }
-
-    var selectedField by mutableStateOf(SelectedField.PRIMARY)
-    var selectedSubField by mutableStateOf(SubField.MAIN)
-
-    var primaryValue by mutableStateOf("")
-    var primaryValue2 by mutableStateOf("")
-    var secondaryValue by mutableStateOf("")
-    var secondaryValue2 by mutableStateOf("")
-
-    var primaryCursor by mutableIntStateOf(0)
-    var primaryCursor2 by mutableIntStateOf(0)
-    var secondaryCursor by mutableIntStateOf(0)
-    var secondaryCursor2 by mutableIntStateOf(0)
 
     fun handleAction(action: CalcButtonAction) {
         when (action) {

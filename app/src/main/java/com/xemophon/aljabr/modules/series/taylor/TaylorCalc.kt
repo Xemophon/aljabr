@@ -24,7 +24,7 @@ import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.screens.ConverterField
+import com.xemophon.aljabr.ui.components.screens.InputFieldSmall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -76,7 +76,7 @@ fun TaylorCalc(
                         .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ConverterField(
+                    InputFieldSmall(
                         label = "Center (a)",
                         value = viewModel.targetText,
                         isFocused = viewModel.currentFocus == CalculatorFocus.TARGET,
@@ -84,7 +84,7 @@ fun TaylorCalc(
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.setFocus(CalculatorFocus.TARGET) }
                     )
-                    ConverterField(
+                    InputFieldSmall(
                         label = "Order (n)",
                         value = viewModel.orderText,
                         isFocused = viewModel.currentFocus == CalculatorFocus.ORDER,

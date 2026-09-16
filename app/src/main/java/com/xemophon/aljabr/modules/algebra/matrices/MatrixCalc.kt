@@ -387,25 +387,16 @@ fun FocusOverlay(
 
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-                    _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixKeypad(
-                        onAction = onAction
+                    ShortCalcButtons(
+                        modifier = Modifier.height(400.dp),
+                        gridMode = ShortGridMode.Convertor,
+                        onAction = onAction,
+                        letterNeeded = CalcButtonAction.Constant("i", Constants.I)
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-fun MatrixKeypad(
-    onAction: (CalcButtonAction) -> Unit
-) {
-    ShortCalcButtons(
-        modifier = Modifier.height(400.dp),
-        gridMode = ShortGridMode.Convertor,
-        onAction = onAction,
-        letterNeeded = CalcButtonAction.Constant("i", Constants.I)
-    )
 }
 
 @Composable
