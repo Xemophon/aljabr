@@ -18,7 +18,7 @@ private val DarkColorScheme = darkColorScheme(
     secondaryContainer = CalcButtonOperationDark,
     tertiaryContainer = CalcButtonEqualDark,
     surfaceVariant = CalcContainerBackgroundDark,
-    primaryFixedDim = CalcPrimaryFixedDimDark
+    primaryFixedDim = CalcPrimaryFixedDimDark,
 )
 
 private val LightColorScheme = lightColorScheme(

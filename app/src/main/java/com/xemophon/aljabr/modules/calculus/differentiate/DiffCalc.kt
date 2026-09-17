@@ -3,7 +3,6 @@ package com.xemophon.aljabr.modules.calculus.differentiate
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.CardDefaults
@@ -32,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,11 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.model.LatexConfig
-import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.ui.components.screens.CalculusStep
-import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
 import com.xemophon.aljabr.ui.components.screens.AnalysisReport
@@ -56,11 +48,10 @@ import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
 import com.xemophon.aljabr.ui.components.screens.StepsBottomSheet
 import com.xemophon.aljabr.ui.components.screens.LoadingIndicator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +67,7 @@ fun DiffCalc(onOpenDrawer: () -> Unit) {
             steps = viewModel.stepsList,
             isCalculating = viewModel.isCalculatingSteps,
             sheetState = rememberModalBottomSheetState(),
-            onDismissRequest = { viewModel.showStepsSheet = false }
+            onDismissRequest = { viewModel.showStepsSheet = false },
         )
     }
 
@@ -171,7 +162,7 @@ fun DiffCalcContent(
                     }
                 }
                 
-                if (analysisResult == null && !isCalculating && !isCalculatingSteps) {
+                if ((analysisResult == null) && !isCalculating && !isCalculatingSteps) {
                     AdvancedButtonsGrid(
                         gridMode = AdvancedGridMode.Differentiation(diffGridMode),
                         onAction = onAction
@@ -299,50 +290,12 @@ fun DiffDisplay(
             } else {
                 // Show Derivative Result
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val needsLatex = remember(result) {
-                        result.any { it.isLetter() || it == '^' || it == '/' }
-                    }
-                    val latexState = produceState<String?>(initialValue = if (!needsLatex) result else null, result) {
-                        if (needsLatex) {
-                            value = withContext(Dispatchers.Default) {
-                                SymjaUtils.toLaTeX(result)
-                            }
-                        } else {
-                            value = result
-                        }
-                    }
-                    val latexValue = latexState.value
-
-                    Box(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (latexValue != null) {
-                            if (needsLatex || (latexValue != result || result.contains("^") || result.contains("/"))) {
-                                Box(modifier = Modifier.widthIn(max = 2000.dp)) {
-                                    Latex(
-                                        latex = latexValue,
-                                        config = LatexConfig(
-                                            fontSize = if (result.length > 15) 24.sp else 32.sp,
-                                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.primary),
-                                        )
-                                    )
-                                }
-                            } else {
-                                Text(
-                                    text = result,
-                                    style = MaterialTheme.typography.displayMedium.copy(
-                                        fontSize = if (result.length > 10) 32.sp else 48.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
+                    ScrollableLatexView(
+                        expression = result,
+                        fontSize = if (result.length > 15) 24.sp else 32.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(16.dp)
+                    )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     

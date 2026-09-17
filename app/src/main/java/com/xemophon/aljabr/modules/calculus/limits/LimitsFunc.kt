@@ -8,7 +8,7 @@ object LimitsFunc {
         expression: String,
         variable: String = "x",
         target: String,
-        useRationalize: Boolean = false
+        useRationalize: Boolean = false,
     ): String {
         return try {
             val cleanedExpr = SymjaUtils.prepareForSymja(expression)
@@ -33,11 +33,12 @@ object LimitsFunc {
             } else {
                 SymjaUtils.formatResult(result)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "Error"
         }
     }
 
+    @Suppress("unused")
     fun calculateLimitWithSteps(
         expression: String,
         variable: String = "x",

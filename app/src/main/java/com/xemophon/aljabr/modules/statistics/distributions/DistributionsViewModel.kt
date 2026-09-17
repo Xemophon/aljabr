@@ -55,7 +55,7 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
     var currentFocus by mutableStateOf(DistributionsFocus.X_VAL)
         private set
 
-    var isFocusedMode by mutableStateOf(false)
+    var isFocusedMode by mutableStateOf(value = false)
         private set
 
     // Binomial inputs (n, p)
@@ -128,13 +128,14 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
     // ==========================================
     // Dynamic metadata getters
     // ==========================================
+    @Suppress("unused")
     val graphExpression: String
         get() = DistributionsFunc.getGraphExpression(
             type = type,
             param1Str = activeParam1Value,
             param2Str = activeParam2Value ?: "",
             param3Str = activeParam3Value ?: "",
-            calcMode = calcMode
+            calcMode = calcMode,
         )
 
     val shadeMinX: Double?
@@ -498,6 +499,7 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    @Suppress("unused")
     fun clearResult() {
         distributionResult = null
         resultText = ""

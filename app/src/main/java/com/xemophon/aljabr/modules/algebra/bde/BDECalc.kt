@@ -26,13 +26,13 @@ import com.xemophon.aljabr.ui.components.screens.*
 @Composable
 fun BDECalc(
     viewModel: CalcBoxViewModel = viewModel(),
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.ODE
     }
 
-    BackHandler(enabled = viewModel.BDEResult != null || viewModel.isCalculating) {
+    BackHandler(enabled = (viewModel.bdeResult != null) || viewModel.isCalculating) {
         viewModel.handleAction(CalcButtonAction.Clear)
     }
 
@@ -40,7 +40,7 @@ fun BDECalc(
         displayText = viewModel.displayText,
         resultText = viewModel.resultText,
         cursorIndex = viewModel.cursorIndex,
-        BDEResult = viewModel.BDEResult,
+        bdeResult = viewModel.bdeResult,
         isCalculating = viewModel.isCalculating,
         odeConditions = viewModel.odeConditions,
         odeConditionFocusIndex = viewModel.odeConditionFocusIndex,
@@ -50,7 +50,7 @@ fun BDECalc(
         onMainFocus = { viewModel.setOdeConditionFocus(-1) },
         onUpdateCursorIndex = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
-        onOpenDrawer = onOpenDrawer
+        onOpenDrawer = onOpenDrawer,
     )
 }
 
@@ -59,7 +59,7 @@ fun BDEContent(
     displayText: String,
     resultText: String,
     cursorIndex: Int,
-    BDEResult: BDEResult? = null,
+    bdeResult: BDEResult? = null,
     isCalculating: Boolean = false,
     odeConditions: List<String>,
     odeConditionFocusIndex: Int,
@@ -69,7 +69,7 @@ fun BDEContent(
     onMainFocus: () -> Unit,
     onUpdateCursorIndex: (Int) -> Unit,
     onAction: (CalcButtonAction) -> Unit,
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
 ) {
     CalculatorScaffold(
         title = { Text("Differential Equation Solver") },
@@ -92,7 +92,7 @@ fun BDEContent(
                             modifier = Modifier.fillMaxSize(),
                             message = "Solving Differential Equation...",
                         )
-                    } else if (BDEResult == null) {
+                    } else if (bdeResult == null) {
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -172,13 +172,13 @@ fun BDEContent(
                         }
                     } else {
                         OdeReport(
-                            result = BDEResult,
+                            result = bdeResult,
                             onClear = { onAction(CalcButtonAction.Clear) }
                         )
                     }
                 }
 
-                if (BDEResult == null && !isCalculating) {
+                if ((bdeResult == null) && !isCalculating) {
                     Spacer(modifier = Modifier.height(8.dp))
                     ShortCalcButtons(
                         modifier = Modifier.weight(1.5f),

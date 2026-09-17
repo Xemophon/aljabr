@@ -63,6 +63,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.screens.MatrixReport
@@ -308,95 +309,21 @@ fun FocusOverlay(
     onPrev: () -> Unit,
     onNext: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onDismiss() }
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Large Focused Element Box
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    .clickable(enabled = false) { },
-                contentAlignment = Alignment.Center
-            ) {
-                AnimatedContent(
-                    targetState = value,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "ValueTransition"
-                ) { targetValue ->
-                    Text(
-                        text = targetValue,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = false) { },
-                color = MaterialTheme.colorScheme.inversePrimary,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                tonalElevation = 8.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onPrev) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
-                        }
-
-                        Text(
-                            text = "Editing Element",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        IconButton(onClick = onNext) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    ShortCalcButtons(
-                        modifier = Modifier.height(400.dp),
-                        gridMode = ShortGridMode.Convertor,
-                        onAction = onAction,
-                        letterNeeded = CalcButtonAction.Constant("i", Constants.I)
-                    )
-                }
-            }
+    FocusedInputOverlay(
+        value = value,
+        title = "Editing Element",
+        onDismiss = onDismiss,
+        onPrev = onPrev,
+        onNext = onNext,
+        keypadContent = {
+            ShortCalcButtons(
+                modifier = Modifier.height(400.dp),
+                gridMode = ShortGridMode.Convertor,
+                onAction = onAction,
+                letterNeeded = CalcButtonAction.Constant("i", Constants.I)
+            )
         }
-    }
+    )
 }
 
 @Composable

@@ -92,7 +92,7 @@ object IntegFunc {
         upper: String,
         useRadians: Boolean = true,
         useRationalize: Boolean = false,
-        type: IntegralType = IntegralType.DEFINITE
+        type: IntegralType = IntegralType.DEFINITE,
     ): String {
         return try {
             SymjaUtils.evaluate { eval ->
@@ -115,7 +115,7 @@ object IntegFunc {
 
                 val res = eval.eval(command).toString()
 
-                if (res.contains("Integrate", ignoreCase = true) || res == "\$Failed") {
+                if ((res.contains("Integrate", ignoreCase = true)) || (res == "\$Failed")) {
                     if (!isIndefinite) {
                         val lNum = lower.toDoubleOrNull() ?: Double.NaN
                         val uNum = upper.toDoubleOrNull() ?: Double.NaN
@@ -124,7 +124,7 @@ object IntegFunc {
                             if (!num.isNaN()) return@evaluate num.toString()
                         }
                     }
-                    return@evaluate categorizeIntegralResult(res, false, "∫($expression)d$v")
+                    return@evaluate categorizeIntegralResult(res, isNumerical = false, defaultFallback = "∫($expression)d$v")
                 }
 
                 val formatted = SymjaUtils.formatResult(res)

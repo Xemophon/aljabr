@@ -202,7 +202,7 @@ fun InteractiveGraphView(expression: String) {
             val gridStep = if (viewportScale > 2f) 1f else if (viewportScale < 0.5f) 5f else 2f
 
             // Vertical grid lines
-            var startX = ((minX / gridStep).roundToInt() * gridStep).toFloat()
+            var startX = (minX / gridStep).roundToInt() * gridStep
             while (startX <= maxX) {
                 val x = centerX + startX * scaleX
                 drawLine(

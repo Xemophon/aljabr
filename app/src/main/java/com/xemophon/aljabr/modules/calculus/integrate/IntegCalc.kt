@@ -1,7 +1,6 @@
 package com.xemophon.aljabr.modules.calculus.integrate
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -51,6 +49,7 @@ import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import com.xemophon.aljabr.ui.components.screens.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
@@ -71,7 +70,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
             steps = viewModel.stepsList,
             isCalculating = viewModel.isCalculatingSteps,
             sheetState = rememberModalBottomSheetState(),
-            onDismissRequest = { viewModel.showStepsSheet = false }
+            onDismissRequest = { viewModel.showStepsSheet = false },
         )
     }
 
@@ -360,7 +359,7 @@ fun IntegDisplay(
                                     .padding(4.dp)
                             ) {
                                 val baseP = if (expression == "0") "" else expression
-                                val textP = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                                val textP = if ((focus == CalculatorFocus.EXPRESSION) && (cursorIndex != -1)) {
                                     if (cursorIndex < baseP.length) StringBuilder(baseP).insert(cursorIndex, "|").toString() else "$baseP|"
                                 } else {
                                     baseP.ifEmpty { "P(x,y)" }
@@ -389,11 +388,10 @@ fun IntegDisplay(
                                     }
                                     .padding(4.dp)
                             ) {
-                                val baseQ = innerLower
                                 val textQ = if (focus == CalculatorFocus.INTEG_INNER_LOWER) {
-                                    if (baseQ.isEmpty()) "|" else "$baseQ|"
+                                    if (innerLower.isEmpty()) "|" else "$innerLower|"
                                 } else {
-                                    baseQ.ifEmpty { "Q(x,y)" }
+                                    innerLower.ifEmpty { "Q(x,y)" }
                                 }
                                 Text(
                                     text = "$textQ ∂y",
@@ -456,70 +454,13 @@ fun IntegDisplay(
                 }
             } else {
                 // Display only the result when it exists using LaTeX if possible
-                val needsLatex = remember(result, integType) {
-                    if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
-                        val expr = result.removeSuffix(" + C")
-                        expr.any { it.isLetter() }
-                    } else {
-                        result.any { it.isLetter() || it == '/' || it == '^' }
-                    }
-                }
-
-                val latexState = produceState<String?>(initialValue = if (!needsLatex) result else null, result) {
-                    if (needsLatex) {
-                        val converted = if (integType == IntegralType.INDEFINITE && result.endsWith(" + C")) {
-                            val expr = result.removeSuffix(" + C")
-                            val res = withContext(Dispatchers.Default) {
-                                SymjaUtils.toLaTeX(expr)
-                            }
-                            "$res + C"
-                        } else {
-                            withContext(Dispatchers.Default) {
-                                SymjaUtils.toLaTeX(result)
-                            }
-                        }
-                        value = converted
-                    } else {
-                        value = result
-                    }
-                }
-
-                val latexContent = latexState.value
-
-                Box(
-                    modifier = Modifier
-                        .clickable {
-                            // Clear result to edit again
-                            onFocusChange(CalculatorFocus.EXPRESSION)
-                        }
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (latexContent != null) {
-                        if (needsLatex || (latexContent != result || result.any { it == '^' || it == '/' })) {
-                            Box(modifier = Modifier.widthIn(max = 2000.dp)) {
-                                Latex(
-                                    latex = latexContent,
-                                    config = LatexConfig(
-                                        fontSize = if (result.length > 15) 24.sp else 32.sp,
-                                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                                    )
-                                )
-                            }
-                        } else {
-                            Text(
-                                text = result,
-                                style = MaterialTheme.typography.displayMedium.copy(
-                                    fontSize = if (result.length > 15) 28.sp else 40.sp
-                                ),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        }
-                    }
-                }
+                ScrollableLatexView(
+                    expression = result,
+                    fontSize = if (result.length > 15) 28.sp else 40.sp,
+                    color = MaterialTheme.colorScheme.secondary,
+                    onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }

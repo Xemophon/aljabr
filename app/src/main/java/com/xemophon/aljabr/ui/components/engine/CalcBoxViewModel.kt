@@ -30,7 +30,7 @@ enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG
 
 class CalcBoxViewModel @JvmOverloads constructor(
     application: Application,
-    odeStateHolder: OdeStateHolder = DefaultOdeStateHolder()
+    odeStateHolder: OdeStateHolder = DefaultOdeStateHolder(),
 ) : AndroidViewModel(application), OdeStateHolder by odeStateHolder {
 
     private val settingsRepository = SettingsRepository(application)
@@ -41,7 +41,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
     var precision by mutableIntStateOf(4)
         private set
 
-    var useRationalize by mutableStateOf(false)
+    var useRationalize by mutableStateOf(value = false)
 
     var displayText by mutableStateOf("0")
         private set
@@ -108,10 +108,10 @@ class CalcBoxViewModel @JvmOverloads constructor(
     private var isShowingResult = false
 
     fun handleAction(action: CalcButtonAction) {
-        if (action !is CalcButtonAction.Calculate && action !is CalcButtonAction.Graph && action !is CalcButtonAction.Clear) {
-            if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.LIMITS ||
-                calculatorMode == CalculatorMode.POLYNOMIALS || calculatorMode == CalculatorMode.TAYLOR ||
-                calculatorMode == CalculatorMode.LAPLACE || calculatorMode == CalculatorMode.ODE) {
+        if ((action !is CalcButtonAction.Calculate) && (action !is CalcButtonAction.Graph) && (action !is CalcButtonAction.Clear)) {
+            if ((calculatorMode == CalculatorMode.INTEGRATE) || (calculatorMode == CalculatorMode.LIMITS) ||
+                (calculatorMode == CalculatorMode.POLYNOMIALS) || (calculatorMode == CalculatorMode.TAYLOR) ||
+                (calculatorMode == CalculatorMode.LAPLACE) || (calculatorMode == CalculatorMode.ODE)) {
                 resultText = ""
                 isShowingResult = false
             }
@@ -169,10 +169,10 @@ class CalcBoxViewModel @JvmOverloads constructor(
                 if (isSameType && (action.type == IntegralType.XVOL || action.type == IntegralType.YVOL ||
                             action.type == IntegralType.XSURF || action.type == IntegralType.YSURF || action.type == IntegralType.NDOUBLE)) {
                     integrationAxis = if (integrationAxis == "X") "Y" else "X"
-                    if (action.type == IntegralType.DOUBLE || action.type == IntegralType.NDOUBLE) {
-                        integType = action.type
+                    integType = if (action.type == IntegralType.NDOUBLE) {
+                        action.type
                     } else {
-                        integType = when (integType) {
+                        when (integType) {
                             IntegralType.XVOL -> IntegralType.YVOL
                             IntegralType.YVOL -> IntegralType.XVOL
                             IntegralType.XSURF -> IntegralType.YSURF
@@ -577,11 +577,11 @@ class CalcBoxViewModel @JvmOverloads constructor(
             return
         }
 
-        try {
+        resultText = try {
             val result = computeBasicResult(displayText)
-            resultText = if (result == "Error") "" else result
+            if (result == "Error") "" else result
         } catch (_: Exception) {
-            resultText = ""
+            ""
         }
     }
 
@@ -643,7 +643,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                     resultText = ""
                     cursorIndex = displayText.length
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 displayText = "Error"
                 resultText = ""
                 cursorIndex = displayText.length
@@ -859,7 +859,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
         isCalculating = true
         viewModelScope.launch {
             try {
-                BDEResult = OdeEngine.solveOde(displayText, odeConditions)
+                bdeResult = OdeEngine.solveOde(displayText, odeConditions)
                 isShowingResult = true
             } catch (_: Exception) {
             } finally {

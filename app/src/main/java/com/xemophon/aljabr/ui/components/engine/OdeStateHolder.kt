@@ -9,7 +9,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.xemophon.aljabr.modules.algebra.bde.BDEResult
 
 interface OdeStateHolder {
-    var BDEResult: BDEResult?
+    var bdeResult: BDEResult?
     val odeConditions: SnapshotStateList<String>
     var odeConditionFocusIndex: Int
 
@@ -21,14 +21,14 @@ interface OdeStateHolder {
 }
 
 class DefaultOdeStateHolder : OdeStateHolder {
-    override var BDEResult by mutableStateOf<BDEResult?>(null)
+    override var bdeResult by mutableStateOf<BDEResult?>(null)
     override val odeConditions = mutableStateListOf<String>()
     override var odeConditionFocusIndex by mutableIntStateOf(-1)
 
     override fun isOdeConditionFocused(calculatorMode: CalculatorMode): Boolean {
-        return calculatorMode == CalculatorMode.ODE && 
-                odeConditionFocusIndex >= 0 && 
-                odeConditionFocusIndex in odeConditions.indices
+        return (calculatorMode == CalculatorMode.ODE) && 
+                (odeConditionFocusIndex >= 0) && 
+                (odeConditionFocusIndex in odeConditions.indices)
     }
 
     override fun setOdeConditionFocus(index: Int) {
@@ -52,7 +52,7 @@ class DefaultOdeStateHolder : OdeStateHolder {
     }
 
     override fun clearOdeState() {
-        BDEResult = null
+        bdeResult = null
         odeConditions.clear()
         odeConditionFocusIndex = -1
     }

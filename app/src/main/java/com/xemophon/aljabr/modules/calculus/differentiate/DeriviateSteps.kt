@@ -214,7 +214,7 @@ class DerivativeSolver(
     // CONSTANT
     // =========================================================================
 
-    private inner class ConstantRule : DerivativeRule {
+    private class ConstantRule : DerivativeRule {
 
         override fun tryApply(
             expr: IExpr,
@@ -1653,9 +1653,6 @@ class DerivativeSolver(
         val base =
             derivation.details["base"]
 
-        val exponent =
-            derivation.details["exponent"]
-
         val outerDerivative =
             derivation.details["outerDerivative"]
 
@@ -1676,7 +1673,7 @@ class DerivativeSolver(
             "Chain Rule",
             outerDerivative?.toLaTeX()
                 ?: derivation.result.toLaTeX(),
-            "${outerDerivative?.toLaTeX() ?: ""}" +
+            (outerDerivative?.toLaTeX() ?: "") +
                     " \\cdot \\frac{d}{dx}(" +
                     "${base?.toLaTeX() ?: ""})"
         )
@@ -1772,9 +1769,6 @@ class DerivativeSolver(
         addTrivialStep: Boolean
     ): List<CalculusStep> {
 
-        val function =
-            derivation.details["function"]
-
         val argument =
             derivation.details["argument"]
 
@@ -1826,6 +1820,7 @@ class DerivativeSolver(
      *
      * This is intentionally NOT used to generate the explanation.
      */
+    @Suppress("unused")
     fun verify(
         original: IExpr,
         derivative: IExpr,

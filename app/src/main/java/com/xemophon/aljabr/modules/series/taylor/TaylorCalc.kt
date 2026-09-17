@@ -1,7 +1,6 @@
 package com.xemophon.aljabr.modules.series.taylor
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +23,7 @@ import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
 import com.xemophon.aljabr.ui.components.screens.InputFieldSmall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -31,11 +31,11 @@ import kotlinx.coroutines.withContext
 @Composable
 fun TaylorCalc(
     viewModel: CalcBoxViewModel = viewModel(),
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.TAYLOR
-        if (viewModel.displayText == "0" || viewModel.displayText.isEmpty()) {
+        if ((viewModel.displayText == "0") || viewModel.displayText.isEmpty()) {
             viewModel.handleAction(CalcButtonAction.Symbol("sin(x)"))
         }
     }
@@ -152,49 +152,20 @@ fun TaylorDisplay(
                 )
             }
         } else {
-            // Result View with LaTeX
-            val needsLatex = remember(result) {
-                result.any { it.isLetter() || it == '/' || it == '^' }
-            }
-
             // Build the formal summation prefix in LaTeX
             val aLatex = remember(center) {
                 if (center.isEmpty()) "a" else center.replace("pi", "\\pi").replace("e", "e")
             }
-            val nLatex = remember(order) { if (order.isEmpty()) "n" else order }
+            val nLatex = remember(order) { order.ifEmpty { "n" } }
             val prefix = "\\sum_{k=0}^{$nLatex} \\frac{f^{(k)}($aLatex)}{k!} (x - $aLatex)^k = "
 
-            val latexState = produceState<String?>(initialValue = null, result) {
-                val expansion = if (needsLatex) {
-                    withContext(Dispatchers.Default) {
-                        SymjaUtils.toLaTeX(result)
-                    }
-                } else {
-                    result
-                }
-                value = prefix + expansion
-            }
-
-            val latexContent = latexState.value
-
-            Box(
-                modifier = Modifier
-                    .clickable { onFocusChange(CalculatorFocus.EXPRESSION) }
-                    .padding(16.dp)
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (latexContent != null) {
-                    Latex(
-                        latex = latexContent,
-                        config = LatexConfig(
-                            fontSize = if (result.length > 20) 18.sp else 24.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.primary),
-                        )
-                    )
-                }
-            }
+            ScrollableLatexView(
+                expression = prefix + result,
+                fontSize = if (result.length > 20) 18.sp else 24.sp,
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

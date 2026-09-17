@@ -43,7 +43,7 @@ object GraphGenerator {
         maxX: Double,
         minY: Double = -10.0,
         maxY: Double = 10.0,
-        steps: Int = 400 // Reduced steps for performance if 2D
+        @Suppress("UNUSED_PARAMETER") steps: Int = 400 // Reduced steps for performance if 2D
     ): Pair<List<List<Point>>, GraphAnalysis> {
         if (expression.isBlank()) return emptyList<List<Point>>() to GraphAnalysis()
 
@@ -354,6 +354,7 @@ object GraphGenerator {
         )
     }
 
+    @Suppress("unused")
     fun generatePoints(
         expression: String,
         minX: Double,

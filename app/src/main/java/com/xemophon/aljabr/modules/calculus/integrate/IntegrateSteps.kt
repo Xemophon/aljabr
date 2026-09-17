@@ -83,6 +83,7 @@ class IntegrationSolver(
         val result: IExpr
     }
 
+    @Suppress("unused")
     private enum class RuleType {
         CONSTANT,
         VARIABLE,
@@ -1059,9 +1060,9 @@ class IntegrationSolver(
                         if (n != null) {
                             "\\frac{" +
                                     "${inferVariableFromExpression(derivation.input, n)}^{" +
-                                    "${engine.evaluate(F.Plus(n, F.C1)).toLaTeX()}" +
+                                    engine.evaluate(F.Plus(n, F.C1)).toLaTeX() +
                                     "}}{" +
-                                    "${engine.evaluate(F.Plus(n, F.C1)).toLaTeX()}" +
+                                    engine.evaluate(F.Plus(n, F.C1)).toLaTeX() +
                                     "}"
                         } else {
                             derivation.result.toLaTeX()
@@ -1154,7 +1155,7 @@ class IntegrationSolver(
 
     private fun inferVariableFromExpression(
         expr: IExpr,
-        ignored: IExpr
+        @Suppress("UNUSED_PARAMETER") ignored: IExpr
     ): String {
 
         return when {

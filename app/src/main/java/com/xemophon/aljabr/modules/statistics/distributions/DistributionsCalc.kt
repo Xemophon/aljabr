@@ -1,6 +1,5 @@
 package com.xemophon.aljabr.modules.statistics.distributions
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -81,6 +80,7 @@ import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -127,105 +127,29 @@ fun DistCalc(
 fun DistFocusOverlay(
     viewModel: DistributionsViewModel
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { viewModel.dismissFocus() }
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Large Focused Element Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    .clickable(enabled = false) { },
-                contentAlignment = Alignment.Center
-            ) {
-                val targetValue = viewModel.focusValue
-                AnimatedContent(
-                    targetState = targetValue,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "ValueTransition"
-                ) { value ->
-                    Text(
-                        text = value.ifEmpty {
-                            when (viewModel.currentFocus) {
-                                DistributionsFocus.PARAM1 -> viewModel.activeParam1Label
-                                DistributionsFocus.PARAM2 -> viewModel.activeParam2Label ?: "Parameter 2"
-                                DistributionsFocus.PARAM3 -> viewModel.activeParam3Label ?: "Parameter 3"
-                                DistributionsFocus.X_VAL -> viewModel.xLabel
-                                DistributionsFocus.X2_VAL -> viewModel.x2Label
-                            }
-                        },
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = if (value.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                        else MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = false) { },
-                color = MaterialTheme.colorScheme.inversePrimary,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                tonalElevation = 8.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { viewModel.prevFocus() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
-                        }
-
-                        Text(
-                            text = "Editing ${viewModel.currentFocus.name}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        IconButton(onClick = { viewModel.nextFocus() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    ShortCalcButtons(
-                        modifier = Modifier.height(400.dp),
-                        gridMode = ShortGridMode.Distributions,
-                        onAction = { viewModel.handleAction(it) },
-                    )
-                }
-            }
-        }
+    val placeholder = when (viewModel.currentFocus) {
+        DistributionsFocus.PARAM1 -> viewModel.activeParam1Label
+        DistributionsFocus.PARAM2 -> viewModel.activeParam2Label ?: "Parameter 2"
+        DistributionsFocus.PARAM3 -> viewModel.activeParam3Label ?: "Parameter 3"
+        DistributionsFocus.X_VAL -> viewModel.xLabel
+        DistributionsFocus.X2_VAL -> viewModel.x2Label
     }
+
+    FocusedInputOverlay(
+        value = viewModel.focusValue,
+        title = "Editing ${viewModel.currentFocus.name}",
+        placeholder = placeholder,
+        onDismiss = { viewModel.dismissFocus() },
+        onPrev = { viewModel.prevFocus() },
+        onNext = { viewModel.nextFocus() },
+        keypadContent = {
+            ShortCalcButtons(
+                modifier = Modifier.height(400.dp),
+                gridMode = ShortGridMode.Distributions,
+                onAction = { viewModel.handleAction(it) },
+            )
+        }
+    )
 }
 
 @Composable
@@ -380,7 +304,7 @@ fun DistributionsPager(
 
     LaunchedEffect(viewModel.type) {
         val page = distributions.indexOf(viewModel.type)
-        if (page >= 0 && page != pagerState.currentPage) {
+        if ((page >= 0) && (page != pagerState.currentPage)) {
             pagerState.animateScrollToPage(page)
         }
     }
@@ -919,7 +843,7 @@ fun DistributionsGraph(
                         }
                         if (progress < 1f) {
                             val pathMeasure = PathMeasure()
-                            pathMeasure.setPath(path, false)
+                            pathMeasure.setPath(path, forceClosed = false)
                             val animatedPath = Path()
                             pathMeasure.getSegment(
                                 startDistance = 0f,

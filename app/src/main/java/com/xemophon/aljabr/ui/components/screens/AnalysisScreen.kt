@@ -100,52 +100,13 @@ fun ResultItemCard(label: String? = null, displayText: String, rawValue: String?
             if (label != null) {
                 Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             }
-            
-            val needsLatex = remember(displayText, rawValue) {
-                val toConvert = rawValue ?: displayText
-                rawValue != null || toConvert.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' || it == '{' || it == '}' }
-            }
-
-            val latexState = produceState<String?>(initialValue = if (!needsLatex) (rawValue ?: displayText) else null, displayText, rawValue) {
-                if (needsLatex) {
-                    val toConvert = rawValue ?: displayText
-                    val result = withContext(Dispatchers.Default) {
-                        SymjaUtils.toLaTeX(toConvert)
-                    }
-                    value = result
-                } else {
-                    value = rawValue ?: displayText
-                }
-            }
-
-            val latexValue = latexState.value
-
-            if (latexValue != null) {
-                if (needsLatex || (latexValue != displayText || displayText.contains("^") || displayText.contains("/"))) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = if (label != null) 4.dp else 0.dp)
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                    ) {
-                        Box(modifier = Modifier.widthIn(max = 2000.dp)) {
-                            Latex(
-                                latex = latexValue,
-                                config = LatexConfig(
-                                    fontSize = 20.sp,
-                                    theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                                )
-                            )
-                        }
-                    }
-                } else {
-                    Text(
-                        text = displayText,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+            ScrollableLatexView(
+                expression = displayText,
+                rawValue = rawValue,
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = if (label != null) 4.dp else 0.dp)
+            )
         }
     }
 }
@@ -309,24 +270,7 @@ fun FourierReport(
 
 @Composable
 fun LatexResultCard(latex: String) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-        ) {
-            Box(modifier = Modifier.widthIn(max = 2000.dp)) {
-                Latex(
-                    latex = latex,
-                    config = LatexConfig(
-                        fontSize = 20.sp,
-                        theme = LatexTheme.light(color = MaterialTheme.colorScheme.secondary),
-                    )
-                )
-            }
-        }
-    }
+    LatexDisplayCard(expression = latex, color = MaterialTheme.colorScheme.secondary)
 }
 
 @Composable

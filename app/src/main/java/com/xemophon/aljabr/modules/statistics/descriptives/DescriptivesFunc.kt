@@ -22,7 +22,7 @@ data class DescriptivesResult(
     val pearsonsCorrelation: PearsonsCorrelation? = null,
     val regression: SimpleRegression? = null,
     val sortedValues: List<Double>,
-    val error: String? = null
+    val error: String? = null,
 )
 
 object DescriptivesFunc {
@@ -131,7 +131,7 @@ object DescriptivesFunc {
         if (data.isEmpty()) return 0.0
         val s = data.sorted()
         val n = s.size
-        return if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2.0
+        return if ((n % 2 == 1)) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2.0
     }
 
     fun mode(data: List<Double>): List<Double> {

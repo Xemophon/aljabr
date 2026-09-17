@@ -37,11 +37,10 @@ object IntegrationEngine {
         useRadians: Boolean,
         useRationalize: Boolean,
         precision: Int,
-        integType: IntegralType
+        integType: IntegralType,
     ): String {
         val pVal = if (displayText == "0") "" else displayText
-        val qVal = innerLowerLimitText
-        val fullExpr = if (qVal.isBlank()) pVal else "$pVal, $qVal"
+        val fullExpr = if (innerLowerLimitText.isBlank()) pVal else "$pVal, $innerLowerLimitText"
         if (useRationalize) {
             return IntegFunc.integrateSymbolic(
                 expression = fullExpr,
@@ -205,7 +204,7 @@ object DifferentiationEngine {
         }
     }
 
-    suspend fun fullAnalysis(displayText: String, diffGridMode: String): AnalysisResult? {
+    suspend fun fullAnalysis(displayText: String, diffGridMode: String): AnalysisResult {
         return withContext(Dispatchers.Default) {
             if (diffGridMode == "Complex") {
                 AnalysisFunc.complexAnalysis(displayText)
@@ -243,13 +242,13 @@ object LaplaceEngine {
 }
 
 object OdeEngine {
-    suspend fun solveOde(displayText: String, odeConditions: List<String>): BDEResult? {
+    suspend fun solveOde(displayText: String, odeConditions: List<String>): BDEResult {
         return BDEFuncs.solveOde(displayText, odeConditions)
     }
 }
 
 object PolynomialEngine {
-    suspend fun analyzePolynomial(displayText: String, useRationalize: Boolean): PolynomialResult? {
+    suspend fun analyzePolynomial(displayText: String, useRationalize: Boolean): PolynomialResult {
         return PolyFuncs.analyzePolynomial(displayText, useRationalize)
     }
 }

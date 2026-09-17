@@ -1,7 +1,6 @@
 package com.xemophon.aljabr.modules.calculus.laplace
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +34,7 @@ import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -55,7 +55,7 @@ fun LaplaceCalc(onOpenDrawer: () -> Unit) {
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
-        onOpenDrawer = onOpenDrawer
+        onOpenDrawer = onOpenDrawer,
     )
 }
 
@@ -153,10 +153,6 @@ fun LaplaceDisplay(
                 )
             }
         } else {
-            val needsLatex = remember(result, expression) {
-                (result + expression).any { it.isLetter() || it == '/' || it == '^' }
-            }
-
             val prefix = if (laplaceMode == "Reverse") {
                 val exprLatex = remember(expression) { SymjaUtils.toLaTeX(expression) }
                 """\mathcal{L}^{-1}\left\{$exprLatex\right\} = """
@@ -165,37 +161,13 @@ fun LaplaceDisplay(
                 """\mathcal{L}\left\{$exprLatex\right\} = """
             }
 
-            val latexState = produceState<String?>(initialValue = null, result, expression) {
-                val resLatex = if (needsLatex) {
-                    withContext(Dispatchers.Default) {
-                        SymjaUtils.toLaTeX(result)
-                    }
-                } else {
-                    result
-                }
-                value = prefix + resLatex
-            }
-
-            val latexContent = latexState.value
-
-            Box(
-                modifier = Modifier
-                    .clickable { onFocusChange(CalculatorFocus.EXPRESSION) }
-                    .padding(16.dp)
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                contentAlignment = Alignment.Center
-            ) {
-                if (latexContent != null) {
-                    Latex(
-                        latex = latexContent,
-                        config = LatexConfig(
-                            fontSize = if (result.length > 20) 18.sp else 24.sp,
-                            theme = LatexTheme.light(color = MaterialTheme.colorScheme.primary),
-                        )
-                    )
-                }
-            }
+            ScrollableLatexView(
+                expression = prefix + result,
+                fontSize = if (result.length > 20) 18.sp else 24.sp,
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

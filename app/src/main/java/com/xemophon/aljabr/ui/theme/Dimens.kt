@@ -7,7 +7,6 @@ object Dimens {
     val PaddingNormal = 16.dp
     val PaddingSmall = 8.dp
     val SpacingSmall = 8.dp
-    val SpacingExtraSmall = 2.dp
 
     val LandingPageCornerRadius = 32.dp
 
@@ -17,9 +16,10 @@ object Dimens {
     val ButtonIconSizeStandard = 32.dp
     val ButtonIconSizeExpanded = 24.dp
 
+    @Suppress("ConstPropertyName")
     const val ButtonAspectRatioStandard = 1f
+    @Suppress("ConstPropertyName")
     const val ButtonAspectRatioExpanded = 1.3f
-    const val ScientificButtonAspectRatio = 1.5f
 
     val TextSizeToggle = 24.sp
     val TextSizeSwitchLabel = 8.sp

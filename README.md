@@ -1,49 +1,59 @@
 # AlJabr
 
-AlJabr is a modern, high-performance mathematical toolkit for Android, designed to bring university-level mathematics to your pocket. Built with **Jetpack Compose** and **Material Design 3**, it offers a seamless experience for everything from basic arithmetic to advanced symbolic calculus, linear algebra, series expansions, and graphing.
+AlJabr is a modern, high-performance mathematical toolkit for Android, designed to bring university-level mathematics to your pocket. Built with **Jetpack Compose** and **Material Design 3**, it offers a seamless experience for everything from basic arithmetic to advanced symbolic calculus, linear algebra, differential equations, probability distributions, series expansions, and interactive graphing.
 
 ## 🚀 Features
 
 ### 🔢 Basic & Scientific Calculator
-- **Standard Operations:** Full support for addition, subtraction, multiplication, and division.
+- **Standard Operations:** Full support for addition, subtraction, multiplication, division, and modulo.
 - **Scientific Mode:** Advanced functions including:
-    - Trigonometry: `sin`, `cos`, `tan` and their inverses.
-    - Logarithms: Common (`log`) and natural (`ln`) logarithms.
-    - Math Constants: $\pi$ (Pi) and $e$ (Euler's number).
-    - Power functions, roots, and factorials.
-- **Smart Engine:** Intelligent handling of nested parentheses, implicit multiplication (e.g., `2π`), and percentages.
+    - Trigonometry: `sin`, `cos`, `tan`, their hyperbolics (`sinh`, `cosh`, `tanh`), and their inverses.
+    - Logarithms: Common (`log`), natural (`ln`), and custom base logarithms.
+    - Mathematical Constants: $\pi$ (Pi) and $e$ (Euler's number).
+    - Power functions, roots, factorials, and combinations/permutations.
+    - Full support for **Complex Numbers** ($a + bi$).
+- **Smart Engine:** Intelligent handling of nested parentheses, implicit multiplication (e.g., `2π`), and percentage calculations.
 
 ### 📈 Graphing Engine
 - **Function Plotting:** High-resolution visualization of functions in the form $f(x)$.
-- **Implicit Equations:** Plot complex relations like $x^2 + y^2 = 9$.
-- **Automated Analysis:** Automatically identifies local extrema (maxima/minima), inflection points, and vertical asymptotes.
-- **Interactive Interface:** Smooth, responsive panning and zooming with companion analysis screens.
+- **Implicit Equations:** Plot complex 2D relations such as $x^2 + y^2 = 9$.
+- **Automated Analysis:** Automatically computes local extrema (maxima/minima), inflection points, and vertical asymptotes.
+- **Interactive Interface:** Responsive panning, zooming, and fullscreen inspection mode with companion analysis cards.
 
 ### 📐 Calculus Suite
-- **Symbolic Differentiation:** Find exact $d/dx$ derivatives for complex expressions with **Step-by-Step** solution breakdowns.
+- **Symbolic Differentiation:** Find exact $d/dx$ derivatives for single and multivariable expressions with **Step-by-Step** solution breakdowns.
 - **Integration:** 
     - **Indefinite:** Exact symbolic integration powered by a robust CAS engine with step-by-step guidance.
-    - **Definite:** Precise numerical integration using Simpson's 1/3 rule.
+    - **Definite:** Numerical integration using Simpson's 1/3 rule as well as symbolic evaluation.
+    - **Multiple Integrals:** Support for double integrals and surface/volume integration.
 - **Limits:** Calculate finite and infinite ($\infty$) limits, including left/right-sided evaluations.
-- **Laplace Transform:** Compute Laplace transforms and inverse transforms for differential equations and signal analysis.
+- **Laplace Transform:** Compute direct Laplace transforms and inverse Laplace transforms for differential equations and signal analysis.
 
-### 🧩 Algebra
-- **Matrices:** Comprehensive support for matrix operations including addition, multiplication, transpose, determinant, and inverse computation.
-- **Polynomials:** Advanced tools for root finding, polynomial division, factorization, and simplification.
+### 🧩 Algebra & Differential Equations
+- **Ordinary Differential Equations (ODE):** Solve first-order and higher-order differential equations with support for initial and boundary conditions.
+- **Matrices:** Comprehensive matrix operations including addition, subtraction, multiplication, determinant, transpose, matrix inversion, and eigenvalues/eigenvectors.
+- **Polynomials:** Advanced polynomial analysis including root finding, division, factorization, and simplification.
 
 ### 📉 Series
-- **Power Series:** Generate Taylor and Maclaurin expansions for common mathematical functions.
-- **Fourier Analysis:** Decompose periodic functions into their constituent sine and cosine harmonic components.
+- **Taylor & Maclaurin Series:** Generate power series expansions around any point $x = a$ up to any specified order $n$.
+- **Fourier Analysis:** Decompose periodic functions into their constituent sine and cosine harmonic components, supporting single and two-branch piecewise functions.
+
+### 📊 Statistics & Probability
+- **Probability Distributions:** Compute PDF/PMF and CDF with real-time interactive distribution curve shading and statistical metrics for:
+    - Continuous: Normal, Student's $t$, Uniform, Exponential, Chi-Square ($\chi^2$), and $F$-Distribution.
+    - Discrete: Binomial, Poisson, Hypergeometric, and Geometric.
+- **Descriptive Statistics:** Calculate summary metrics including Mean, Median, Mode, Variance (sample & population), Standard Deviation, Range, Quartiles, Skewness, and Kurtosis.
+- **Bivariate & Regression Analysis:** Compute Pearson's correlation coefficient ($r$) and simple linear regression models ($y = ax + b$).
 
 ### 🔄 Unit Conversion & Reference Sheets
-- **Versatile Converters:** Real-time conversion for length, weight, area, volume, temperature, and more.
+- **Math Utility Converters:** Real-time conversion for polar/cartesian complex numbers, base conversions (hexadecimal, binary, decimal), and angle units (degrees/radians).
 - **Mathematical Reference Sheets:** Quick access to essential math formulas, identity tables, and constants.
 
 ### 📱 Premium User Experience
-- **Material 3 Design:** A polished UI with dynamic color support and adaptive layouts.
+- **Material 3 Design:** A polished UI with dynamic color support (Android 12+ Monet) and multiple themed color schemes (Default, Blue, Green, Red, Yellow, Orange, Teal, Pink, Brown).
 - **LaTeX Rendering:** Beautifully typeset mathematical expressions for maximum clarity.
 - **Step-by-Step Explanations:** Detailed step breakdowns for calculus operations.
-- **Customizable & Responsive:** System theme integration (Light/Dark/Auto) and dynamically scaling text.
+- **Customizable & Responsive:** System theme integration (Light/Dark/Auto) and adaptive layouts.
 
 ## 🛠️ Tech Stack
 
@@ -73,22 +83,26 @@ The project is organized into modular packages under `com.xemophon.aljabr`:
     - `basicCalc/`: Core logic and UI for the scientific calculator.
     - `calculus/`:
         - `differentiate/`: Symbolic derivatives and step-by-step solutions.
-        - `integrate/`: Indefinite/definite integration and steps.
+        - `integrate/`: Indefinite/definite integration, double integrals, and steps.
         - `limits/`: Limit evaluation engine.
-        - `laplace/`: Laplace transform calculators.
+        - `laplace/`: Laplace and Inverse Laplace transform calculators.
     - `algebra/`:
-        - `matrices/`: Matrix calculator and view model.
-        - `polynomials/`: Polynomial operations and root finder.
+        - `matrices/`: Matrix operations, linear solver, and eigenvalues.
+        - `polynomials/`: Polynomial operations, roots, and factoring.
+        - `bde/`: Ordinary differential equation (ODE) solver with boundary conditions.
     - `series/`:
-        - `fourier/`: Fourier series expansion.
-        - `taylor/`: Taylor and Maclaurin series.
+        - `fourier/`: Fourier series expansion (single and two-branch).
+        - `taylor/`: Taylor and Maclaurin series expansions.
+    - `statistics/`:
+        - `distributions/`: Probability distribution calculators and interactive distribution plots.
+        - `descriptives/`: Summary statistics, correlation, and regression models.
     - `graphMaker/`: Interactive plotting and curve analysis engine.
     - `conversions/`: Unit convertors and reference utility tables.
     - `misc/`: App settings, About screen, and utilities.
 - `navigation/`: Type-safe navigation routes and app scaffolding.
 - `ui/`:
     - `components/`: Reusable math input handlers, button grids, and step display views.
-    - `theme/`: Material 3 themes, colors, typography, and dimensions.
+    - `theme/`: Material 3 themes, color schemes, typography, and dimensions.
 
 ## 📄 License
 

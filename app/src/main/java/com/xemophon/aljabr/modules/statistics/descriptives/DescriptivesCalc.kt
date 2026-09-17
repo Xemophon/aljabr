@@ -1,7 +1,6 @@
 package com.xemophon.aljabr.modules.statistics.descriptives
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -63,6 +62,7 @@ import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.components.screens.AnalysisSectionHeader
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.MathDataMemberBox
 import com.xemophon.aljabr.ui.components.screens.ReportScreen
 import com.xemophon.aljabr.ui.components.screens.ResultItemCard
 import java.util.Locale
@@ -247,8 +247,8 @@ fun DescriptivesScreen(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         members.forEachIndexed { index, value ->
-                                            DataMemberBox(
-                                                index = index,
+                                            MathDataMemberBox(
+                                                indexPrefix = "x${index + 1}:",
                                                 value = value,
                                                 isSelected = selectedIndex == index,
                                                 onClick = { selectedIndex = index },
@@ -257,7 +257,7 @@ fun DescriptivesScreen(
                                                     selectedIndex = when {
                                                         members.isEmpty() -> null
                                                         selectedIndex == index -> (index - 1).coerceAtLeast(0)
-                                                        selectedIndex != null && selectedIndex!! > index -> selectedIndex!! - 1
+                                                        (selectedIndex != null) && (selectedIndex!! > index) -> selectedIndex!! - 1
                                                         else -> selectedIndex
                                                     }
                                                 }
@@ -294,7 +294,7 @@ fun DescriptivesScreen(
                                     when (action.text) {
                                         "." -> {
                                             if (!currentText.contains(".")) {
-                                                members[activeIdx] = currentText + "."
+                                                members[activeIdx] = "$currentText."
                                             }
                                         }
                                         "( )" -> {
@@ -347,92 +347,6 @@ fun DescriptivesScreen(
                         }
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun DataMemberBox(
-    index: Int,
-    value: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "Cursor")
-    val cursorAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "CursorAlpha"
-    )
-
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable { onClick() },
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-        else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "x${index + 1}:",
-                style = MaterialTheme.typography.labelLarge,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            val displayText = if (isSelected) {
-                buildAnnotatedString {
-                    append(value)
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = cursorAlpha))) {
-                        append("|")
-                    }
-                }
-            } else {
-                buildAnnotatedString {
-                    if (value.isEmpty()) {
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))) {
-                            append("0")
-                        }
-                    } else {
-                        append(value)
-                    }
-                }
-            }
-            Text(
-                text = displayText,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                textAlign = TextAlign.Start
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = onRemove,
-                modifier = Modifier.size(20.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Remove item",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp)
-                )
             }
         }
     }

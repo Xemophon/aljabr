@@ -8,7 +8,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
-import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.input.MathInputHandler
 import com.xemophon.aljabr.ui.components.screens.FourierResult
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +20,7 @@ enum class FourierFocus {
 
 class FourierViewModel(application: Application) : AndroidViewModel(application) {
 
-    var isTwoBranch by mutableStateOf(false)
+    var isTwoBranch by mutableStateOf(value = false)
     
     var f1 by mutableStateOf("")
     var f2 by mutableStateOf("")
@@ -53,10 +52,10 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
         val values = FourierFocus.entries
         val nextIndex = (currentFocus.ordinal + 1) % values.size
         // Skip BRANCH2 if not in two-branch mode
-        if (!isTwoBranch && values[nextIndex] == FourierFocus.BRANCH2) {
-            currentFocus = values[(nextIndex + 1) % values.size]
+        currentFocus = if ((!isTwoBranch) && (values[nextIndex] == FourierFocus.BRANCH2)) {
+            values[(nextIndex + 1) % values.size]
         } else {
-            currentFocus = values[nextIndex]
+            values[nextIndex]
         }
     }
 
@@ -179,13 +178,13 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                         "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Sin[$genArg]", bClean, cClean)})"
                     }
 
-                    val anGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$anGenExpr, Element[n, Integers]]").toString() } catch(e:Exception) { null }
-                    val bnGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$bnGenExpr, Element[n, Integers]]").toString() } catch(e:Exception) { null }
+                    val anGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$anGenExpr, Element[n, Integers]]").toString() } catch (_: Exception) { null }
+                    val bnGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$bnGenExpr, Element[n, Integers]]").toString() } catch (_: Exception) { null }
 
                     withContext(Dispatchers.Main) {
                         fourierResult = fourierResult?.copy(
                             anGeneral = if (anGenVal != null && !anGenVal.contains("Integrate")) SymjaUtils.formatResult(anGenVal) else null,
-                            bnGeneral = if (bnGenVal != null && !bnGenVal.contains("Integrate")) SymjaUtils.formatResult(bnGenVal) else null
+                            bnGeneral = if (bnGenVal != null && !bnGenVal.contains("Integrate")) SymjaUtils.formatResult(bnGenVal) else null,
                         )
                     }
                 }

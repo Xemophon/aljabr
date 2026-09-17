@@ -1,12 +1,10 @@
 package com.xemophon.aljabr.modules.series.fourier
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xemophon.aljabr.ui.components.screens.AnalysisSectionHeader
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.buttons.SegmentedToggleButtons
+import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.screens.FourierReport
@@ -65,7 +65,7 @@ fun FourierCalc(
     Box(modifier = Modifier.fillMaxSize()) {
         CalculatorScaffold(
             title = { Text("Fourier Series") },
-            onOpenDrawer = onOpenDrawer
+            onOpenDrawer = onOpenDrawer,
         ) { padding ->
             Surface(
                 modifier = Modifier
@@ -74,7 +74,7 @@ fun FourierCalc(
                     .blur(if (viewModel.isFocusedMode) 12.dp else 0.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                if (viewModel.fourierResult == null && !viewModel.isCalculating) {
+                if ((viewModel.fourierResult == null) && !viewModel.isCalculating) {
                     FourierContent(viewModel)
                 } else if (viewModel.isCalculating) {
                     FourierLoadingReport(viewModel)
@@ -117,25 +117,11 @@ fun FourierContent(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            ModeButton(
-                text = "Single",
-                isSelected = !viewModel.isTwoBranch,
-                onClick = { viewModel.isTwoBranch = false },
-                modifier = Modifier.weight(1f)
-            )
-            ModeButton(
-                text = "Double",
-                isSelected = viewModel.isTwoBranch,
-                onClick = { viewModel.isTwoBranch = true },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        SegmentedToggleButtons(
+            options = listOf(false to "Single", true to "Double"),
+            selectedOption = viewModel.isTwoBranch,
+            onOptionSelected = { viewModel.isTwoBranch = it }
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -249,6 +235,7 @@ fun BranchArea(
     }
 }
 
+@Suppress("unused")
 @Composable
 fun ModeButton(
     text: String,
@@ -351,109 +338,34 @@ fun FourierFocusOverlay(
         FourierFocus.LIMIT_C -> viewModel.c
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { viewModel.dismissFocus() }
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Large Focused Element Box
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    .clickable(enabled = false) { },
-                contentAlignment = Alignment.Center
-            ) {
-                AnimatedContent(
-                    targetState = focusValue,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "ValueTransition"
-                ) { targetValue ->
-                    Text(
-                        text = targetValue.ifEmpty { 
-                            when(viewModel.currentFocus) {
-                                FourierFocus.BRANCH1 -> if (viewModel.isTwoBranch) "f1(x)" else "f(x)"
-                                FourierFocus.BRANCH2 -> "f2(x)"
-                                FourierFocus.LIMIT_A -> "a"
-                                FourierFocus.LIMIT_B -> "b"
-                                FourierFocus.LIMIT_C -> "c"
-                            }
-                        },
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = if (targetValue.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                else MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = false) { },
-                color = MaterialTheme.colorScheme.inversePrimary,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                tonalElevation = 8.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { viewModel.prevFocus() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
-                        }
-
-                        Text(
-                            text = "Editing ${viewModel.currentFocus.name}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        IconButton(onClick = { viewModel.nextFocus() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    val gridMode = if (viewModel.currentFocus in listOf(FourierFocus.BRANCH1, FourierFocus.BRANCH2)) {
-                        ShortGridMode.Functions
-                    } else {
-                        ShortGridMode.Convertor
-                    }
-
-                    ShortCalcButtons(
-                        modifier = Modifier.height(400.dp),
-                        gridMode = gridMode,
-                        onAction = { viewModel.handleAction(it) },
-                        letterNeeded = if (gridMode == ShortGridMode.Convertor) CalcButtonAction.Done else CalcButtonAction.Constant("π", Constants.PI)
-                    )
-                }
-            }
-        }
+    val placeholder = when(viewModel.currentFocus) {
+        FourierFocus.BRANCH1 -> if (viewModel.isTwoBranch) "f1(x)" else "f(x)"
+        FourierFocus.BRANCH2 -> "f2(x)"
+        FourierFocus.LIMIT_A -> "a"
+        FourierFocus.LIMIT_B -> "b"
+        FourierFocus.LIMIT_C -> "c"
     }
+
+    val gridMode = if (viewModel.currentFocus in listOf(FourierFocus.BRANCH1, FourierFocus.BRANCH2)) {
+        ShortGridMode.Functions
+    } else {
+        ShortGridMode.Convertor
+    }
+
+    FocusedInputOverlay(
+        value = focusValue,
+        title = "Editing ${viewModel.currentFocus.name}",
+        placeholder = placeholder,
+        onDismiss = { viewModel.dismissFocus() },
+        onPrev = { viewModel.prevFocus() },
+        onNext = { viewModel.nextFocus() },
+        keypadContent = {
+            ShortCalcButtons(
+                modifier = Modifier.height(400.dp),
+                gridMode = gridMode,
+                onAction = { viewModel.handleAction(it) },
+                letterNeeded = if (gridMode == ShortGridMode.Convertor) CalcButtonAction.Done else CalcButtonAction.Constant("π", Constants.PI)
+            )
+        }
+    )
 }

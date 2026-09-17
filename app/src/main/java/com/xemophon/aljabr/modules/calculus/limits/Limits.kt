@@ -56,7 +56,7 @@ fun Limits(onOpenDrawer: () -> Unit) {
         onFocusChange = { viewModel.setFocus(it) },
         onCursorIndexChange = { viewModel.updateCursorIndex(it) },
         onAction = { viewModel.handleAction(it) },
-        onOpenDrawer = onOpenDrawer
+        onOpenDrawer = onOpenDrawer,
     )
 }
 
@@ -171,7 +171,7 @@ fun LimitDisplay(
                         }
                         .padding(8.dp)
                 ) {
-                    val displayText = if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
+                    val displayText = if ((focus == CalculatorFocus.EXPRESSION) && (cursorIndex != -1)) {
                         if (cursorIndex < expression.length) {
                             StringBuilder(expression).insert(cursorIndex, "|").toString()
                         } else {

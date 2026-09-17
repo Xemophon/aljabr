@@ -46,7 +46,7 @@ data class DistributionsResult(
     val variance: String,
     val stdDev: String,
     val summary: String = "",
-    val extraInfo: Map<String, String> = emptyMap()
+    val extraInfo: Map<String, String> = emptyMap(),
 )
 
 object DistributionsFunc {
@@ -61,9 +61,9 @@ object DistributionsFunc {
         param3Str: String = "",
         calcMode: DistCalcMode = DistCalcMode.PDF_PMF
     ): String {
-        val p1 = if (param1Str.isBlank()) "1" else param1Str
-        val p2 = if (param2Str.isBlank()) "1" else param2Str
-        val p3 = if (param3Str.isBlank()) "1" else param3Str
+        val p1 = param1Str.ifBlank { "1" }
+        val p2 = param2Str.ifBlank { "1" }
+        val p3 = param3Str.ifBlank { "1" }
 
         val fnName = if (calcMode == DistCalcMode.CDF) "CDF" else "PDF"
         val distName = when (type) {
@@ -106,7 +106,7 @@ object DistributionsFunc {
             val diff = openCount - closeCount
             val sb = StringBuilder(cleaned)
             var replaced = 0
-            for (i in sb.length - 1 downTo 0) {
+            for (i in (sb.length - 1) downTo 0) {
                 if (sb[i] == ')' && replaced < diff) {
                     sb.setCharAt(i, ']')
                     replaced++
@@ -345,7 +345,7 @@ object DistributionsFunc {
     }
 
     private fun logCombination(n: Int, k: Int): Double {
-        if (k < 0 || k > n) return Double.NEGATIVE_INFINITY
+        if (k !in 0..n) return Double.NEGATIVE_INFINITY
         return logFactorial(n) - logFactorial(k) - logFactorial(n - k)
     }
 

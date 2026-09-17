@@ -4,6 +4,7 @@ import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.abs
 
 object SymjaUtils {
 
@@ -12,8 +13,8 @@ object SymjaUtils {
 
         fun <T> evaluate(block: (ExprEvaluator) -> T): T {
             val eval = pool.poll() ?: createEvaluator()
-            try {
-                return block(eval)
+            return try {
+                block(eval)
             } finally {
                 if (pool.size < maxPoolSize) {
                     pool.offer(eval)
@@ -49,8 +50,8 @@ object SymjaUtils {
     // Pre-compiled regexes for high performance
     private val ABS_REGEX = Regex("""\|([^|]+)\|""")
     private val LN_LATEX_REGEX = Regex("""\\ln\s*(?:\\left\()?\s*(?:\\left\||\|)\s*(.+?)\s*(?:\\right\||\|)\s*(?:\\right\)?|\))""")
-    private val D_REGEX = Regex("""D[\(\[](.+?),\s*(.+?)[\)\]]""")
-    private val INTEGRATE_REGEX = Regex("""Integrate[\(\[](.+?),\s*(.+?)[\)\]]""")
+    private val D_REGEX = Regex("""D[(\[](.+?),\s*(.+?)[)\]]""")
+    private val INTEGRATE_REGEX = Regex("""Integrate[(\[](.+?),\s*(.+?)[)\]]""")
     private val I_REGEX = Regex("""(?<![a-zA-Z])I(?![a-zA-Z])""")
     private val EULER_E_REGEX = Regex("""(?<![a-zA-Z])e(?![a-zA-Z])""")
     private val IMAGINARY_J_REGEX = Regex("""(?<![a-zA-Z])j(?![a-zA-Z])""", RegexOption.IGNORE_CASE)
@@ -143,16 +144,16 @@ object SymjaUtils {
     }
 
     fun formatComplexNumber(real: Double, imag: Double, precision: Int = 4): String {
-        val isRealZero = Math.abs(real) < 1e-10
-        val isImagZero = Math.abs(imag) < 1e-10
+        val isRealZero = abs(real) < 1e-10
+        val isImagZero = abs(imag) < 1e-10
 
         if (isImagZero) {
             return CalcFuncs.formatResult(real, precision)
         }
 
         val realFormatted = if (isRealZero) "" else CalcFuncs.formatResult(real, precision)
-        val absImag = Math.abs(imag)
-        val imagFormatted = if (Math.abs(absImag - 1.0) < 1e-10) "" else CalcFuncs.formatResult(absImag, precision)
+        val absImag = abs(imag)
+        val imagFormatted = if (abs(absImag - 1.0) < 1e-10) "" else CalcFuncs.formatResult(absImag, precision)
 
         return when {
             realFormatted.isEmpty() -> {
@@ -189,7 +190,7 @@ object SymjaUtils {
                     val realVal = eval.eval("N[Re[$cleaned], $precision + 2]").toString().toDoubleOrNull()
                     val imagVal = eval.eval("N[Im[$cleaned], $precision + 2]").toString().toDoubleOrNull()
 
-                    if (realVal != null && imagVal != null && !realVal.isNaN() && !imagVal.isNaN()) {
+                    if ((realVal != null) && (imagVal != null) && !realVal.isNaN() && !imagVal.isNaN()) {
                         return@evaluate formatComplexNumber(realVal, imagVal, precision)
                     }
                 } else {
@@ -198,7 +199,7 @@ object SymjaUtils {
                     val realVal = realStr.toDoubleOrNull()
                     val imagVal = imagStr.toDoubleOrNull()
 
-                    if (realVal != null && imagVal != null && !realVal.isNaN() && !imagVal.isNaN()) {
+                    if ((realVal != null) && (imagVal != null) && !realVal.isNaN() && !imagVal.isNaN()) {
                         return@evaluate formatComplexNumber(realVal, imagVal, precision)
                     }
                 }
@@ -211,7 +212,7 @@ object SymjaUtils {
                 val resStr = result.toString()
 
                 val d = resStr.toDoubleOrNull()
-                val formatted = if (d != null && !useRationalize) {
+                val formatted = if ((d != null) && !useRationalize) {
                     CalcFuncs.formatResult(d, precision)
                 } else {
                     formatResult(resStr)
@@ -267,7 +268,7 @@ object SymjaUtils {
                     .replace("\\text{DiracDelta}", "\\delta")
                     .replace("DiracDelta", "\\delta")
 
-                val logBaseRegex = Regex("""\\log_(\{?[^{}\s\(\)]+\}?)""")
+                val logBaseRegex = Regex("""\\log_(\{?[^{}\s()]+\}?)""")
                 result = result.replace(logBaseRegex, "LATEX_LOG_BASE_$1")
                     .replace("\\log10", "LATEX_LOG_BASE_{10}")
                     .replace("\\log", "\\ln")
@@ -285,7 +286,7 @@ object SymjaUtils {
             }
         }
 
-        if (formatted.isNotEmpty() && lateXCache.size < 500) {
+        if ((formatted.isNotEmpty()) && (lateXCache.size < 500)) {
             lateXCache[cacheKey] = formatted
         }
         return formatted
@@ -294,8 +295,8 @@ object SymjaUtils {
     fun formatSymjaTexListToMatrix(texStr: String): String {
         var content = texStr.trim()
 
-        if (content.startsWith("\\{") && content.endsWith("\\}")) {
-            content = content.substring(2, content.length - 2).trim()
+        content = if (content.startsWith("\\{") && content.endsWith("\\}")) {
+            content.substring(2, content.length - 2).trim()
         } else {
             return texStr
         }
@@ -442,16 +443,16 @@ object SymjaUtils {
                     Triple(
                         eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 1]]").toString().removeSuffix(".0"),
                         eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 2]]").toString().removeSuffix(".0"),
-                        eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 3]]").toString().removeSuffix(".0")
+                        eval.eval("Simplify[ReplaceAll[$evalTerm, n -> 3]]").toString().removeSuffix(".0"),
                     )
                 }
 
-                val simplified = when {
-                    val1 == "-1" && val2 == "1" && val3 == "-1" -> "(-1)ⁿ"
-                    val1 == "1" && val2 == "-1" && val3 == "1" -> "-(-1)ⁿ"
-                    val1 == "0" && val2 == "0" && val3 == "0" -> "0"
-                    val1 == "1" && val2 == "1" && val3 == "1" -> "1"
-                    val1 == "-1" && val2 == "-1" && val3 == "-1" -> "-1"
+                val simplified = when (Triple(val1, val2, val3)) {
+                    Triple("-1", "1", "-1") -> "(-1)ⁿ"
+                    Triple("1", "-1", "1") -> "-(-1)ⁿ"
+                    Triple("0", "0", "0") -> "0"
+                    Triple("1", "1", "1") -> "1"
+                    Triple("-1", "-1", "-1") -> "-1"
                     else -> null
                 }
 
@@ -536,24 +537,17 @@ object SymjaUtils {
 
     /**
      * Formats Symja logarithm and absolute value expressions cleanly before general bracket formatting.
-     * Log[Abs[x]] -> ln|x|
-     * Log[x] -> ln(x)
-     * Log[a, Abs[x]] -> log_a|x|
-     * Log[a, x] -> log_a(x)
-     * Log10[Abs[x]] -> log|x|
-     * Log10[x] -> log(x)
-     * Abs[x] -> |x|
      */
     fun formatSymjaLogsAndAbs(input: String): String {
         var result = input
 
         val heads = listOf("Log10", "Log", "Abs")
         while (true) {
-            val match = heads.mapNotNull { head ->
+            val match = heads.asSequence().mapNotNull { head ->
                 val idxSquare = result.indexOf("$head[")
                 val idxParen = result.indexOf("$head(")
                 val idx = when {
-                    idxSquare != -1 && idxParen != -1 -> Math.min(idxSquare, idxParen)
+                    idxSquare != -1 && idxParen != -1 -> minOf(idxSquare, idxParen)
                     idxSquare != -1 -> idxSquare
                     else -> idxParen
                 }
@@ -612,10 +606,7 @@ object SymjaUtils {
     }
 
     /**
-     * Strips Abs inside logarithms for differentiation, since (ln|u|)' = (ln u)' = u'/u.
-     * Log[Abs[u]] -> Log[u]
-     * Log[a, Abs[u]] -> Log[u]/Log[a]
-     * Log10[Abs[u]] -> Log10[u]
+     * Strips Abs inside logarithms for differentiation.
      */
     fun stripAbsFromLogsInSymja(input: String): String {
         var result = input
@@ -625,7 +616,7 @@ object SymjaUtils {
         val logDualAbsRegex = Regex("""Log[\(\[]\s*([^,\]\)]+)\s*,\s*\(?\s*Abs[\(\[](.+?)[\)\]]\s*\)?\s*[\)\]]""", RegexOption.IGNORE_CASE)
         result = result.replace(logDualAbsRegex, "Log[$2]/Log[$1]")
 
-        val logDualRegex = Regex("""Log\[\s*([^,\]]+)\s*,\s*([^,\]]+)\s*\]""")
+        val logDualRegex = Regex("""Log\[\s*([^,\]]+)\s*,\s*([^,\]]+)\s*]""")
         result = result.replace(logDualRegex, "Log[$2]/Log[$1]")
 
         val logSingleAbsRegex = Regex("""Log[\(\[]\s*\(?\s*Abs[\(\[](.+?)[\)\]]\s*\)?\s*[\)\]]""", RegexOption.IGNORE_CASE)
@@ -670,7 +661,7 @@ object SymjaUtils {
 
     /**
      * Converts logarithms in input expressions to Symja AST forms.
-     * Symja uses Log[x] for natural log (ln) and Log10[x] or Log[base, x] for common/custom base logarithms.
+     * Symja uses Log(x) for natural log (ln) and Log10(x) or Log(base, x) for common/custom base logarithms.
      */
     fun replaceLogarithmsForSymja(input: String): String {
         var result = input
@@ -733,7 +724,7 @@ object SymjaUtils {
     private fun replaceFuncWithBalancedParens(
         input: String,
         funcName: String,
-        transform: (content: String) -> String
+        transform: (content: String) -> String,
     ): String {
         val pattern = "(?<![a-zA-Z])$funcName\\s*\\("
         val regex = Regex(pattern, RegexOption.IGNORE_CASE)
@@ -779,8 +770,8 @@ object SymjaUtils {
     }
 
     /**
-     * Simplifying helper that converts logarithmic ratios like ln(x)/ln(a), log(x)/log(a), or Log[x]/Log[a]
-     * to base-a logarithm forms: log(x, a) or Log[a, x] (or log(x) / Log10[x] when a = 10).
+     * Simplifying helper that converts logarithmic ratios like ln(x)/ln(a), log(x)/log(a), or Log(x)/Log(a)
+     * to base-a logarithm forms: log(x, a) or Log(a, x) (or log(x) / Log10(x) when a = 10).
      */
     fun simplifyLogRatios(expression: String): String {
         var result = expression
