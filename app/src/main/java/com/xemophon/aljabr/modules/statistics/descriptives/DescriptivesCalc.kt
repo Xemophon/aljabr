@@ -1,14 +1,13 @@
 package com.xemophon.aljabr.modules.statistics.descriptives
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,14 +29,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -50,18 +47,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
 import com.xemophon.aljabr.ui.components.buttons.ShortGridMode
 import com.xemophon.aljabr.ui.components.screens.AnalysisSectionHeader
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
+import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
 import com.xemophon.aljabr.ui.components.screens.MathDataMemberBox
 import com.xemophon.aljabr.ui.components.screens.ReportScreen
 import com.xemophon.aljabr.ui.components.screens.ResultItemCard
@@ -76,270 +72,311 @@ fun DescriptivesScreen(
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     var resultState by remember { mutableStateOf<DescriptivesResult?>(null) }
 
-    BackHandler(enabled = resultState != null) {
-        resultState = null
+    val isFocusedMode = selectedIndex != null && selectedIndex!! in members.indices
+
+    BackHandler(enabled = resultState != null || isFocusedMode) {
+        if (resultState != null) {
+            resultState = null
+        } else if (isFocusedMode) {
+            selectedIndex = null
+        }
     }
 
-    CalculatorScaffold(
-        title = { Text(text = "Descriptive Statistics") },
-        onOpenDrawer = onOpenDrawer,
-        navigationIcon = Icons.Default.Menu,
-        navigationIconAction = onOpenDrawer,
-        navigationIconContentDescription = "Menu"
-    ) { padding ->
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            color = MaterialTheme.colorScheme.surfaceVariant
-        ) {
-            if (resultState != null) {
-                DescriptivesReport(
-                    result = resultState!!,
-                    onClear = { resultState = null }
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .safeDrawingPadding()
-                ) {
-                    // Upper Box: Interactive Array Fields & Action Controls
-                    Card(
+    Box(modifier = Modifier.fillMaxSize()) {
+        CalculatorScaffold(
+            title = { Text(text = "Descriptive Statistics") },
+            onOpenDrawer = onOpenDrawer,
+            navigationIcon = Icons.Default.Menu,
+            navigationIconAction = onOpenDrawer,
+            navigationIconContentDescription = "Menu"
+        ) { padding ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .blur(if (isFocusedMode) 12.dp else 0.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                if (resultState != null) {
+                    DescriptivesReport(
+                        result = resultState!!,
+                        onClear = { resultState = null }
+                    )
+                } else {
+                    Column(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            .fillMaxSize()
+                            .safeDrawingPadding()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
+                        // Main Array Area Box
+                        Card(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp)
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            // Control Header
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
                             ) {
                                 Text(
-                                    text = "Data Array (N = ${members.size})",
+                                    text = "Array Area (N = ${members.size})",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
 
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.outlineVariant,
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .padding(12.dp)
                                 ) {
-                                    if (members.isNotEmpty()) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                members.clear()
-                                                selectedIndex = null
-                                            },
-                                            shape = MaterialTheme.shapes.medium,
-                                            contentPadding = ButtonDefaults.ContentPadding,
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            )
+                                    if (members.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Clear All",
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Clear", fontWeight = FontWeight.Bold)
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Text(
+                                                    text = "Array Area is Empty",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Tap '+' below to add members to the array",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
                                         }
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            members.add("")
-                                            selectedIndex = members.size - 1
-                                        },
-                                        shape = MaterialTheme.shapes.medium,
-                                        contentPadding = ButtonDefaults.ContentPadding,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = "Add Member",
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("+ Member", fontWeight = FontWeight.Bold)
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            resultState = DescriptivesFunc.calculate(members)
-                                        },
-                                        shape = MaterialTheme.shapes.medium,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Calculate,
-                                            contentDescription = "Compute",
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Compute", fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Scrollable Focus Box Area
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                    .padding(8.dp)
-                            ) {
-                                if (members.isEmpty()) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
+                                    } else {
+                                        @OptIn(ExperimentalLayoutApi::class)
+                                        FlowRow(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .verticalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Text(
-                                                text = "Array is empty",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            Text(
-                                                text = "Tap '+ Member' to add data elements to analyze",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                                textAlign = TextAlign.Center
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    @OptIn(ExperimentalLayoutApi::class)
-                                    FlowRow(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .verticalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        members.forEachIndexed { index, value ->
-                                            MathDataMemberBox(
-                                                indexPrefix = "x${index + 1}:",
-                                                value = value,
-                                                isSelected = selectedIndex == index,
-                                                onClick = { selectedIndex = index },
-                                                onRemove = {
-                                                    members.removeAt(index)
-                                                    selectedIndex = when {
-                                                        members.isEmpty() -> null
-                                                        selectedIndex == index -> (index - 1).coerceAtLeast(0)
-                                                        (selectedIndex != null) && (selectedIndex!! > index) -> selectedIndex!! - 1
-                                                        else -> selectedIndex
+                                            members.forEachIndexed { index, value ->
+                                                MathDataMemberBox(
+                                                    indexPrefix = "x${index + 1}:",
+                                                    value = value,
+                                                    isSelected = selectedIndex == index,
+                                                    onClick = { selectedIndex = index },
+                                                    onRemove = {
+                                                        members.removeAt(index)
+                                                        selectedIndex = when {
+                                                            members.isEmpty() -> null
+                                                            selectedIndex == index -> null
+                                                            selectedIndex != null && selectedIndex!! > index -> selectedIndex!! - 1
+                                                            else -> selectedIndex
+                                                        }
                                                     }
-                                                }
-                                            )
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Keypad for input into focused member box
-                    ShortCalcButtons(
-                        modifier = Modifier
-                            .weight(1.3f)
-                            .fillMaxWidth(),
-                        gridMode = ShortGridMode.Descriptives,
-                        onAction = { action ->
-                            // Ensure there is an active focused box
-                            if (selectedIndex == null || selectedIndex!! >= members.size) {
-                                if (members.isEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Bottom Action Controls (Shown when no array member is focused for editing)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // + Button (Add member)
+                            Button(
+                                onClick = {
                                     members.add("")
-                                    selectedIndex = 0
-                                } else {
                                     selectedIndex = members.size - 1
-                                }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Member",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("+", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
 
-                            val activeIdx = selectedIndex ?: return@ShortCalcButtons
-                            val currentText = members[activeIdx]
+                            // Solve / Compute Button
+                            Button(
+                                onClick = {
+                                    resultState = DescriptivesFunc.calculate(members)
+                                },
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .fillMaxSize(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Calculate,
+                                    contentDescription = "Solve",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Solve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+
+                            // Clear Button
+                            OutlinedButton(
+                                onClick = {
+                                    members.clear()
+                                    selectedIndex = null
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Clear", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Focus Overlay for editing array elements
+        AnimatedVisibility(
+            visible = isFocusedMode,
+            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+            exit = fadeOut() + scaleOut(targetScale = 0.9f)
+        ) {
+            val activeIdx = selectedIndex ?: 0
+            val currentVal = members.getOrNull(activeIdx) ?: ""
+
+            FocusedInputOverlay(
+                value = currentVal,
+                title = "Editing Member x${activeIdx + 1}",
+                onDismiss = { selectedIndex = null },
+                onPrev = {
+                    if (activeIdx > 0) {
+                        selectedIndex = activeIdx - 1
+                    }
+                },
+                onNext = {
+                    if (activeIdx < members.size - 1) {
+                        selectedIndex = activeIdx + 1
+                    } else {
+                        members.add("")
+                        selectedIndex = members.size - 1
+                    }
+                },
+                keypadContent = {
+                    ShortCalcButtons(
+                        modifier = Modifier.height(360.dp),
+                        gridMode = ShortGridMode.Descriptives,
+                        onAction = { action ->
+                            val idx = selectedIndex ?: return@ShortCalcButtons
+                            if (idx !in members.indices) return@ShortCalcButtons
+                            val text = members[idx]
 
                             when (action) {
                                 is CalcButtonAction.Symbol -> {
                                     when (action.text) {
                                         "." -> {
-                                            if (!currentText.contains(".")) {
-                                                members[activeIdx] = "$currentText."
+                                            if (!text.contains(".")) {
+                                                members[idx] = "$text."
                                             }
                                         }
                                         "( )" -> {
-                                            val openCount = currentText.count { it == '(' }
-                                            val closeCount = currentText.count { it == ')' }
-                                            members[activeIdx] = if (openCount > closeCount && currentText.isNotEmpty() && currentText.last().isDigit()) {
-                                                "$currentText)"
+                                            val openCount = text.count { it == '(' }
+                                            val closeCount = text.count { it == ')' }
+                                            members[idx] = if (openCount > closeCount && text.isNotEmpty() && text.last().isDigit()) {
+                                                "$text)"
                                             } else {
-                                                "$currentText("
+                                                "$text("
                                             }
                                         }
                                         else -> {
-                                            members[activeIdx] = currentText + action.text
+                                            members[idx] = text + action.text
                                         }
                                     }
                                 }
 
                                 is CalcButtonAction.Backspace -> {
-                                    if (currentText.isNotEmpty()) {
-                                        members[activeIdx] = currentText.dropLast(1)
+                                    if (text.isNotEmpty()) {
+                                        members[idx] = text.dropLast(1)
                                     } else if (members.size > 1) {
-                                        members.removeAt(activeIdx)
-                                        selectedIndex = (activeIdx - 1).coerceAtLeast(0)
+                                        members.removeAt(idx)
+                                        selectedIndex = (idx - 1).coerceAtLeast(0)
                                     }
                                 }
 
                                 is CalcButtonAction.Clear -> {
-                                    if (currentText.isNotEmpty()) {
-                                        members[activeIdx] = ""
+                                    if (text.isNotEmpty()) {
+                                        members[idx] = ""
                                     } else {
-                                        members.clear()
-                                        selectedIndex = null
+                                        members.removeAt(idx)
+                                        selectedIndex = if (members.isEmpty()) null else (idx - 1).coerceAtLeast(0)
                                     }
                                 }
 
                                 is CalcButtonAction.Calculate, is CalcButtonAction.Done -> {
+                                    selectedIndex = null
                                     resultState = DescriptivesFunc.calculate(members)
                                 }
 
                                 is CalcButtonAction.Constant -> {
-                                    members[activeIdx] = currentText + action.text
+                                    members[idx] = text + action.text
                                 }
 
                                 is CalcButtonAction.Variable -> {
-                                    members[activeIdx] = currentText + action.text
+                                    members[idx] = text + action.text
                                 }
 
                                 else -> {}
@@ -347,7 +384,7 @@ fun DescriptivesScreen(
                         }
                     )
                 }
-            }
+            )
         }
     }
 }
