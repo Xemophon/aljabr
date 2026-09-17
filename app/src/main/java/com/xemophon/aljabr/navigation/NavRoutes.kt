@@ -28,6 +28,7 @@ import com.xemophon.aljabr.modules.conversions.UtilitiesScreen
 import com.xemophon.aljabr.modules.misc.MiscPage
 import com.xemophon.aljabr.modules.series.fourier.FourierCalc
 import com.xemophon.aljabr.modules.series.taylor.TaylorCalc
+import com.xemophon.aljabr.modules.statistics.hypothesis.HypothesisCalc
 import com.xemophon.aljabr.modules.statistics.descriptives.DescriptivesScreen
 import com.xemophon.aljabr.modules.statistics.distributions.DistCalc
 import kotlinx.serialization.Serializable
@@ -64,6 +65,9 @@ object OdeRoute
 object DescriptivesRoute
 @Serializable
 object DistributionsRoute
+@Serializable
+object ConfidenceRoute
+
 val Calculus = listOf(
     CalculatorVariant(
         route = LimitsRoute,
@@ -197,5 +201,12 @@ val Statistics = listOf(
         label = "Distributions",
         icon = R.drawable.distributions,
         content = { onOpenDrawer -> DistCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = ConfidenceRoute,
+        routeClass = ConfidenceRoute::class,
+        label = "Confidence Intervals",
+        icon = R.drawable.hypothesis,
+        content = { onOpenDrawer -> HypothesisCalc(onOpenDrawer = onOpenDrawer) }
     )
 )

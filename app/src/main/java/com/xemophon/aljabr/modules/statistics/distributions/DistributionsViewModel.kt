@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.max
+import kotlin.math.min
 
 enum class DistributionsType {
     BINOMIAL,
@@ -142,10 +143,13 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
         get() {
             val x1 = DistributionsFunc.parseExpression(xVal) ?: return null
             return when (calcMode) {
-                DistCalcMode.PDF_PMF -> x1 - 0.05
+                DistCalcMode.PDF_PMF -> null
                 DistCalcMode.CDF -> distributionLowerBound(type, activeParam1Value, activeParam2Value)
                 DistCalcMode.UPPER_CDF -> x1
-                DistCalcMode.RANGE -> x1
+                DistCalcMode.RANGE -> {
+                    val x2 = DistributionsFunc.parseExpression(x2Val) ?: x1
+                    min(x1, x2)
+                }
             }
         }
 
@@ -153,10 +157,13 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
         get() {
             val x1 = DistributionsFunc.parseExpression(xVal) ?: return null
             return when (calcMode) {
-                DistCalcMode.PDF_PMF -> x1 + 0.05
+                DistCalcMode.PDF_PMF -> null
                 DistCalcMode.CDF -> x1
                 DistCalcMode.UPPER_CDF -> distributionUpperBound(type, activeParam1Value, activeParam2Value)
-                DistCalcMode.RANGE -> DistributionsFunc.parseExpression(x2Val) ?: x1
+                DistCalcMode.RANGE -> {
+                    val x2 = DistributionsFunc.parseExpression(x2Val) ?: x1
+                    max(x1, x2)
+                }
             }
         }
 

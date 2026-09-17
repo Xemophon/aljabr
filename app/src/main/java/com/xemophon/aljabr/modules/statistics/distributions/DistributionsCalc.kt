@@ -549,7 +549,7 @@ fun DistributionsResults(
             ) {
                 ResultItem(label = "Mean (μ)", value = result.mean)
                 ResultItem(label = "Variance (σ²)", value = result.variance)
-                ResultItem(label = "Std Dev (σ)", value = result.stdDev)
+                ResultItem(label = "Standard Deviation (σ)", value = result.stdDev)
             }
 
             Row(

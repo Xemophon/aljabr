@@ -222,7 +222,7 @@ fun DescriptivesScreen(
                                     selectedIndex = members.size - 1
                                 },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(0.8f)
                                     .fillMaxSize(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -236,7 +236,6 @@ fun DescriptivesScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("+", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
 
                             // Solve / Compute Button
@@ -245,7 +244,7 @@ fun DescriptivesScreen(
                                     resultState = DescriptivesFunc.calculate(members)
                                 },
                                 modifier = Modifier
-                                    .weight(1.2f)
+                                    .weight(1.4f)
                                     .fillMaxSize(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -259,7 +258,7 @@ fun DescriptivesScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Solve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Compute", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
 
                             // Clear Button

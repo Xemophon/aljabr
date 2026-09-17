@@ -642,7 +642,7 @@ fun CalcButton(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(width = 74.dp, height = 64.dp) //Controls the button size
+                                    .size(width = 80.dp, height = 68.dp) //Controls the button size
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable {

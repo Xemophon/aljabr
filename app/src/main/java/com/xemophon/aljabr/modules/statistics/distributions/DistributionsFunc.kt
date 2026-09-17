@@ -149,7 +149,7 @@ object DistributionsFunc {
         val p2 = parseExpression(param2Str) ?: 1.0
         val p3 = parseExpression(param3Str) ?: 1.0
 
-        val isCdf = calcMode == DistCalcMode.CDF || calcMode == DistCalcMode.UPPER_CDF || calcMode == DistCalcMode.RANGE
+        val isCdf = calcMode == DistCalcMode.CDF
 
         val rawY = when (type) {
             DistributionsType.NORMAL -> {
