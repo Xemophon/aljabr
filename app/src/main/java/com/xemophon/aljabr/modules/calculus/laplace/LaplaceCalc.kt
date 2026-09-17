@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -161,8 +160,12 @@ fun LaplaceDisplay(
                 """\mathcal{L}\left\{$exprLatex\right\} = """
             }
 
+            val resultLatex = remember(result) {
+                if (result == "Error") "Error" else SymjaUtils.toLaTeX(result)
+            }
+
             ScrollableLatexView(
-                expression = prefix + result,
+                expression = prefix + resultLatex,
                 fontSize = if (result.length > 20) 18.sp else 24.sp,
                 color = MaterialTheme.colorScheme.primary,
                 onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },
