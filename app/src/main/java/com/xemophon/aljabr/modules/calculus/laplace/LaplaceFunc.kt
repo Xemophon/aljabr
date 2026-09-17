@@ -4,36 +4,42 @@ import com.xemophon.aljabr.data.SymjaUtils
 
 object LaplaceFunc {
 
+    private val STANDALONE_S_REGEX = Regex("""\bs\b""", RegexOption.IGNORE_CASE)
+    private val STANDALONE_T_REGEX = Regex("""\bt\b""", RegexOption.IGNORE_CASE)
+    private val STANDALONE_X_REGEX = Regex("""\bx\b""", RegexOption.IGNORE_CASE)
+
     fun calculateLaplace(
         expression: String,
         isInverse: Boolean = false,
         useRationalize: Boolean = false
     ): String {
         return try {
-            var cleanedExpr = SymjaUtils.prepareForSymja(expression)
-            if (cleanedExpr.isBlank()) return ""
+            var rawExpr = expression.trim()
+            if (rawExpr.isBlank()) return ""
 
             if (isInverse) {
                 // For Inverse Laplace: target variable in F(s) is s.
-                // If expression has no 's'/'S', but has 't' or 'x', map standalone 't' and 'x' to 's'.
-                val hasS = cleanedExpr.contains("s", ignoreCase = false) || cleanedExpr.contains("S", ignoreCase = false)
+                // Check for standalone 's' using word boundary regex BEFORE prepareForSymja
+                val hasS = STANDALONE_S_REGEX.containsMatchIn(rawExpr)
                 if (!hasS) {
-                    cleanedExpr = cleanedExpr
-                        .replace(Regex("""\bt\b"""), "s")
-                        .replace(Regex("""\bx\b"""), "s")
+                    rawExpr = rawExpr
+                        .replace(STANDALONE_T_REGEX, "s")
+                        .replace(STANDALONE_X_REGEX, "s")
                 }
             } else {
-                // For Forward Laplace: target variable in f(t) is t.
-                // If expression has no 't', but has 's' or 'x', map standalone 's' and 'x' to 't'.
-                val hasT = cleanedExpr.contains("t", ignoreCase = false)
+                // For Direct Laplace: target variable in f(t) is t.
+                // Check for standalone 't' using word boundary regex BEFORE prepareForSymja
+                val hasT = STANDALONE_T_REGEX.containsMatchIn(rawExpr)
                 if (!hasT) {
-                    cleanedExpr = cleanedExpr
-                        .replace(Regex("""\bs\b"""), "t")
-                        .replace(Regex("""\bx\b"""), "t")
+                    rawExpr = rawExpr
+                        .replace(STANDALONE_S_REGEX, "t")
+                        .replace(STANDALONE_X_REGEX, "t")
                 }
             }
 
-            // Always wrap in Rationalize so floating point numbers (e.g. 0.5) are converted to exact fractions (1/2) for Symja's symbolic engine
+            val cleanedExpr = SymjaUtils.prepareForSymja(rawExpr)
+
+            // Wrap in Rationalize so floating point numbers (e.g. 0.5) are converted to exact fractions (1/2) for Symja's symbolic engine
             val command = if (isInverse) {
                 "Simplify[InverseLaplaceTransform[Rationalize[$cleanedExpr], s, t]]"
             } else {
@@ -47,6 +53,7 @@ object LaplaceFunc {
             if (result.contains("LaplaceTransform") ||
                 result.contains("InverseLaplaceTransform") ||
                 result.contains("Indeterminate") ||
+                result.contains("ComplexInfinity") ||
                 result.contains("Error")
             ) {
                 "Error"
