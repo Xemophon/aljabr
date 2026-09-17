@@ -11,11 +11,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -73,8 +71,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.modules.graphMaker.GraphAnalysis
-import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
 import com.xemophon.aljabr.modules.graphMaker.Point
 import com.xemophon.aljabr.ui.components.buttons.HorizontalSeparator
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
@@ -747,7 +743,7 @@ fun DistributionsGraph(
             }
 
             // Draw Shaded Probability Area under curve
-            if (shadeMinX != null && shadeMaxX != null && shadeMinX < shadeMaxX) {
+            if (shadeMinX != null && shadeMaxX != null && shadeMinX < shadeMaxX && shadeMinX < effectiveMaxX && shadeMaxX > effectiveMinX) {
                 val clampedShadeMin = shadeMinX.coerceIn(effectiveMinX, effectiveMaxX).toFloat()
                 val clampedShadeMax = shadeMaxX.coerceIn(effectiveMinX, effectiveMaxX).toFloat()
 
@@ -778,18 +774,22 @@ fun DistributionsGraph(
                         // Boundary indicator vertical lines
                         val firstPy = toPy(firstPt.y)
                         val lastPy = toPy(lastPt.y)
-                        drawLine(
-                            color = graphColor,
-                            start = Offset(xStartPx, yZeroPx),
-                            end = Offset(xStartPx, firstPy),
-                            strokeWidth = 2.5f
-                        )
-                        drawLine(
-                            color = graphColor,
-                            start = Offset(xEndPx, yZeroPx),
-                            end = Offset(xEndPx, lastPy),
-                            strokeWidth = 2.5f
-                        )
+                        if (shadeMinX >= effectiveMinX) {
+                            drawLine(
+                                color = graphColor,
+                                start = Offset(xStartPx, yZeroPx),
+                                end = Offset(xStartPx, firstPy),
+                                strokeWidth = 2.5f
+                            )
+                        }
+                        if (shadeMaxX <= effectiveMaxX) {
+                            drawLine(
+                                color = graphColor,
+                                start = Offset(xEndPx, yZeroPx),
+                                end = Offset(xEndPx, lastPy),
+                                strokeWidth = 2.5f
+                            )
+                        }
                     }
                 }
             }
@@ -805,16 +805,19 @@ fun DistributionsGraph(
                         val px = toPx(pt.x)
                         val py = toPy(pt.y)
                         if (px in 0f..width) {
+                            val inShadeRange = shadeMinX != null && shadeMaxX != null && pt.x >= shadeMinX.toFloat() && pt.x <= shadeMaxX.toFloat()
+                            val stemColor = if (inShadeRange) shadeColor.copy(alpha = 1f) else graphColor.copy(alpha = 0.5f)
+
                             val animatedPy = yZeroPx - (yZeroPx - py) * progress
                             drawLine(
-                                color = graphColor,
+                                color = stemColor,
                                 start = Offset(px, yZeroPx),
                                 end = Offset(px, animatedPy),
                                 strokeWidth = 3.5f
                             )
                             drawCircle(
-                                color = graphColor,
-                                radius = 5f,
+                                color = stemColor,
+                                radius = 5.5f,
                                 center = Offset(px, animatedPy)
                             )
                         }

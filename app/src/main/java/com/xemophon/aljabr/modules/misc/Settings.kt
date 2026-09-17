@@ -541,7 +541,7 @@ fun AboutContent(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Version 1.0",
+                text = "Version 2.0",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )

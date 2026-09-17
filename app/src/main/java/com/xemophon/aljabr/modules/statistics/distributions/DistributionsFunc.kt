@@ -3,13 +3,13 @@ package com.xemophon.aljabr.modules.statistics.distributions
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.modules.graphMaker.Point
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.exp
+import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.PI
-import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -119,7 +119,6 @@ object DistributionsFunc {
 
     /**
      * Parses a string mathematical expression into a [Double].
-     * Supports basic numeric input, fractions (e.g. "1/2"), and constants/functions via Symja.
      */
     fun parseExpression(expression: String): Double? {
         if (expression.isBlank()) return null
@@ -135,20 +134,43 @@ object DistributionsFunc {
     }
 
     /**
-     * Evaluates a distribution function at a specific point x in pure Kotlin.
+     * Lanczos 7-term logGamma approximation for high precision special functions.
      */
-    fun evaluatePoint(
+    fun logGamma(x: Double): Double {
+        if (x <= 0.0) return 0.0
+        val p = doubleArrayOf(
+            0.99999999999980993,
+            676.5203681218851,
+            -1259.139216723402,
+            771.32342877765313,
+            -176.61502916214059,
+            12.507343278686905,
+            -0.13857109526572012,
+            9.9843695780195716e-6,
+            1.5056327351493116e-7
+        )
+        var y = x
+        var tmp = x + 7.5
+        tmp = (x + 0.5) * ln(tmp) - tmp
+        var ser = p[0]
+        for (i in 1 until p.size) {
+            y += 1.0
+            ser += p[i] / y
+        }
+        return tmp + ln(sqrt(2.0 * PI) * ser / x)
+    }
+
+    /**
+     * Pure Kotlin evaluation of probability distribution functions for point x.
+     */
+    fun evaluatePointParsed(
         type: DistributionsType,
-        param1Str: String,
-        param2Str: String = "",
-        param3Str: String = "",
+        p1: Double,
+        p2: Double,
+        p3: Double,
         x: Double,
         calcMode: DistCalcMode = DistCalcMode.PDF_PMF
     ): Double {
-        val p1 = parseExpression(param1Str) ?: 1.0
-        val p2 = parseExpression(param2Str) ?: 1.0
-        val p3 = parseExpression(param3Str) ?: 1.0
-
         val isCdf = calcMode == DistCalcMode.CDF
 
         val rawY = when (type) {
@@ -212,9 +234,7 @@ object DistributionsFunc {
                         SymjaUtils.evaluate { eval -> eval.eval("N[CDF[ChiSquareDistribution[$df], $x]]").toString().toDouble() }
                     } catch (_: Exception) { 0.0 }
                 } else {
-                    try {
-                        SymjaUtils.evaluate { eval -> eval.eval("N[PDF[ChiSquareDistribution[$df], $x]]").toString().toDouble() }
-                    } catch (_: Exception) { 0.0 }
+                    chiSquarePdf(df, x)
                 }
             }
             DistributionsType.F_DISTRIBUTION -> {
@@ -225,9 +245,7 @@ object DistributionsFunc {
                         SymjaUtils.evaluate { eval -> eval.eval("N[CDF[FRatioDistribution[$df1, $df2], $x]]").toString().toDouble() }
                     } catch (_: Exception) { 0.0 }
                 } else {
-                    try {
-                        SymjaUtils.evaluate { eval -> eval.eval("N[PDF[FRatioDistribution[$df1, $df2], $x]]").toString().toDouble() }
-                    } catch (_: Exception) { 0.0 }
+                    fDistributionPdf(df1, df2, x)
                 }
             }
             DistributionsType.HYPERGEOMETRIC -> {
@@ -248,8 +266,25 @@ object DistributionsFunc {
         return if (rawY.isNaN() || rawY.isInfinite()) 0.0 else rawY
     }
 
+    private fun chiSquarePdf(df: Double, x: Double): Double {
+        if (x <= 0.0 || df <= 0.0) return 0.0
+        val k2 = df / 2.0
+        val logPdf = (k2 - 1.0) * ln(x) - x / 2.0 - k2 * ln(2.0) - logGamma(k2)
+        return exp(logPdf)
+    }
+
+    private fun fDistributionPdf(df1: Double, df2: Double, x: Double): Double {
+        if (x <= 0.0 || df1 <= 0.0 || df2 <= 0.0) return 0.0
+        val a = df1 / 2.0
+        val b = df2 / 2.0
+        val logBeta = logGamma(a) + logGamma(b) - logGamma(a + b)
+        val logNum = a * ln(df1) + a * ln(x) + b * ln(df2)
+        val logDen = (a + b) * ln(df1 * x + df2) + ln(x) + logBeta
+        return exp(logNum - logDen)
+    }
+
     /**
-     * Generates sampled points for graphing a probability distribution.
+     * Generates sampled points for graphing a probability distribution efficiently without repeated string parsing.
      */
     fun generateGraphPoints(
         type: DistributionsType,
@@ -262,6 +297,10 @@ object DistributionsFunc {
         steps: Int = 400
     ): List<List<Point>> {
         if (maxX <= minX) return emptyList()
+
+        val p1 = parseExpression(param1Str) ?: 1.0
+        val p2 = parseExpression(param2Str) ?: 1.0
+        val p3 = parseExpression(param3Str) ?: 1.0
 
         val isDiscrete = type in listOf(
             DistributionsType.BINOMIAL,
@@ -276,14 +315,14 @@ object DistributionsFunc {
             val startK = floor(minX).toInt()
             val endK = ceil(maxX).toInt()
             for (k in startK..endK) {
-                val y = evaluatePoint(type, param1Str, param2Str, param3Str, k.toDouble(), calcMode)
+                val y = evaluatePointParsed(type, p1, p2, p3, k.toDouble(), calcMode)
                 pointList.add(Point(k.toFloat(), y.toFloat()))
             }
         } else {
             val stepSize = (maxX - minX) / steps
             for (i in 0..steps) {
                 val x = minX + i * stepSize
-                val y = evaluatePoint(type, param1Str, param2Str, param3Str, x, calcMode)
+                val y = evaluatePointParsed(type, p1, p2, p3, x, calcMode)
                 pointList.add(Point(x.toFloat(), y.toFloat()))
             }
         }
@@ -293,7 +332,6 @@ object DistributionsFunc {
 
     /**
      * Formats a [Double] according to user precision settings.
-     * Whole numbers are printed without trailing zeros. Small probabilities use scientific notation.
      */
     fun Double.formatPrecision(precision: Int = 4): String {
         if (this.isNaN()) return "NaN"
@@ -713,13 +751,11 @@ object DistributionsFunc {
     }
 
     private fun studentTPdf(df: Double, t: Double): Double {
-        return try {
-            SymjaUtils.evaluate { eval ->
-                eval.eval("N[PDF[StudentTDistribution[$df], $t]]").toString().toDouble()
-            }
-        } catch (_: Exception) {
-            0.0
-        }
+        if (df <= 0.0) return 0.0
+        val halfDf1 = (df + 1.0) / 2.0
+        val halfDf = df / 2.0
+        val logPdf = logGamma(halfDf1) - 0.5 * ln(df * PI) - logGamma(halfDf) - halfDf1 * ln(1.0 + (t * t) / df)
+        return exp(logPdf)
     }
 
     private fun studentTCdf(df: Double, t: Double): Double {
@@ -1083,12 +1119,7 @@ object DistributionsFunc {
         val xVal = parseExpression(xStr)
             ?: throw IllegalArgumentException("Invalid value 'x'.")
 
-        val pdfVal = try {
-            SymjaUtils.evaluate { eval ->
-                eval.eval("N[PDF[ChiSquareDistribution[$dfVal], $xVal]]").toString().toDouble()
-            }
-        } catch (_: Exception) { 0.0 }
-
+        val pdfVal = chiSquarePdf(dfVal, xVal)
         val cdfVal = try {
             SymjaUtils.evaluate { eval ->
                 eval.eval("N[CDF[ChiSquareDistribution[$dfVal], $xVal]]").toString().toDouble()
@@ -1170,12 +1201,7 @@ object DistributionsFunc {
         val xVal = parseExpression(xStr)
             ?: throw IllegalArgumentException("Invalid value 'x'.")
 
-        val pdfVal = try {
-            SymjaUtils.evaluate { eval ->
-                eval.eval("N[PDF[FRatioDistribution[$df1Val, $df2Val], $xVal]]").toString().toDouble()
-            }
-        } catch (_: Exception) { 0.0 }
-
+        val pdfVal = fDistributionPdf(df1Val, df2Val, xVal)
         val cdfVal = try {
             SymjaUtils.evaluate { eval ->
                 eval.eval("N[CDF[FRatioDistribution[$df1Val, $df2Val], $xVal]]").toString().toDouble()
