@@ -169,6 +169,7 @@ fun ShortCalcButtons(
         ButtonGrid(
             gridData = selectedGrid,
             modifier = Modifier.weight(1f),
+            calcContext = if(gridMode == ShortGridMode.Polynomials) CalcContext.POLYNOMIALS else CalcContext.BASIC,
             isExpanded = true,
             onAction = onAction,
             buttonModifier = Modifier.fillMaxHeight(),
@@ -260,7 +261,7 @@ fun CalcButtons(
                             isExpanded = true,
                             onAction = onAction,
                             buttonModifier = Modifier.aspectRatio(1.5f),
-                            calcType = "Basic"
+                            calcContext = CalcContext.BASIC
                         )
                     }
                 }
@@ -280,7 +281,7 @@ fun CalcButtons(
             isExpanded = isExpanded,
             onAction = onAction,
             buttonModifier = Modifier.aspectRatio(buttonAspectRatio),
-            calcType = "Basic"
+            calcContext = CalcContext.BASIC
         )
     }
 }
@@ -513,10 +514,16 @@ fun AdvancedButtonsGrid(
             }
             else -> emptyMap()
         },
-        calcType = when(gridMode){
-            is AdvancedGridMode.Graph -> "Graph"
-            is AdvancedGridMode.Integration -> if(gridMode.currentType in listOf(IntegralType.DOUBLE, IntegralType.NDOUBLE, IntegralType.CURVET1, IntegralType.CURVET2)) "IntegrationMulti" else "IntegrationSingle"
-            else -> null
+        calcContext = when (gridMode) {
+            is AdvancedGridMode.Graph -> CalcContext.GRAPH
+            is AdvancedGridMode.Integration -> {
+                if (selectedGrid == MultipleVariableGrid) CalcContext.MULTI_VARIABLE_INTEGRATION
+                else CalcContext.SINGLE_VARIABLE_INTEGRATION
+            }
+            else -> {
+                if (selectedGrid == MultipleVariableGrid) CalcContext.MULTI_VARIABLE
+                else CalcContext.SINGLE_VARIABLE
+            }
         }
     )
 }
@@ -545,7 +552,7 @@ private fun ModeToggleButton(
 private fun ButtonGrid(
     gridData: List<List<CalcButtonAction>>,
     modifier: Modifier = Modifier,
-    calcType: String? = null,
+    calcContext: CalcContext = CalcContext.BASIC,
     isExpanded: Boolean,
     onAction: (CalcButtonAction) -> Unit,
     buttonModifier: Modifier = Modifier,
@@ -571,7 +578,7 @@ private fun ButtonGrid(
                     modifier = Modifier
                         .weight(1f)
                         .then(buttonModifier),
-                    calcType = calcType,
+                    calcContext = calcContext,
                     onActionSelected = onAction,
                     onClick = { onAction(baseAction) }
                 )
