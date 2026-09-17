@@ -66,6 +66,7 @@ import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.screens.ReportScreen
 import com.xemophon.aljabr.ui.components.screens.ResultItemCard
 import java.util.Locale
+import kotlin.math.abs
 
 @Composable
 fun DescriptivesScreen(
@@ -544,6 +545,72 @@ fun DescriptivesReport(
                 label = "Sorted Data Array",
                 displayText = "[ " + result.sortedValues.joinToString(", ") { formatDouble(it) } + " ]"
             )
+        }
+
+        result.regression?.let { reg ->
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                AnalysisSectionHeader("Linear Regression & Trend Analysis")
+            }
+
+            val slope = reg.slope
+            val intercept = reg.intercept
+            val rSquare = reg.rSquare
+            val r = reg.r
+
+            if (!r.isNaN()) {
+                item {
+                    ResultItemCard(
+                        label = "Pearson Correlation Coefficient (r)",
+                        displayText = formatDouble(r),
+                        rawValue = "r = ${formatDouble(r)}"
+                    )
+                }
+            }
+
+            if (!slope.isNaN() && !intercept.isNaN()) {
+                val sign = if (intercept >= 0) "+" else "-"
+                val absIntercept = abs(intercept)
+                val eqText = "y = ${formatDouble(slope)}x $sign ${formatDouble(absIntercept)}"
+                item {
+                    ResultItemCard(
+                        label = "Linear Regression Equation",
+                        displayText = eqText,
+                        rawValue = eqText
+                    )
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            ResultItemCard(
+                                label = "Slope (m)",
+                                displayText = formatDouble(slope),
+                                rawValue = "m = ${formatDouble(slope)}"
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            ResultItemCard(
+                                label = "Y-Intercept (b)",
+                                displayText = formatDouble(intercept),
+                                rawValue = "b = ${formatDouble(intercept)}"
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!rSquare.isNaN()) {
+                item {
+                    ResultItemCard(
+                        label = "Coefficient of Determination (R²)",
+                        displayText = formatDouble(rSquare),
+                        rawValue = "R^2 = ${formatDouble(rSquare)}"
+                    )
+                }
+            }
         }
     }
 }

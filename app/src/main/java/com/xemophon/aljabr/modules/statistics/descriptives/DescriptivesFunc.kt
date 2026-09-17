@@ -1,6 +1,8 @@
 package com.xemophon.aljabr.modules.statistics.descriptives
 
 import com.xemophon.aljabr.data.SymjaUtils
+import org.hipparchus.stat.correlation.PearsonsCorrelation
+import org.hipparchus.stat.regression.SimpleRegression
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -17,6 +19,8 @@ data class DescriptivesResult(
     val min: Double,
     val max: Double,
     val range: Double,
+    val pearsonsCorrelation: PearsonsCorrelation? = null,
+    val regression: SimpleRegression? = null,
     val sortedValues: List<Double>,
     val error: String? = null
 )
@@ -82,44 +86,31 @@ object DescriptivesFunc {
 
         val count = parsedNumbers.size
         val sum = parsedNumbers.sum()
-        val mean = sum / count
+        val meanVal = mean(parsedNumbers)
+        val medianVal = median(parsedNumbers)
+        val modeList = mode(parsedNumbers)
+
+        val varianceSample = variance(parsedNumbers, isSample = true)
+        val stdDevSample = standardDeviation(parsedNumbers, isSample = true)
+
+        val variancePopulation = variance(parsedNumbers, isSample = false)
+        val stdDevPopulation = standardDeviation(parsedNumbers, isSample = false)
 
         val sorted = parsedNumbers.sorted()
-        val median = if (count % 2 == 1) {
-            sorted[count / 2]
-        } else {
-            (sorted[count / 2 - 1] + sorted[count / 2]) / 2.0
-        }
-
-        // Mode calculation
-        val freqMap = mutableMapOf<Double, Int>()
-        for (n in parsedNumbers) {
-            freqMap[n] = (freqMap[n] ?: 0) + 1
-        }
-        val maxFreq = freqMap.values.maxOrNull() ?: 0
-        val modeList = if (maxFreq > 1) {
-            freqMap.filterValues { it == maxFreq }.keys.sorted()
-        } else {
-            emptyList()
-        }
-
-        // Variance & Standard Deviation
-        val sumSqDiff = parsedNumbers.sumOf { (it - mean).pow(2) }
-        val varianceSample = if (count > 1) sumSqDiff / (count - 1) else 0.0
-        val stdDevSample = sqrt(varianceSample)
-
-        val variancePopulation = sumSqDiff / count
-        val stdDevPopulation = sqrt(variancePopulation)
-
         val min = sorted.first()
         val max = sorted.last()
         val range = max - min
 
+        // Pearson Correlation & Simple Linear Regression
+        val indexList = List(count) { (it + 1).toDouble() }
+        val regression = linearRegression(indexList, parsedNumbers)
+        val pearsonsCorrelation = pearsonsCorrelation(indexList, parsedNumbers)
+
         return DescriptivesResult(
             count = count,
             sum = sum,
-            mean = mean,
-            median = median,
+            mean = meanVal,
+            median = medianVal,
             mode = modeList,
             varianceSample = varianceSample,
             variancePopulation = variancePopulation,
@@ -128,6 +119,8 @@ object DescriptivesFunc {
             min = min,
             max = max,
             range = range,
+            pearsonsCorrelation = pearsonsCorrelation,
+            regression = regression,
             sortedValues = sorted
         )
     }
@@ -157,5 +150,20 @@ object DescriptivesFunc {
 
     fun standardDeviation(data: List<Double>, isSample: Boolean = true): Double {
         return sqrt(variance(data, isSample))
+    }
+
+    fun pearsonsCorrelation(xData: List<Double>, yData: List<Double>): PearsonsCorrelation? {
+        if (xData.size < 2 || xData.size != yData.size) return null
+        val matrix = Array(xData.size) { i -> doubleArrayOf(xData[i], yData[i]) }
+        return PearsonsCorrelation(matrix)
+    }
+
+    fun linearRegression(xData: List<Double>, yData: List<Double>): SimpleRegression? {
+        if (xData.size < 2 || xData.size != yData.size) return null
+        val regression = SimpleRegression()
+        for (i in xData.indices) {
+            regression.addData(xData[i], yData[i])
+        }
+        return regression
     }
 }
