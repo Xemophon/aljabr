@@ -37,7 +37,7 @@ object MathInputHandler {
         applyImplicitMultiplication: Boolean = false
     ): InputState {
         val safeCursor = if (cursorIndex == -1) currentText.length else cursorIndex.coerceIn(0, currentText.length)
-        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded(currentText, safeCursor)) " × " else ""
+        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded(currentText, safeCursor)) "*" else ""
         val finalInsert = "$prefix$toInsert"
 
         if (currentText == "0" && !finalInsert.startsWith(" × ")) {

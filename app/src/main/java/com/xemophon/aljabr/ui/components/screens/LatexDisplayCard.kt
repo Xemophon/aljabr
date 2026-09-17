@@ -63,11 +63,13 @@ fun ScrollableLatexView(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .horizontalScroll(rememberScrollState()),
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.Center
     ) {
         if (latexContent != null) {
             if (needsLatex || latexContent.any { it == '^' || it == '/' }) {
-                Box(modifier = Modifier.widthIn(max = 2000.dp)) {
+                Box(
+                    modifier = Modifier.widthIn(max = 2000.dp)
+                ) {
                     Latex(
                         latex = latexContent,
                         config = LatexConfig(
