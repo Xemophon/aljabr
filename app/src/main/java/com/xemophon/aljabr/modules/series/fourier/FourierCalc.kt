@@ -265,7 +265,7 @@ fun ModeButton(
         shape = RoundedCornerShape(8.dp),
         modifier = modifier.border(
             width = 1.dp,
-            color = Color.Transparent,
+            color = MaterialTheme.colorScheme.outlineVariant,
             shape = RoundedCornerShape(8.dp)
         )
     ) {
