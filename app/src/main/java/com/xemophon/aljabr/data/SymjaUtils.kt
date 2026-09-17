@@ -237,9 +237,19 @@ object SymjaUtils {
         val cacheKey = "$expression|$assumeIntegerN"
         lateXCache[cacheKey]?.let { return it }
 
+        val trailingConstantRegex = Regex("""\s*\+\s*(C|c|C1|C_1|C₁\(x\)\s*\+\s*C₂\(y\)|C1\(x\)\s*\+\s*C2\(y\))\s*$""")
+        val trailingMatch = trailingConstantRegex.find(expression.trim())
+        val (expressionToEval, trailingSuffix) = if (trailingMatch != null) {
+            val suffix = expression.trim().substring(trailingMatch.range.first)
+            val main = expression.trim().substring(0, trailingMatch.range.first).trim()
+            if (main.isNotEmpty()) main to suffix else expression to ""
+        } else {
+            expression to ""
+        }
+
         val formatted = evaluate { eval ->
             try {
-                val cleaned = prepareForSymja(expression)
+                val cleaned = prepareForSymja(expressionToEval)
                 if (cleaned.isBlank()) return@evaluate ""
 
                 val evalExpr = if (assumeIntegerN) {
@@ -278,6 +288,21 @@ object SymjaUtils {
                     try {
                         result = result.replace(LN_LATEX_REGEX, """\\ln\left|$1\right|""")
                     } catch (_: Exception) {}
+                }
+
+                if (trailingSuffix.isNotEmpty()) {
+                    val formattedSuffix = trailingSuffix
+                        .replace("C₁(x)", "C_1(x)")
+                        .replace("C₂(y)", "C_2(y)")
+                    result = "$result $formattedSuffix"
+                }
+
+                val leadingCRegex = Regex("""^(C|C_1|C_2|C_\{1\}|C_\{2\}|\\text\{C\})\s*\+\s*(.+)""")
+                val leadingMatch = leadingCRegex.find(result.trim())
+                if (leadingMatch != null) {
+                    val constPart = leadingMatch.groupValues[1]
+                    val restPart = leadingMatch.groupValues[2]
+                    result = "$restPart + $constPart"
                 }
 
                 result

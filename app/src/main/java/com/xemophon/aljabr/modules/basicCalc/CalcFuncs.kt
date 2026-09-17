@@ -56,6 +56,11 @@ object CalcFuncs {
                 val arg = match.groupValues[2]
                 "log($arg, $base)"
             }
+            val openParens = cleanedInput.count { it == '(' }
+            val closeParens = cleanedInput.count { it == ')' }
+            if (openParens > closeParens) {
+                cleanedInput += ")".repeat(openParens - closeParens)
+            }
             evaluate(cleanedInput, variables, useRadians)
         } catch (e: Throwable) {
             Double.NaN

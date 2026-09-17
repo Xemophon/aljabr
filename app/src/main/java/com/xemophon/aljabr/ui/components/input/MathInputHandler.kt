@@ -17,16 +17,13 @@ object MathInputHandler {
         val lastChar = if (clampedIndex > 0) text[clampedIndex - 1] else null
         return lastChar != null && (
             lastChar.isDigit() ||
+            lastChar.isLetter() ||
             lastChar == ')' ||
-            lastChar == 'x' ||
-            lastChar == 'y' ||
-            lastChar == 'n' ||
+            lastChar == ']' ||
             lastChar == 'π' ||
-            lastChar == 'e' ||
             lastChar == 'φ' ||
-            lastChar == 'j' ||
-            lastChar == 'i' ||
-            lastChar == '%'
+            lastChar == '%' ||
+            lastChar == '!'
         )
     }
 
@@ -72,7 +69,8 @@ object MathInputHandler {
         val lastChar = if (safeCursor > 0) currentText[safeCursor - 1] else null
         val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
 
-        val applyImplicit = isDigitOrDot && isImplicitMultiplicationNeeded(currentText, safeCursor) && !isLastCharDigitOrDot
+        val applyImplicit = (isDigitOrDot && isImplicitMultiplicationNeeded(currentText, safeCursor) && !isLastCharDigitOrDot) ||
+                (symbol == "(" && isImplicitMultiplicationNeeded(currentText, safeCursor))
 
         return insertText(currentText, safeCursor, symbol, applyImplicitMultiplication = applyImplicit)
     }

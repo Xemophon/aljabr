@@ -292,7 +292,8 @@ class CalcBoxViewModel @JvmOverloads constructor(
         val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
         val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
 
-        val applyImplicit = isDigitOrDot && isImplicitMultiplicationNeeded() && !isLastCharDigitOrDot
+        val applyImplicit = (isDigitOrDot && isImplicitMultiplicationNeeded() && !isLastCharDigitOrDot) ||
+                (symbol == "(" && isImplicitMultiplicationNeeded())
 
         insertText(symbol, applyImplicitMultiplication = applyImplicit)
         isShowingResult = false

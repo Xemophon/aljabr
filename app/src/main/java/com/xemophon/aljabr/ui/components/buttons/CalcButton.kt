@@ -74,7 +74,9 @@ sealed interface CalcButtonAction {
     data class Backspace(@param:DrawableRes val iconRes: Int) : CalcButtonAction
 }
 
-fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
+fun CalcButtonAction.getAdditionalActions(
+    calcType: String? = null
+): List<CalcButtonAction> {
     return when (this) {
         is CalcButtonAction.Scientific -> {
             when (type) {
@@ -98,7 +100,6 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
                     CalcButtonAction.Symbol(",", " , ")
                 )
                 ScientificType.SQRT -> listOf(
-                    CalcButtonAction.Symbol("x²", "^2"),
                     CalcButtonAction.Scientific("Abs", ScientificType.ABS)
                 )
                 else -> emptyList()
@@ -107,10 +108,10 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
 
         is CalcButtonAction.Constant -> {
             when (type) {
-                Constants.PI -> listOf(
+                Constants.PI ->  if (calcType == "Basic") listOf(
                     CalcButtonAction.Constant("j", Constants.I),
                     CalcButtonAction.Constant("φ", Constants.PHI)
-                )
+                ) else emptyList()
                 else -> emptyList()
             }
         }
@@ -127,12 +128,12 @@ fun CalcButtonAction.getAdditionalActions(): List<CalcButtonAction> {
 
         is CalcButtonAction.Variable ->{
             when (type) {
-                Variables.X -> listOf(CalcButtonAction.Constant("∞", Constants.INF))
+                Variables.X -> if(calcType == "IntegrationSingle" || calcType == "IntegrationMulti") listOf(CalcButtonAction.Constant("∞", Constants.INF)) else emptyList()
                 else -> emptyList()
             }
         }
 
-        is CalcButtonAction.Backspace -> listOf(CalcButtonAction.Clear)
+        is CalcButtonAction.Backspace -> if (calcType == "Graph" || calcType == "Basic" ||  calcType == "IntegrationSingle") emptyList() else listOf(CalcButtonAction.Clear)
 
         else -> emptyList()
     }
@@ -512,6 +513,7 @@ fun CalcButton(
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     isExpanded: Boolean = false,
+    calcType: String? = null,
     onActionSelected: ((CalcButtonAction) -> Unit)? = null,
     onClick: () -> Unit
 ) {
@@ -519,7 +521,7 @@ fun CalcButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     var showPopup by remember { mutableStateOf(false) }
 
-    val extraActions = remember(action) { action.getAdditionalActions() }
+    val extraActions = remember(action) { action.getAdditionalActions(calcType) }
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1f,

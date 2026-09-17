@@ -259,7 +259,8 @@ fun CalcButtons(
                             gridData = ScientificButtonsGrid,
                             isExpanded = true,
                             onAction = onAction,
-                            buttonModifier = Modifier.aspectRatio(1.5f)
+                            buttonModifier = Modifier.aspectRatio(1.5f),
+                            calcType = "Basic"
                         )
                     }
                 }
@@ -278,7 +279,8 @@ fun CalcButtons(
             gridData = StandardButtonsGrid,
             isExpanded = isExpanded,
             onAction = onAction,
-            buttonModifier = Modifier.aspectRatio(buttonAspectRatio)
+            buttonModifier = Modifier.aspectRatio(buttonAspectRatio),
+            calcType = "Basic"
         )
     }
 }
@@ -510,6 +512,11 @@ fun AdvancedButtonsGrid(
                 }
             }
             else -> emptyMap()
+        },
+        calcType = when(gridMode){
+            is AdvancedGridMode.Graph -> "Graph"
+            is AdvancedGridMode.Integration -> if(gridMode.currentType in listOf(IntegralType.DOUBLE, IntegralType.NDOUBLE, IntegralType.CURVET1, IntegralType.CURVET2)) "IntegrationMulti" else "IntegrationSingle"
+            else -> null
         }
     )
 }
@@ -538,6 +545,7 @@ private fun ModeToggleButton(
 private fun ButtonGrid(
     gridData: List<List<CalcButtonAction>>,
     modifier: Modifier = Modifier,
+    calcType: String? = null,
     isExpanded: Boolean,
     onAction: (CalcButtonAction) -> Unit,
     buttonModifier: Modifier = Modifier,
@@ -563,6 +571,7 @@ private fun ButtonGrid(
                     modifier = Modifier
                         .weight(1f)
                         .then(buttonModifier),
+                    calcType = calcType,
                     onActionSelected = onAction,
                     onClick = { onAction(baseAction) }
                 )
