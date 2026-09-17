@@ -166,6 +166,7 @@ fun LaplaceDisplay(
 
             ScrollableLatexView(
                 expression = prefix + resultLatex,
+                isAlreadyLatex = true,
                 fontSize = if (result.length > 20) 18.sp else 24.sp,
                 color = MaterialTheme.colorScheme.primary,
                 onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },

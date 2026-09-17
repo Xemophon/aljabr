@@ -35,18 +35,27 @@ import kotlinx.coroutines.withContext
 fun ScrollableLatexView(
     expression: String,
     modifier: Modifier = Modifier,
+    isAlreadyLatex: Boolean = false,
     rawValue: String? = null,
     fontSize: TextUnit = 24.sp,
     color: Color = MaterialTheme.colorScheme.primary,
     onClick: (() -> Unit)? = null
 ) {
-    val needsLatex = remember(expression, rawValue) {
+    val needsLatex = remember(expression, rawValue, isAlreadyLatex) {
+        if (isAlreadyLatex) return@remember true
         val target = rawValue ?: expression
         rawValue != null || target.any { it.isLetter() || it == '^' || it == '/' || it == '*' || it == '(' || it == '{' || it == '}' }
     }
 
-    val latexState = produceState<String?>(initialValue = if (!needsLatex) (rawValue ?: expression) else null, expression, rawValue) {
-        if (needsLatex) {
+    val latexState = produceState<String?>(
+        initialValue = if (isAlreadyLatex) expression else if (!needsLatex) (rawValue ?: expression) else null,
+        expression,
+        rawValue,
+        isAlreadyLatex
+    ) {
+        if (isAlreadyLatex) {
+            value = expression
+        } else if (needsLatex) {
             val toConvert = rawValue ?: expression
             value = withContext(Dispatchers.Default) {
                 SymjaUtils.toLaTeX(toConvert)
@@ -97,6 +106,7 @@ fun ScrollableLatexView(
 fun LatexDisplayCard(
     expression: String,
     modifier: Modifier = Modifier,
+    isAlreadyLatex: Boolean = false,
     rawValue: String? = null,
     fontSize: TextUnit = 20.sp,
     color: Color = MaterialTheme.colorScheme.secondary
@@ -105,6 +115,7 @@ fun LatexDisplayCard(
         Box(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             ScrollableLatexView(
                 expression = expression,
+                isAlreadyLatex = isAlreadyLatex,
                 rawValue = rawValue,
                 fontSize = fontSize,
                 color = color

@@ -133,7 +133,7 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
         
         viewModelScope.launch {
             isCalculating = true
-            fourierResult = FourierResult("", "", null, null, "")
+            fourierResult = FourierResult("", "", null, null, rawL = "", rawA0 = "", rawAnGeneral = null, rawBnGeneral = null, fullSeries = "")
             
             try {
                 withContext(Dispatchers.Default) {
@@ -144,52 +144,99 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
                     val f2Clean = if (isTwoBranch) f2.prepare() else null
                     
                     // 1. L (Half-period)
-                    val bigLRaw = SymjaUtils.evaluator.eval("Simplify[($cClean - ($aClean)) / 2]").toString()
+                    val bigLRaw = SymjaUtils.evaluate { eval ->
+                        eval.eval("Clear[n, x]")
+                        eval.eval("Simplify[($cClean - ($aClean)) / 2]").toString()
+                    }
+                    if (bigLRaw.contains("Infinity") || bigLRaw.contains("Indeterminate") || bigLRaw.contains("ComplexInfinity")) {
+                        withContext(Dispatchers.Main) {
+                            fourierResult = FourierResult("", "", error = "Invalid interval limits: [$a, $c]")
+                        }
+                        return@withContext
+                    }
                     val bigL = SymjaUtils.formatResult(bigLRaw)
                     
                     withContext(Dispatchers.Main) {
-                        fourierResult = fourierResult?.copy(l = bigL)
+                        fourierResult = fourierResult?.copy(l = bigL, rawL = bigLRaw)
                     }
 
                     // 2. a0
-                    fun integral(func: String, lower: String, upper: String) = "Integrate[$func, {x, $lower, $upper}]"
+                    fun integral(func: String, lower: String, upper: String) = "Integrate[($func), {x, $lower, $upper}]"
                     val a0Expr = if (f2Clean == null) {
                         "(1/($bigLRaw)) * (${integral(f1Clean, aClean, cClean)})"
                     } else {
                         "(1/($bigLRaw)) * (${integral(f1Clean, aClean, bClean)} + ${integral(f2Clean, bClean, cClean)})"
                     }
-                    val a0Val = SymjaUtils.evaluator.eval("FullSimplify[$a0Expr]").toString()
-                    val a0 = SymjaUtils.formatResult(a0Val)
+                    val a0Raw = SymjaUtils.evaluate { eval ->
+                        eval.eval("Clear[n, x]")
+                        eval.eval("FullSimplify[$a0Expr]").toString()
+                    }
                     
+                    val a0HasError = a0Raw.contains("Integrate") || a0Raw.contains("Infinity") || a0Raw.contains("Indeterminate") || a0Raw.contains("ComplexInfinity")
+                    if (a0HasError) {
+                        val fnDisplay = if (isTwoBranch) "f₁(x)=$f1, f₂(x)=$f2" else "f(x)=$f1"
+                        withContext(Dispatchers.Main) {
+                            fourierResult = FourierResult(l = bigL, a0 = "", error = "Function $fnDisplay is singular or non-integrable on the interval [$a, $c].")
+                        }
+                        return@withContext
+                    }
+
+                    val a0 = SymjaUtils.formatResult(a0Raw)
                     withContext(Dispatchers.Main) {
-                        fourierResult = fourierResult?.copy(a0 = a0)
+                        fourierResult = fourierResult?.copy(a0 = a0, rawA0 = a0Raw)
                     }
 
                     // 3. General coefficients
                     val genArg = "(n * Pi * x) / ($bigLRaw)"
                     val anGenExpr = if (f2Clean == null) {
-                        "(1/($bigLRaw)) * (${integral("$f1Clean * Cos[$genArg]", aClean, cClean)})"
+                        "(1/($bigLRaw)) * (${integral("($f1Clean) * Cos[$genArg]", aClean, cClean)})"
                     } else {
-                        "(1/($bigLRaw)) * (${integral("$f1Clean * Cos[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Cos[$genArg]", bClean, cClean)})"
+                        "(1/($bigLRaw)) * (${integral("($f1Clean) * Cos[$genArg]", aClean, bClean)} + ${integral("($f2Clean) * Cos[$genArg]", bClean, cClean)})"
                     }
                     val bnGenExpr = if (f2Clean == null) {
-                        "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, cClean)})"
+                        "(1/($bigLRaw)) * (${integral("($f1Clean) * Sin[$genArg]", aClean, cClean)})"
                     } else {
-                        "(1/($bigLRaw)) * (${integral("$f1Clean * Sin[$genArg]", aClean, bClean)} + ${integral("$f2Clean * Sin[$genArg]", bClean, cClean)})"
+                        "(1/($bigLRaw)) * (${integral("($f1Clean) * Sin[$genArg]", aClean, bClean)} + ${integral("($f2Clean) * Sin[$genArg]", bClean, cClean)})"
                     }
 
-                    val anGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$anGenExpr, Element[n, Integers]]").toString() } catch (_: Exception) { null }
-                    val bnGenVal = try { SymjaUtils.evaluator.eval("FullSimplify[$bnGenExpr, Element[n, Integers]]").toString() } catch (_: Exception) { null }
+                    val anGenVal = try {
+                        SymjaUtils.evaluate { eval ->
+                            eval.eval("Clear[n, x]")
+                            eval.eval("FullSimplify[$anGenExpr, n > 0 && Element[n, Integers]]").toString()
+                        }
+                    } catch (_: Exception) { null }
+
+                    val bnGenVal = try {
+                        SymjaUtils.evaluate { eval ->
+                            eval.eval("Clear[n, x]")
+                            eval.eval("FullSimplify[$bnGenExpr, n > 0 && Element[n, Integers]]").toString()
+                        }
+                    } catch (_: Exception) { null }
+
+                    val anHasError = anGenVal != null && (anGenVal.contains("Integrate") || anGenVal.contains("Infinity") || anGenVal.contains("Indeterminate") || anGenVal.contains("ComplexInfinity"))
+                    val bnHasError = bnGenVal != null && (bnGenVal.contains("Integrate") || bnGenVal.contains("Infinity") || bnGenVal.contains("Indeterminate") || bnGenVal.contains("ComplexInfinity"))
+
+                    if (anHasError || bnHasError) {
+                        val fnDisplay = if (isTwoBranch) "f₁(x)=$f1, f₂(x)=$f2" else "f(x)=$f1"
+                        withContext(Dispatchers.Main) {
+                            fourierResult = FourierResult(l = bigL, a0 = a0, rawA0 = a0Raw, error = "Function $fnDisplay has non-integrable or divergent harmonic coefficients on [$a, $c].")
+                        }
+                        return@withContext
+                    }
 
                     withContext(Dispatchers.Main) {
                         fourierResult = fourierResult?.copy(
-                            anGeneral = if (anGenVal != null && !anGenVal.contains("Integrate")) SymjaUtils.formatResult(anGenVal) else null,
-                            bnGeneral = if (bnGenVal != null && !bnGenVal.contains("Integrate")) SymjaUtils.formatResult(bnGenVal) else null,
+                            anGeneral = if (anGenVal != null) SymjaUtils.formatResult(anGenVal) else null,
+                            bnGeneral = if (bnGenVal != null) SymjaUtils.formatResult(bnGenVal) else null,
+                            rawAnGeneral = anGenVal,
+                            rawBnGeneral = bnGenVal
                         )
                     }
                 }
             } catch (e: Exception) {
-                resultText = "Error"
+                withContext(Dispatchers.Main) {
+                    fourierResult = FourierResult("", "", error = e.message ?: "Calculation error")
+                }
             } finally {
                 isCalculating = false
             }

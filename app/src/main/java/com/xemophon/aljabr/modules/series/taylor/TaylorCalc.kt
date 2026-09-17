@@ -154,13 +154,18 @@ fun TaylorDisplay(
         } else {
             // Build the formal summation prefix in LaTeX
             val aLatex = remember(center) {
-                if (center.isEmpty()) "a" else center.replace("pi", "\\pi").replace("e", "e")
+                if (center.isBlank() || center == "0") "0" else SymjaUtils.toLaTeX(center)
             }
             val nLatex = remember(order) { order.ifEmpty { "n" } }
-            val prefix = "\\sum_{k=0}^{$nLatex} \\frac{f^{(k)}($aLatex)}{k!} (x - $aLatex)^k = "
+            val resultLatex = remember(result) {
+                if (result == "Error") "Error" else SymjaUtils.toLaTeX(result)
+            }
+            val centerTerm = if (center.isBlank() || center == "0") "x" else "(x - $aLatex)"
+            val prefix = "\\sum_{k=0}^{$nLatex} \\frac{f^{(k)}($aLatex)}{k!} $centerTerm^k = "
 
             ScrollableLatexView(
-                expression = prefix + result,
+                expression = prefix + resultLatex,
+                isAlreadyLatex = true,
                 fontSize = if (result.length > 20) 18.sp else 24.sp,
                 color = MaterialTheme.colorScheme.primary,
                 onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },

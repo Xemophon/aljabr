@@ -11,50 +11,52 @@ object PolyFuncs {
      * Finds roots and analytical properties of a polynomial.
      */
     suspend fun analyzePolynomial(expression: String, useRationalize: Boolean = false): PolynomialResult = withContext(Dispatchers.Default) {
-        synchronized(SymjaUtils.evaluator) {
+        SymjaUtils.evaluate { eval ->
             try {
                 val cleaned = if (useRationalize) {
-                    SymjaUtils.evaluator.eval("Rationalize(${SymjaUtils.prepareForSymja(expression)})").toString()
+                    eval.eval("Rationalize(${SymjaUtils.prepareForSymja(expression)})").toString()
                 } else {
                     SymjaUtils.prepareForSymja(expression)
                 }
                 
-                if (cleaned.isBlank()) return@synchronized PolynomialResult(expression, "", emptyList(), error = "Empty expression")
+                if (cleaned.isBlank()) return@evaluate PolynomialResult(expression, "", emptyList(), error = "Empty expression")
 
                 // 1. Identify variable
-                val varsResult = SymjaUtils.evaluator.eval("Variables($cleaned)").toString()
+                val varsResult = eval.eval("Variables($cleaned)").toString()
                 val vars = varsResult.removeSurrounding("{", "}").split(",")
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
 
-                if (vars.isEmpty()) return@synchronized PolynomialResult(expression, "", emptyList(), error = "No variables found")
+                if (vars.isEmpty()) return@evaluate PolynomialResult(expression, "", emptyList(), error = "No variables found")
                 val variable = vars[0]
 
                 // 2. Find Roots (Numerical and Analytical)
-                // Using Solve if rationalizing, otherwise NSolve
                 val solveCommand = if (useRationalize) {
                     "Solve($cleaned == 0, $variable)"
                 } else {
                     "NSolve($cleaned == 0, $variable)"
                 }
                 
-                val solveRes = SymjaUtils.evaluator.eval(solveCommand).toString()
-                val roots = SymjaUtils.parseSolveResult(solveRes).map { rule ->
-                    val rootVal = rule.substringAfter("->").trim()
-                    SymjaUtils.formatResult(rootVal)
+                val solveRes = eval.eval(solveCommand).toString()
+                val rawRoots = SymjaUtils.parseSolveResult(solveRes).map { rule ->
+                    rule.substringAfter("->").trim()
                 }.distinct()
+                val roots = rawRoots.map { SymjaUtils.formatResult(it) }
 
                 // 3. Factored Form
-                val factored = try {
-                    val factorRes = SymjaUtils.evaluator.eval("Factor($cleaned)").toString()
-                    if (factorRes != cleaned) SymjaUtils.formatResult(factorRes) else null
+                val rawFactored = try {
+                    val factorRes = eval.eval("Factor($cleaned)").toString()
+                    if (factorRes != cleaned) factorRes else null
                 } catch (_: Exception) { null }
+                val factored = rawFactored?.let { SymjaUtils.formatResult(it) }
 
                 PolynomialResult(
                     expression = expression,
                     variable = variable,
                     roots = roots,
-                    factoredForm = factored
+                    rawRoots = rawRoots,
+                    factoredForm = factored,
+                    rawFactoredForm = rawFactored
                 )
             } catch (e: Exception) {
                 PolynomialResult(expression, "", emptyList(), error = e.message)

@@ -69,7 +69,11 @@ data class FourierResult(
     val a0: String,
     val anGeneral: String? = null,
     val bnGeneral: String? = null,
-    val fullSeries: String,
+    val rawL: String = "",
+    val rawA0: String = "",
+    val rawAnGeneral: String? = null,
+    val rawBnGeneral: String? = null,
+    val fullSeries: String = "",
     val error: String? = null
 )
 
@@ -77,7 +81,9 @@ data class PolynomialResult(
     val expression: String,
     val variable: String,
     val roots: List<String>,
+    val rawRoots: List<String> = emptyList(),
     val factoredForm: String? = null,
+    val rawFactoredForm: String? = null,
     val error: String? = null
 )
 
@@ -215,31 +221,44 @@ fun FourierReport(
         onClear = onClear
     ) {
         item { AnalysisSectionHeader("Transformation Parameters") }
-        item { ResultItemCard("Half-period (L)", result.l) }
-        item { ResultItemCard("DC Component (a₀)", result.a0) }
+        item { ResultItemCard("Half-period (L)", result.l, rawValue = result.rawL.ifEmpty { null }) }
+        item { ResultItemCard("DC Component (a₀)", result.a0, rawValue = result.rawA0.ifEmpty { null }) }
 
         if (result.anGeneral != null || result.bnGeneral != null) {
             item { AnalysisSectionHeader("General Fourier Coefficients") }
-            result.anGeneral?.let { item { ResultItemCard("aₙ (Symbolic)", it) } }
-            result.bnGeneral?.let { item { ResultItemCard("bₙ (Symbolic)", it) } }
+            result.anGeneral?.let { item { ResultItemCard("aₙ (Symbolic)", it, rawValue = result.rawAnGeneral) } }
+            result.bnGeneral?.let { item { ResultItemCard("bₙ (Symbolic)", it, rawValue = result.rawBnGeneral) } }
 
             item { AnalysisSectionHeader("General Form (Summation)") }
             
             // Simplify the argument once
-            val argLatex = SymjaUtils.toLaTeX("(n * Pi * x) / (${result.l})")
+            val rawL = result.rawL.ifEmpty { result.l }
+            val argLatex = SymjaUtils.toLaTeX("(n * Pi * x) / ($rawL)")
             
-            val anPart = result.anGeneral?.let { 
-                if (it == "0" || it.isBlank()) ""
+            val anPart = result.rawAnGeneral?.let { raw ->
+                if (raw == "0" || raw.isBlank()) ""
                 else {
-                    val latex = SymjaUtils.toLaTeX(it, assumeIntegerN = true)
+                    val latex = SymjaUtils.toLaTeX(raw, assumeIntegerN = true)
+                    "\\left(${latex}\\right) \\cos\\left(${argLatex}\\right)" 
+                }
+            } ?: result.anGeneral?.let { formatted ->
+                if (formatted == "0" || formatted.isBlank()) ""
+                else {
+                    val latex = SymjaUtils.toLaTeX(formatted, assumeIntegerN = true)
                     "\\left(${latex}\\right) \\cos\\left(${argLatex}\\right)" 
                 }
             } ?: ""
             
-            val bnPart = result.bnGeneral?.let { 
-                if (it == "0" || it.isBlank()) ""
+            val bnPart = result.rawBnGeneral?.let { raw ->
+                if (raw == "0" || raw.isBlank()) ""
                 else {
-                    val latex = SymjaUtils.toLaTeX(it, assumeIntegerN = true)
+                    val latex = SymjaUtils.toLaTeX(raw, assumeIntegerN = true)
+                    "\\left(${latex}\\right) \\sin\\left(${argLatex}\\right)" 
+                }
+            } ?: result.bnGeneral?.let { formatted ->
+                if (formatted == "0" || formatted.isBlank()) ""
+                else {
+                    val latex = SymjaUtils.toLaTeX(formatted, assumeIntegerN = true)
                     "\\left(${latex}\\right) \\sin\\left(${argLatex}\\right)" 
                 }
             } ?: ""
@@ -251,9 +270,9 @@ fun FourierReport(
                 else -> ""
             }
             
-            val a0Part = if (result.a0 != "0") {
-                // Try to simplify a0/2
-                val a0Latex = SymjaUtils.toLaTeX("(${result.a0}) / 2")
+            val rawA0 = result.rawA0
+            val a0Part = if (rawA0.isNotEmpty() && rawA0 != "0" && !rawA0.contains("Integrate") && result.a0 != "0" && result.a0 != "Undefined") {
+                val a0Latex = SymjaUtils.toLaTeX("($rawA0) / 2")
                 "$a0Latex + "
             } else ""
             
@@ -270,7 +289,7 @@ fun FourierReport(
 
 @Composable
 fun LatexResultCard(latex: String) {
-    LatexDisplayCard(expression = latex, color = MaterialTheme.colorScheme.secondary)
+    LatexDisplayCard(expression = latex, isAlreadyLatex = true, color = MaterialTheme.colorScheme.secondary)
 }
 
 @Composable
@@ -352,8 +371,7 @@ fun AnalysisReport(
             }
             item {
                 val statusText = if (complex.cauchyRiemannSatisfied) "Satisfied ~ Holomorphic & Analytic" else "Not Satisfied ~ Non-Holomorphic"
-                val rawStatusText = if (complex.cauchyRiemannSatisfied) "True" else "False"
-                ResultItemCard("Cauchy-Riemann Equations Check", statusText, rawStatusText)
+                ResultItemCard("Cauchy-Riemann Equations Check", statusText)
             }
             if (complex.poles.isNotEmpty()) {
                 item { AnalysisSectionHeader("Singular Points (z₀)") }
@@ -390,8 +408,10 @@ fun PolynomialReport(
         // Roots Section
         if (result.roots.isNotEmpty()) {
             item { AnalysisSectionHeader("Roots (Numerical)") }
-            items(result.roots) { root ->
-                ResultItemCard(displayText = root)
+            items(result.roots.indices.toList()) { index ->
+                val root = result.roots[index]
+                val rawRoot = result.rawRoots.getOrNull(index)
+                ResultItemCard(displayText = root, rawValue = rawRoot)
             }
         } else {
             item { Text(text = "No roots found", style = MaterialTheme.typography.bodyLarge) }
@@ -401,7 +421,7 @@ fun PolynomialReport(
         result.factoredForm?.let { factored ->
             item { AnalysisSectionHeader("Factored Form") }
             item {
-                ResultItemCard(displayText = factored)
+                ResultItemCard(displayText = factored, rawValue = result.rawFactoredForm)
             }
         }
     }
@@ -419,8 +439,10 @@ fun OdeReport(
     ) {
         if (result.solution.isNotEmpty()) {
             item { AnalysisSectionHeader("General Solution") }
-            items(result.solution) { sol ->
-                ResultItemCard(displayText = sol)
+            items(result.solution.indices.toList()) { index ->
+                val sol = result.solution[index]
+                val rawSol = result.rawSolution.getOrNull(index)
+                ResultItemCard(displayText = sol, rawValue = rawSol)
             }
         } else {
             item { Text(text = "No analytical solution found", style = MaterialTheme.typography.bodyLarge) }

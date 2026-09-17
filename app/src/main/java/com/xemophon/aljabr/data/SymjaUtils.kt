@@ -277,6 +277,8 @@ object SymjaUtils {
                     .replace("\\operatorname{arctanh}", "\\operatorname{atanh}")
                     .replace("\\text{DiracDelta}", "\\delta")
                     .replace("DiracDelta", "\\delta")
+                    .replace("SineIntegral", "\\operatorname{Si}")
+                    .replace("CosineIntegral", "\\operatorname{Ci}")
 
                 val logBaseRegex = Regex("""\\log_(\{?[^{}\s()]+\}?)""")
                 result = result.replace(logBaseRegex, "LATEX_LOG_BASE_$1")

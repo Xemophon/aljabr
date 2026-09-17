@@ -310,17 +310,17 @@ fun FourierLoadingReport(viewModel: FourierViewModel) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (result.l.isNotEmpty()) {
                     AnalysisSectionHeader("Parameters")
-                    ResultItemCard("L (Half-period)", result.l)
+                    ResultItemCard("L (Half-period)", result.l, rawValue = result.rawL.ifEmpty { null })
                 }
                 
                 if (result.a0.isNotEmpty()) {
-                    ResultItemCard("a₀ (DC Component)", result.a0)
+                    ResultItemCard("a₀ (DC Component)", result.a0, rawValue = result.rawA0.ifEmpty { null })
                 }
 
                 if (result.anGeneral != null || result.bnGeneral != null) {
                     AnalysisSectionHeader("General Coefficients")
-                    result.anGeneral?.let { ResultItemCard("aₙ (Symbolic)", it) }
-                    result.bnGeneral?.let { ResultItemCard("bₙ (Symbolic)", it) }
+                    result.anGeneral?.let { ResultItemCard("aₙ (Symbolic)", it, rawValue = result.rawAnGeneral) }
+                    result.bnGeneral?.let { ResultItemCard("bₙ (Symbolic)", it, rawValue = result.rawBnGeneral) }
                 }
             }
         }

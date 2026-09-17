@@ -19,22 +19,24 @@ class HybridEngine {
 
         try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            val engine = SymjaUtils.evaluator.evalEngine
-            val expr = engine.parse(cleaned)
+            return SymjaUtils.evaluate { eval ->
+                val engine = eval.evalEngine
+                val expr = engine.parse(cleaned)
 
-            // Simple variable detection: default to x, or first variable found
-            val xSymbol = engine.parse("x") as ISymbol
-            val v = if (expr.isFree(xSymbol)) {
-                val vars = SymjaUtils.evaluator.eval("Variables[$cleaned]")
-                if (vars.isAST && (vars.size() > 1)) engine.parse(vars[1].toString()) as ISymbol else xSymbol
-            } else {
-                xSymbol
+                // Simple variable detection: default to x, or first variable found
+                val xSymbol = engine.parse("x") as ISymbol
+                val v = if (expr.isFree(xSymbol)) {
+                    val vars = eval.eval("Variables[$cleaned]")
+                    if (vars.isAST && (vars.size() > 1)) engine.parse(vars[1].toString()) as ISymbol else xSymbol
+                } else {
+                    xSymbol
+                }
+
+                val solver = IntegrationSolver(engine)
+                val res = solver.solveIntegral(expr, v, steps)
+
+                res?.let { Pair(it, steps) }
             }
-
-            val solver = IntegrationSolver(engine)
-            val res = solver.solveIntegral(expr, v, steps)
-
-            return res?.let { Pair(it, steps) }
         } catch (_: Exception) {
         }
         return null
@@ -50,12 +52,14 @@ class HybridEngine {
 
         try {
             val cleaned = SymjaUtils.prepareForSymja(expression)
-            val engine = SymjaUtils.evaluator.evalEngine
-            val expr = engine.parse(cleaned)
-            val v = SymjaUtils.evaluator.eval(variable) as ISymbol
+            SymjaUtils.evaluate { eval ->
+                val engine = eval.evalEngine
+                val expr = engine.parse(cleaned)
+                val v = eval.eval(variable) as ISymbol
 
-            val solver = DerivativeSolver(engine)
-            solver.solveDerivative(expr, v, steps)
+                val solver = DerivativeSolver(engine)
+                solver.solveDerivative(expr, v, steps)
+            }
         } catch (_: Exception) {
             // Silently fail
         }

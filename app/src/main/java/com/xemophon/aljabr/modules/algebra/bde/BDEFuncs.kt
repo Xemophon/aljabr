@@ -9,6 +9,7 @@ import kotlin.time.Duration.Companion.milliseconds
 data class BDEResult(
     val equation: String,
     val solution: List<String>,
+    val rawSolution: List<String> = emptyList(),
     val error: String? = null
 )
 
@@ -44,10 +45,10 @@ object BDEFuncs {
 
     suspend fun solveOde(expression: String, conditions: List<String> = emptyList()): BDEResult = withContext(Dispatchers.Default) {
         val timedOutResult = withTimeoutOrNull(5000L.milliseconds) {
-            synchronized(SymjaUtils.evaluator) {
+            SymjaUtils.evaluate { eval ->
                 try {
                     val prepared = prepareOdeExpression(expression)
-                    if (prepared.isBlank()) return@synchronized BDEResult(expression, emptyList(), error = "Empty expression")
+                    if (prepared.isBlank()) return@evaluate BDEResult(expression, emptyList(), error = "Empty expression")
 
                     val eq = if (!prepared.contains("==")) {
                         prepared.replace("=", "==")
@@ -74,17 +75,17 @@ object BDEFuncs {
                         "DSolve[{${allItems.joinToString(", ")}}, y(x), x]"
                     }
 
-                    val res = SymjaUtils.evaluator.eval(dsolveCommand).toString()
-                    val solutions = SymjaUtils.parseSolveResult(res).map { rule ->
-                        val solVal = rule.substringAfter("->").trim()
-                        SymjaUtils.formatResult(solVal)
+                    val res = eval.eval(dsolveCommand).toString()
+                    val rawSolutions = SymjaUtils.parseSolveResult(res).map { rule ->
+                        rule.substringAfter("->").trim()
                     }.distinct()
+                    val solutions = rawSolutions.map { SymjaUtils.formatResult(it) }
 
                     if (res.startsWith("DSolve") || solutions.isEmpty()) {
-                        return@synchronized BDEResult(expression, emptyList(), error = "Could not solve differential equation analytically: $res")
+                        return@evaluate BDEResult(expression, emptyList(), error = "Could not solve differential equation analytically: $res")
                     }
 
-                    BDEResult(expression, solutions)
+                    BDEResult(expression, solutions, rawSolutions)
                 } catch (e: Exception) {
                     BDEResult(expression, emptyList(), error = e.message ?: "ODE solution failed")
                 }
