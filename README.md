@@ -44,6 +44,9 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
     - Discrete: Binomial, Poisson, Hypergeometric, and Geometric.
 - **Descriptive Statistics:** Calculate summary metrics including Mean, Median, Mode, Variance (sample & population), Standard Deviation, Range, Quartiles, Skewness, and Kurtosis.
 - **Bivariate & Regression Analysis:** Compute Pearson's correlation coefficient ($r$) and simple linear regression models ($y = ax + b$).
+- **Hypothesis Testing & Confidence Intervals:** Inferential statistics suite featuring:
+    - **Hypothesis Tests:** Perform single-sample $Z$-Tests and Student's $t$-Tests with two-tailed, left-tailed, and right-tailed $p$-values, critical values, and null hypothesis rejection guidance.
+    - **Confidence Intervals:** Evaluate $Z$ and $t$ confidence intervals with configurable confidence levels ($90\%$, $95\%$, $99\%$, etc.), margin of error, and lower/upper bounds.
 
 ### 🔄 Unit Conversion & Reference Sheets
 - **Math Utility Converters:** Real-time conversion for polar/cartesian complex numbers, base conversions (hexadecimal, binary, decimal), and angle units (degrees/radians).
@@ -96,6 +99,7 @@ The project is organized into modular packages under `com.xemophon.aljabr`:
     - `statistics/`:
         - `distributions/`: Probability distribution calculators and interactive distribution plots.
         - `descriptives/`: Summary statistics, correlation, and regression models.
+        - `hypothesis/`: Hypothesis testing (Z/t-tests) and confidence interval calculators.
     - `graphMaker/`: Interactive plotting and curve analysis engine.
     - `conversions/`: Unit convertors and reference utility tables.
     - `misc/`: App settings, About screen, and utilities.
