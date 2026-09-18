@@ -6,9 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,20 +20,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -120,7 +112,7 @@ fun FourierContent(
         SegmentedToggleButtons(
             options = listOf(false to "Single", true to "Double"),
             selectedOption = viewModel.isTwoBranch,
-            onOptionSelected = { viewModel.isTwoBranch = it }
+            onOptionSelected = { viewModel.setTwoBranchMode(it) }
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -235,31 +227,6 @@ fun BranchArea(
     }
 }
 
-@Suppress("unused")
-@Composable
-fun ModeButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(8.dp),
-        modifier = modifier.border(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant,
-            shape = RoundedCornerShape(8.dp)
-        )
-    ) {
-        Text(text = text, style = MaterialTheme.typography.labelMedium)
-    }
-}
-
 @Composable
 fun LimitBox(
     value: String,
@@ -338,6 +305,14 @@ fun FourierFocusOverlay(
         FourierFocus.LIMIT_C -> viewModel.c
     }
 
+    val title = when (viewModel.currentFocus){
+        FourierFocus.BRANCH1 -> if (viewModel.isTwoBranch) "f₁(x)" else "f(x)"
+        FourierFocus.BRANCH2 -> "f₂(x)"
+        FourierFocus.LIMIT_A -> "Limit A"
+        FourierFocus.LIMIT_B -> "Limit B"
+        FourierFocus.LIMIT_C -> "Limit C"
+    }
+
     val placeholder = when(viewModel.currentFocus) {
         FourierFocus.BRANCH1 -> if (viewModel.isTwoBranch) "f1(x)" else "f(x)"
         FourierFocus.BRANCH2 -> "f2(x)"
@@ -354,7 +329,7 @@ fun FourierFocusOverlay(
 
     FocusedInputOverlay(
         value = focusValue,
-        title = "Editing ${viewModel.currentFocus.name}",
+        title = "Editing $title",
         placeholder = placeholder,
         onDismiss = { viewModel.dismissFocus() },
         onPrev = { viewModel.prevFocus() },

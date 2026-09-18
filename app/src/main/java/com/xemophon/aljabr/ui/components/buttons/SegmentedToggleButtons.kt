@@ -1,5 +1,6 @@
 package com.xemophon.aljabr.ui.components.buttons
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -31,11 +32,11 @@ fun ModeButton(
             contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
         ),
         shape = RoundedCornerShape(8.dp),
-        modifier = modifier.border(
+        border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant,
-            shape = RoundedCornerShape(8.dp)
-        )
+            color = if (isSelected) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.outlineVariant
+        ),
+        modifier = modifier
     ) {
         Text(text = text, style = MaterialTheme.typography.labelMedium)
     }

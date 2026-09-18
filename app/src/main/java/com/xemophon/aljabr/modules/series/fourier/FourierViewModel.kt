@@ -21,6 +21,14 @@ enum class FourierFocus {
 class FourierViewModel(application: Application) : AndroidViewModel(application) {
 
     var isTwoBranch by mutableStateOf(value = false)
+        private set
+
+    fun setTwoBranchMode(twoBranch: Boolean) {
+        isTwoBranch = twoBranch
+        if ((!twoBranch) && (currentFocus in listOf(FourierFocus.BRANCH2, FourierFocus.LIMIT_B))) {
+            currentFocus = FourierFocus.BRANCH1
+        }
+    }
     
     var f1 by mutableStateOf("")
     var f2 by mutableStateOf("")
@@ -39,7 +47,17 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
     var isCalculating by mutableStateOf(false)
         private set
 
+    private val activeFocuses: List<FourierFocus>
+        get() = if (isTwoBranch) {
+            listOf(FourierFocus.BRANCH1, FourierFocus.LIMIT_A, FourierFocus.LIMIT_B, FourierFocus.BRANCH2, FourierFocus.LIMIT_C)
+        } else {
+            listOf(FourierFocus.BRANCH1, FourierFocus.LIMIT_A, FourierFocus.LIMIT_C)
+        }
+
     fun onFocusChange(focus: FourierFocus) {
+        if ((!isTwoBranch) && (focus in listOf(FourierFocus.BRANCH2, FourierFocus.LIMIT_B))) {
+            return
+        }
         currentFocus = focus
         isFocusedMode = true
     }
@@ -49,24 +67,23 @@ class FourierViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun nextFocus() {
-        val values = FourierFocus.entries
-        val nextIndex = (currentFocus.ordinal + 1) % values.size
-        // Skip BRANCH2 if not in two-branch mode
-        currentFocus = if ((!isTwoBranch) && (values[nextIndex] == FourierFocus.BRANCH2)) {
-            values[(nextIndex + 1) % values.size]
+        val list = activeFocuses
+        val currentIndex = list.indexOf(currentFocus)
+        currentFocus = if (currentIndex == -1) {
+            list.first()
         } else {
-            values[nextIndex]
+            list[(currentIndex + 1) % list.size]
         }
     }
 
     fun prevFocus() {
-        val values = FourierFocus.entries
-        val prevIndex = if (currentFocus.ordinal == 0) values.size - 1 else currentFocus.ordinal - 1
-        // Skip BRANCH2 if not in two-branch mode
-        if (!isTwoBranch && values[prevIndex] == FourierFocus.BRANCH2) {
-            currentFocus = values[if (prevIndex == 0) values.size - 1 else prevIndex - 1]
+        val list = activeFocuses
+        val currentIndex = list.indexOf(currentFocus)
+        currentFocus = if (currentIndex == -1) {
+            list.first()
         } else {
-            currentFocus = values[prevIndex]
+            val prevIndex = if (currentIndex == 0) list.size - 1 else currentIndex - 1
+            list[prevIndex]
         }
     }
 
