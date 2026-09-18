@@ -126,6 +126,52 @@ val trigonometrySheet = listOf(
     """\cos^2(\theta/2) = \frac{1 + \cos(\theta)}{2}"""
 )
 
+val laplaceSheet = listOf(
+    // Definition & Fundamental Properties
+    """\mathcal{L}\{f(t)\} = \int_{0}^{\infty} e^{-st} f(t) \, dt = F(s)""",
+    """\mathcal{L}\{a f(t) + b g(t)\} = a F(s) + b G(s)""",
+    """\mathcal{L}\{e^{at} f(t)\} = F(s - a)""",
+    """\mathcal{L}\{f(t - a) u(t - a)\} = e^{-as} F(s)""",
+    """\mathcal{L}\{f'(t)\} = s F(s) - f(0)""",
+    """\mathcal{L}\{f''(t)\} = s^2 F(s) - s f(0) - f'(0)""",
+    """\mathcal{L}\{t \cdot f(t)\} = -F'(s)""",
+    """\mathcal{L}\left\{\int_{0}^{t} f(\tau) \, d\tau\right\} = \frac{F(s)}{s}""",
+
+    // Common Laplace Transforms
+    """\mathcal{L}\{1\} = \frac{1}{s}""",
+    """\mathcal{L}\{t^n\} = \frac{n!}{s^{n+1}}""",
+    """\mathcal{L}\{e^{at}\} = \frac{1}{s - a}""",
+    """\mathcal{L}\{\sin(at)\} = \frac{a}{s^2 + a^2}""",
+    """\mathcal{L}\{\cos(at)\} = \frac{s}{s^2 + a^2}""",
+    """\mathcal{L}\{\sinh(at)\} = \frac{a}{s^2 - a^2}""",
+    """\mathcal{L}\{\cosh(at)\} = \frac{s}{s^2 - a^2}""",
+    """\mathcal{L}\{e^{at}\sin(bt)\} = \frac{b}{(s-a)^2 + b^2}""",
+    """\mathcal{L}\{e^{at}\cos(bt)\} = \frac{s-a}{(s-a)^2 + b^2}""",
+    """\mathcal{L}\{u(t - a)\} = \frac{e^{-as}}{s}""",
+    """\mathcal{L}\{\delta(t - a)\} = e^{-as}"""
+)
+
+val inverseLaplaceSheet = listOf(
+    // Fundamental Properties
+    """\mathcal{L}^{-1}\{a F(s) + b G(s)\} = a f(t) + b g(t)""",
+    """\mathcal{L}^{-1}\{F(s - a)\} = e^{at} f(t)""",
+    """\mathcal{L}^{-1}\{e^{-as} F(s)\} = f(t - a) u(t - a)""",
+    """\mathcal{L}^{-1}\{F(s) G(s)\} = \int_{0}^{t} f(\tau) g(t - \tau) \, d\tau""",
+
+    // Common Inverse Laplace Transforms
+    """\mathcal{L}^{-1}\left\{\frac{1}{s}\right\} = 1""",
+    """\mathcal{L}^{-1}\left\{\frac{1}{s^n}\right\} = \frac{t^{n-1}}{(n-1)!}""",
+    """\mathcal{L}^{-1}\left\{\frac{1}{s - a}\right\} = e^{at}""",
+    """\mathcal{L}^{-1}\left\{\frac{1}{s^2 + a^2}\right\} = \frac{1}{a} \sin(at)""",
+    """\mathcal{L}^{-1}\left\{\frac{s}{s^2 + a^2}\right\} = \cos(at)""",
+    """\mathcal{L}^{-1}\left\{\frac{1}{s^2 - a^2}\right\} = \frac{1}{a} \sinh(at)""",
+    """\mathcal{L}^{-1}\left\{\frac{s}{s^2 - a^2}\right\} = \cosh(at)""",
+    """\mathcal{L}^{-1}\left\{\frac{1}{(s-a)^2 + b^2}\right\} = \frac{1}{b} e^{at} \sin(bt)""",
+    """\mathcal{L}^{-1}\left\{\frac{s-a}{(s-a)^2 + b^2}\right\} = e^{at} \cos(bt)""",
+    """\mathcal{L}^{-1}\left\{\frac{e^{-as}}{s}\right\} = u(t - a)""",
+    """\mathcal{L}^{-1}\{e^{-as}\} = \delta(t - a)"""
+)
+
 @Composable
 fun UtilitiesScreen(
     onOpenDrawer: () -> Unit
@@ -133,7 +179,9 @@ fun UtilitiesScreen(
     val sheets = listOf(
         "Derivatives" to derivativesSheet,
         "Integrals" to integralsSheet,
-        "Trigonometry" to trigonometrySheet
+        "Trigonometry" to trigonometrySheet,
+        "Laplace Transform" to laplaceSheet,
+        "Inverse Laplace" to inverseLaplaceSheet
     )
     val pagerState = rememberPagerState { sheets.size }
 
