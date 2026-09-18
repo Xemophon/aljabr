@@ -16,7 +16,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -92,7 +91,7 @@ fun DistCalc(
     onOpenDrawer: () -> Unit
 ) {
     CalculatorScaffold(
-        title = { Text(text = "Distributions Calculator") },
+        title = { Text(text = viewModel.displayTitle) },
         onOpenDrawer = onOpenDrawer,
         navigationIcon = Icons.Default.Menu,
         navigationIconAction = onOpenDrawer,
@@ -123,6 +122,14 @@ fun DistCalc(
 fun DistFocusOverlay(
     viewModel: DistributionsViewModel
 ) {
+    val overlayTitle = when (viewModel.currentFocus) {
+        DistributionsFocus.PARAM1 -> "Editing ${viewModel.activeParam1Label}"
+        DistributionsFocus.PARAM2 -> "Editing ${viewModel.activeParam2Label ?: "Parameter 2"}"
+        DistributionsFocus.PARAM3 -> "Editing ${viewModel.activeParam3Label ?: "Parameter 3"}"
+        DistributionsFocus.X_VAL -> "Editing ${viewModel.xLabel}"
+        DistributionsFocus.X2_VAL -> "Editing ${viewModel.x2Label}"
+    }
+
     val placeholder = when (viewModel.currentFocus) {
         DistributionsFocus.PARAM1 -> viewModel.activeParam1Label
         DistributionsFocus.PARAM2 -> viewModel.activeParam2Label ?: "Parameter 2"
@@ -133,7 +140,7 @@ fun DistFocusOverlay(
 
     FocusedInputOverlay(
         value = viewModel.focusValue,
-        title = "Editing ${viewModel.currentFocus.name}",
+        title = overlayTitle,
         placeholder = placeholder,
         onDismiss = { viewModel.dismissFocus() },
         onPrev = { viewModel.prevFocus() },

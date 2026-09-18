@@ -68,6 +68,7 @@ sealed class ShortGridMode{
     data object Convertor : ShortGridMode()
     data object Polynomials : ShortGridMode()
     data object BDE: ShortGridMode()
+    data object Limits : ShortGridMode()
     data object Functions : ShortGridMode()
     data object Distributions : ShortGridMode()
     data object Descriptives : ShortGridMode()
@@ -77,37 +78,14 @@ sealed class ShortGridMode{
 fun ShortCalcButtons(
     modifier: Modifier = Modifier,
     gridMode: ShortGridMode,
-    letterNeeded: CalcButtonAction = CalcButtonAction.Constant("φ", Constants.PHI),
-    hexRowNeeded: Boolean = false,
+    overrides: Map<Pair<Int, Int>, CalcButtonAction> = emptyMap(),
     onAction: (CalcButtonAction) -> Unit,
 ) {
     CalcButtonSheet(modifier.fillMaxHeight()) {
-        val isFunctions = gridMode == ShortGridMode.Functions
-        val selectedGrid = if (isFunctions) FunctionsButtonGrid else ShortButtonGrid
-
-        if (hexRowNeeded) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-            ) {
-                listOf("A", "B", "C", "D", "E", "F").forEach { hexChar ->
-                    Button(
-                        onClick = { onAction(CalcButtonAction.Symbol(hexChar)) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    ) {
-                        Text(
-                            text = hexChar,
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-            }
+        val selectedGrid = when (gridMode) {
+            ShortGridMode.Descriptives -> NumberButtonGrid
+            ShortGridMode.Distributions -> NumberButtonGrid
+            else -> ShortButtonGrid
         }
 
         val isPolyOrOde = gridMode == ShortGridMode.Polynomials || gridMode == ShortGridMode.BDE
@@ -119,68 +97,65 @@ fun ShortCalcButtons(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
             ) {
                 when (gridMode) {
-                    ShortGridMode.BDE -> {
-                        Button(
-                            onClick = { onAction(CalcButtonAction.Misc("'", Misc.PRIME)) },
-                            modifier = Modifier.weight(0.8f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            Text(
-                                "'",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                        }
-                        Button(
-                            onClick = { onAction(CalcButtonAction.Variable("x", Variables.X)) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            Text(
-                                "x",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                        Button(
-                            onClick = { onAction(CalcButtonAction.Variable("y", Variables.Y)) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                        ) {
-                            Text(
-                                "y",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                        }
-                        Button(
-                            onClick = { onAction(CalcButtonAction.Calculate) },
-                            modifier = Modifier.weight(1.4f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Text(
-                            "Solve",
-                            color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-                    }
                     else -> {}
                 }
             }
         }
         
+        val defaultOverrides = when(gridMode) {
+            ShortGridMode.Convertor -> mapOf((0 to 1) to CalcButtonAction.Constant("φ", Constants.PHI))
+            ShortGridMode.Polynomials -> mapOf(
+                (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
+                (0 to 1) to CalcButtonAction.Symbol("( )"),
+                (0 to 2) to CalcButtonAction.Symbol("^"),
+                (4 to 3) to CalcButtonAction.Calculate,
+                (3 to 3) to CalcButtonAction.Symbol("+"),
+                (2 to 3) to CalcButtonAction.Symbol("-"),
+                (1 to 3) to CalcButtonAction.Symbol("×", "*"),
+                (0 to 3) to CalcButtonAction.Symbol("÷", "/")
+            )
+            ShortGridMode.BDE -> mapOf(
+                (0 to 0) to CalcButtonAction.Variable("y", Variables.Y),
+                (0 to 1) to CalcButtonAction.Symbol("^"),
+                (4 to 3) to CalcButtonAction.Symbol("=", "="),
+                (3 to 3) to CalcButtonAction.Symbol("+"),
+                (2 to 3) to CalcButtonAction.Symbol("-"),
+                (1 to 3) to CalcButtonAction.Symbol("×", "*"),
+                (0 to 3) to CalcButtonAction.Symbol("÷", "/")
+            )
+            ShortGridMode.Distributions -> mapOf(
+                (0 to 1) to CalcButtonAction.Symbol("%"),
+                (0 to 2) to CalcButtonAction.Done
+            )
+            ShortGridMode.Descriptives -> mapOf(
+                (0 to 2) to CalcButtonAction.Done
+            )
+
+            ShortGridMode.Functions -> mapOf(
+                (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
+                (0 to 2) to CalcButtonAction.Symbol("( )"),
+                (0 to 1) to CalcButtonAction.Constant("π", Constants.PI),
+                (0 to 3) to CalcButtonAction.Symbol("^"),
+            )
+
+
+
+            else -> emptyMap()
+        }
+
         ButtonGrid(
             gridData = selectedGrid,
             modifier = Modifier.weight(1f),
-            calcContext = if(gridMode == ShortGridMode.Polynomials) CalcContext.POLYNOMIALS else CalcContext.BASIC,
+            calcContext = when(gridMode) {
+                ShortGridMode.Polynomials -> CalcContext.POLYNOMIALS
+                ShortGridMode.Functions -> CalcContext.POLYNOMIALS
+                ShortGridMode.BDE -> CalcContext.BDE
+                else -> CalcContext.BASIC
+            },
             isExpanded = true,
             onAction = onAction,
             buttonModifier = Modifier.fillMaxHeight(),
-            overrides = when(gridMode) {
-                ShortGridMode.Convertor -> mapOf((4 to 3) to letterNeeded)
-                ShortGridMode.Polynomials -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Variable("x", Variables.X), (4 to 1) to CalcButtonAction.Symbol("( )"), (3 to 2) to CalcButtonAction.Symbol("^"))
-                ShortGridMode.BDE -> mapOf((4 to 3) to CalcButtonAction.Symbol("=", "="),(4 to 2) to CalcButtonAction.Symbol("( )"))
-                ShortGridMode.Distributions -> mapOf((4 to 3) to CalcButtonAction.Done, (4 to 2) to CalcButtonAction.Symbol("%"))
-                ShortGridMode.Descriptives -> mapOf((4 to 3) to CalcButtonAction.Calculate, (4 to 2) to CalcButtonAction.Symbol("."))
-                else -> emptyMap()
-            }
+            overrides = defaultOverrides + overrides
         )
     }
 }

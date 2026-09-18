@@ -1,16 +1,14 @@
 package com.xemophon.aljabr.modules.algebra.matrices
 
-import androidx.compose.animation.AnimatedContent
+import android.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Calculate
@@ -217,6 +213,7 @@ fun MatrixScreen(
         ) {
             FocusOverlay(
                 value = viewModel.matrixData.getOrNull(viewModel.selectedIndex) ?: "",
+                rawElementIndex = Pair(viewModel.selectedIndex, viewModel.columns),
                 onDismiss = { viewModel.dismissFocus() },
                 onAction = { viewModel.handleAction(it) },
                 onPrev = { viewModel.prevElement() },
@@ -304,14 +301,20 @@ fun FooterButton(
 @Composable
 fun FocusOverlay(
     value: String,
+    rawElementIndex: Pair<Int, Int>,
     onDismiss: () -> Unit,
     onAction: (CalcButtonAction) -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit
 ) {
+
+    val row = rawElementIndex.first / rawElementIndex.second
+    val col = rawElementIndex.first % rawElementIndex.second
+    val index = "(${row + 1}, ${col + 1})"
+
     FocusedInputOverlay(
         value = value,
-        title = "Editing Element",
+        title = "Editing Element $index",
         onDismiss = onDismiss,
         onPrev = onPrev,
         onNext = onNext,
@@ -320,7 +323,7 @@ fun FocusOverlay(
                 modifier = Modifier.height(400.dp),
                 gridMode = ShortGridMode.Convertor,
                 onAction = onAction,
-                letterNeeded = CalcButtonAction.Constant("i", Constants.I)
+                overrides = mapOf((0 to 1) to CalcButtonAction.Constant("i", Constants.I))
             )
         }
     )
@@ -471,33 +474,6 @@ fun MatrixElementBox(
             ),
             textAlign = TextAlign.Center,
             maxLines = 1
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FocusOverlayPreview() {
-    MaterialTheme {
-        _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.FocusOverlay(
-            value = "1.23",
-            onDismiss = {},
-            onAction = {},
-            onPrev = {},
-            onNext = {}
-        )
-    }
-}
-
-@Preview
-@Composable
-fun BoxPreview() {
-    MaterialTheme {
-        _root_ide_package_.com.xemophon.aljabr.modules.algebra.matrices.MatrixElementBox(
-            modifier = Modifier.size(64.dp),
-            value = "1",
-            isSelected = true,
-            onClick = {}
         )
     }
 }

@@ -129,6 +129,23 @@ class DistributionsViewModel(application: Application) : AndroidViewModel(applic
     // ==========================================
     // Dynamic metadata getters
     // ==========================================
+    val distributionTitle: String
+        get() = when (type) {
+            DistributionsType.BINOMIAL -> "Binomial Distribution"
+            DistributionsType.POISSON -> "Poisson Distribution"
+            DistributionsType.NORMAL -> "Normal Distribution"
+            DistributionsType.STUDENT -> "Student's t-Distribution"
+            DistributionsType.UNIFORM -> "Uniform Distribution"
+            DistributionsType.HYPERGEOMETRIC -> "Hypergeometric Distribution"
+            DistributionsType.EXPONENTIAL -> "Exponential Distribution"
+            DistributionsType.GEOMETRIC -> "Geometric Distribution"
+            DistributionsType.CHI_SQUARE -> "Chi-Square Distribution"
+            DistributionsType.F_DISTRIBUTION -> "F-Distribution"
+        }
+
+    val displayTitle: String
+        get() = distributionTitle
+
     @Suppress("unused")
     val graphExpression: String
         get() = DistributionsFunc.getGraphExpression(

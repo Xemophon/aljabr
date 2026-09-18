@@ -76,6 +76,7 @@ sealed interface CalcButtonAction {
 enum class CalcContext {
     BASIC,
     GRAPH,
+    BDE,
     POLYNOMIALS,
     SINGLE_VARIABLE,
     MULTI_VARIABLE,
@@ -143,6 +144,25 @@ fun CalcButtonAction.getAdditionalActions(
                     CalcButtonAction.Symbol("x²", "^2"),
                     CalcButtonAction.Symbol("x³", "^3")
                 )
+                "=" -> if(calcContext == CalcContext.BDE) listOf(CalcButtonAction.Calculate) else emptyList()
+                "0x" -> listOf(
+                    CalcButtonAction.Symbol("A"),
+                    CalcButtonAction.Symbol("B"),
+                    CalcButtonAction.Symbol("C"),
+                    CalcButtonAction.Symbol("D"),
+                    CalcButtonAction.Symbol("E"),
+                    CalcButtonAction.Symbol("F")
+                )
+                else -> emptyList()
+            }
+        }
+
+        is CalcButtonAction.Variable -> {
+            when(type) {
+                Variables.Y -> if(calcContext == CalcContext.BDE) listOf(
+                    CalcButtonAction.Variable("x", Variables.X),
+                    CalcButtonAction.Misc("'", Misc.PRIME)
+                ) else emptyList()
                 else -> emptyList()
             }
         }
@@ -168,40 +188,41 @@ enum class Parameter { N }
 enum class LimitType { FINITE, INFINITE }
 enum class IntegralType { DEFINITE, INDEFINITE, ARC, XSURF, YSURF, XVOL, YVOL, DOUBLE, NDOUBLE, CURVET1, CURVET2  }
 
-val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
+val NumberButtonGrid : List<List<CalcButtonAction>> = listOf(
+    listOf(
+        CalcButtonAction.Clear,
+        CalcButtonAction.Symbol("( )"),
+        CalcButtonAction.Symbol("%"),
+    ),
     listOf(
         CalcButtonAction.Symbol("7"),
         CalcButtonAction.Symbol("8"),
         CalcButtonAction.Symbol("9"),
-        CalcButtonAction.Symbol("÷", "/")
     ),
     listOf(
         CalcButtonAction.Symbol("4"),
         CalcButtonAction.Symbol("5"),
         CalcButtonAction.Symbol("6"),
-        CalcButtonAction.Symbol("×", "*")
     ),
     listOf(
         CalcButtonAction.Symbol("1"),
         CalcButtonAction.Symbol("2"),
         CalcButtonAction.Symbol("3"),
-        CalcButtonAction.Symbol("-")
     ),
     listOf(
         CalcButtonAction.Symbol("0"),
         CalcButtonAction.Symbol("."),
-        CalcButtonAction.Symbol("^"),
-        CalcButtonAction.Symbol("+")
-    ),
-    listOf(
         CalcButtonAction.Backspace(R.drawable.backspace),
-        CalcButtonAction.Clear,
-        CalcButtonAction.Constant("π", Constants.PI),
-        CalcButtonAction.Symbol("( )")
     )
 )
 
-val FunctionsButtonGrid : List<List<CalcButtonAction>> = listOf(
+val ShortButtonGrid : List<List<CalcButtonAction>> = listOf(
+    listOf(
+        CalcButtonAction.Clear,
+        CalcButtonAction.Constant("π", Constants.PI),
+        CalcButtonAction.Symbol("( )"),
+        CalcButtonAction.Symbol("^"),
+    ),
     listOf(
         CalcButtonAction.Symbol("7"),
         CalcButtonAction.Symbol("8"),
@@ -223,21 +244,11 @@ val FunctionsButtonGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Symbol("0"),
         CalcButtonAction.Symbol("."),
-        CalcButtonAction.Constant("π", Constants.PI),
-        CalcButtonAction.Symbol("+")
-    ),
-    listOf(
-        CalcButtonAction.Variable("x", Variables.X),
-        CalcButtonAction.Symbol("("),
-        CalcButtonAction.Symbol(")"),
-        CalcButtonAction.Symbol("^"),
-    ),
-    listOf(
         CalcButtonAction.Backspace(R.drawable.backspace),
-        CalcButtonAction.Clear,
-        CalcButtonAction.Done
+        CalcButtonAction.Symbol("+")
     )
 )
+
 val StandardButtonsGrid : List<List<CalcButtonAction>> = listOf(
     listOf(
         CalcButtonAction.Clear,

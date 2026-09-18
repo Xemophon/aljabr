@@ -42,7 +42,6 @@ import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.SegmentedToggleButtons
 import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.buttons.Constants
 import com.xemophon.aljabr.ui.components.screens.FourierReport
 import com.xemophon.aljabr.ui.components.screens.ResultItemCard
 import com.xemophon.aljabr.ui.components.buttons.ShortCalcButtons
@@ -324,7 +323,7 @@ fun FourierFocusOverlay(
     val gridMode = if (viewModel.currentFocus in listOf(FourierFocus.BRANCH1, FourierFocus.BRANCH2)) {
         ShortGridMode.Functions
     } else {
-        ShortGridMode.Convertor
+        ShortGridMode.Limits
     }
 
     FocusedInputOverlay(
@@ -339,7 +338,7 @@ fun FourierFocusOverlay(
                 modifier = Modifier.height(400.dp),
                 gridMode = gridMode,
                 onAction = { viewModel.handleAction(it) },
-                letterNeeded = if (gridMode == ShortGridMode.Convertor) CalcButtonAction.Done else CalcButtonAction.Constant("π", Constants.PI)
+                overrides = if (gridMode == ShortGridMode.Convertor) mapOf((0 to 1) to CalcButtonAction.Done) else emptyMap()
             )
         }
     )
