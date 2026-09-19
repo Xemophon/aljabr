@@ -190,12 +190,13 @@ fun GeoIntegCalc(
                             modifier = Modifier.padding(horizontal = 8.dp),
                             overrides = when (viewModel.mode) {
                                 GeoIntegMode.SCALAR_LINE, GeoIntegMode.ARC_LINE, GeoIntegMode.VECTOR_LINE -> {
-                                    mapOf(
-                                        (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
-                                        (0 to 1) to CalcButtonAction.Variable("y", Variables.Y),
-                                        (0 to 2) to CalcButtonAction.Variable("t", Variables.T),
-                                        (0 to 3) to CalcButtonAction.Symbol("( )")
-                                    )
+                                    if (viewModel.currentFocus in listOf(GeoIntegFocus.PARAM_X, GeoIntegFocus.PARAM_Y))
+                                        mapOf(
+                                        (0 to 0) to CalcButtonAction.Variable("t", Variables.T),
+                                        (0 to 1) to CalcButtonAction.Symbol("("),
+                                        (0 to 2) to CalcButtonAction.Symbol(")"),
+                                        (0 to 3) to CalcButtonAction.Clear
+                                    ) else emptyMap()
                                 }
                                 GeoIntegMode.SURFACE -> {
                                     mapOf(

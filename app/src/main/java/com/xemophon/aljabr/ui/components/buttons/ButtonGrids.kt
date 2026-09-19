@@ -583,7 +583,7 @@ fun AdvancedButtonsGrid(
         },
         calcContext = when (gridMode) {
             is AdvancedGridMode.Graph -> CalcContext.GRAPH
-            is AdvancedGridMode.Integration -> {
+            is AdvancedGridMode.Integration1D -> {
                 if (selectedGrid == MultipleVariableGrid) CalcContext.MULTI_VARIABLE_INTEGRATION
                 else CalcContext.SINGLE_VARIABLE_INTEGRATION
             }
