@@ -285,6 +285,7 @@ fun AdvancedButtonsGrid(
             gridMode.currentType == IntegralType.CURVET1 ||
             gridMode.currentType == IntegralType.CURVET2
         ) MultipleVariableGrid else SingleVariableGrid
+        is AdvancedGridMode.Graph -> MultipleVariableGrid
         else -> SingleVariableGrid
     }
 
@@ -308,12 +309,12 @@ fun AdvancedButtonsGrid(
                 Button(
                     onClick = { onAction(CalcButtonAction.Clear) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Clear", style = MaterialTheme.typography.labelLarge)
+                    Text(text = "Clear", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onError)
                 }
             }
         }

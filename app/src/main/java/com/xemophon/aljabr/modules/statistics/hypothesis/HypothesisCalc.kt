@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -258,14 +259,18 @@ fun HypothesisScreen(
                 Text("Compute", style = MaterialTheme.typography.titleMedium)
             }
 
-            OutlinedButton(
+            Button(
                 onClick = { viewModel.clear() },
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
             ) {
-                Text("Clear", style = MaterialTheme.typography.titleMedium)
+                Text("Clear", style = MaterialTheme.typography.titleMedium,color = MaterialTheme.colorScheme.onError)
             }
         }
     }

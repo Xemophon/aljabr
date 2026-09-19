@@ -262,7 +262,7 @@ fun DescriptivesScreen(
                             }
 
                             // Clear Button
-                            OutlinedButton(
+                            Button(
                                 onClick = {
                                     members.clear()
                                     selectedIndex = null
@@ -272,16 +272,18 @@ fun DescriptivesScreen(
                                     .fillMaxSize(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
                                 )
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Clear,
                                     contentDescription = "Clear",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onError
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Clear", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Clear", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onError )
                             }
                         }
                     }
