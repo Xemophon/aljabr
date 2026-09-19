@@ -228,24 +228,24 @@ fun GeoIntegReport(
             item { LatexResultCard(result.formulaLatex) }
         }
 
-        item { AnalysisSectionHeader("Symbolic Output") }
+        result.antiDerivativeResult?.let { antiDeriv ->
+            item { AnalysisSectionHeader("Anti-Derivative (Before Bounds)") }
+            item {
+                ResultItemCard(
+                    label = "Indefinite Expression",
+                    displayText = antiDeriv,
+                    rawValue = result.rawAntiDerivative?.ifEmpty { null }
+                )
+            }
+        }
+
+        item { AnalysisSectionHeader("Numerical Output") }
         item {
             ResultItemCard(
-                label = "Symbolic Solution",
+                label = "Numerical Solution",
                 displayText = result.symbolicResult,
                 rawValue = result.rawSymbolicResult.ifEmpty { null }
             )
-        }
-
-        result.numericResult?.let { numeric ->
-            item { AnalysisSectionHeader("Numeric Output") }
-            item {
-                ResultItemCard(
-                    label = "Numerical Approximation",
-                    displayText = numeric,
-                    rawValue = result.rawNumericResult?.ifEmpty { null }
-                )
-            }
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.xemophon.aljabr.modules.calculus.integrate.geometric
 
 import com.xemophon.aljabr.data.SymjaUtils
+import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import org.matheclipse.core.eval.ExprEvaluator
 
 data class GeoIntegResult(
     val modeTitle: String,
+    val antiDerivativeResult: String? = null,
+    val rawAntiDerivative: String? = null,
     val symbolicResult: String,
     val rawSymbolicResult: String = "",
     val numericResult: String? = null,
@@ -81,14 +84,25 @@ object GeoIntegFunc {
         val b = SymjaUtils.prepareForSymja(upperT)
 
         val integrand = "Sqrt[(D($xt, t))^2 + (D($yt, t))^2]"
+        val indefCmd = "Simplify[Integrate[$integrand, t]]"
         val symCmd = "Simplify[Integrate[$integrand, {t, $a, $b}]]"
 
         val formulaLatex = "\\int_{${SymjaUtils.toLaTeX(lowerT)}}^{${SymjaUtils.toLaTeX(upperT)}} \\sqrt{\\left[x'(t)\\right]^2 + \\left[y'(t)\\right]^2} \\, dt"
 
-        val (symRes, rawSym, numRes, rawNum) = evaluateSymbolicAndNumeric(eval, symCmd, integrand, listOf("t" to Pair(a, b)))
+        val (antiDeriv, rawAnti, symRes, rawSym, numRes, rawNum) = evaluateAntiAndSymbolicAndNumeric(
+            eval = eval,
+            indefCmd = indefCmd,
+            symCmd = symCmd,
+            integrand = integrand,
+            boundsList = listOf("t" to Pair(a, b)),
+            lowerBoundLatex = SymjaUtils.toLaTeX(lowerT),
+            upperBoundLatex = SymjaUtils.toLaTeX(upperT)
+        )
 
         return GeoIntegResult(
             modeTitle = "Arc Length Integral",
+            antiDerivativeResult = antiDeriv,
+            rawAntiDerivative = rawAnti,
             symbolicResult = symRes,
             rawSymbolicResult = rawSym,
             numericResult = numRes,
@@ -112,14 +126,25 @@ object GeoIntegFunc {
         val b = SymjaUtils.prepareForSymja(upperT)
 
         val integrand = "ReplaceAll[$f, {x -> ($xt), y -> ($yt)}] * Sqrt[(D($xt, t))^2 + (D($yt, t))^2]"
+        val indefCmd = "Simplify[Integrate[$integrand, t]]"
         val symCmd = "Simplify[Integrate[$integrand, {t, $a, $b}]]"
 
         val formulaLatex = "\\int_{${SymjaUtils.toLaTeX(lowerT)}}^{${SymjaUtils.toLaTeX(upperT)}} f(x(t), y(t)) \\sqrt{\\left(x'(t)\\right)^2 + \\left(y'(t)\\right)^2} \\, dt"
 
-        val (symRes, rawSym, numRes, rawNum) = evaluateSymbolicAndNumeric(eval, symCmd, integrand, listOf("t" to Pair(a, b)))
+        val (antiDeriv, rawAnti, symRes, rawSym, numRes, rawNum) = evaluateAntiAndSymbolicAndNumeric(
+            eval = eval,
+            indefCmd = indefCmd,
+            symCmd = symCmd,
+            integrand = integrand,
+            boundsList = listOf("t" to Pair(a, b)),
+            lowerBoundLatex = SymjaUtils.toLaTeX(lowerT),
+            upperBoundLatex = SymjaUtils.toLaTeX(upperT)
+        )
 
         return GeoIntegResult(
             modeTitle = "Scalar Line Integral",
+            antiDerivativeResult = antiDeriv,
+            rawAntiDerivative = rawAnti,
             symbolicResult = symRes,
             rawSymbolicResult = rawSym,
             numericResult = numRes,
@@ -145,14 +170,25 @@ object GeoIntegFunc {
         val b = SymjaUtils.prepareForSymja(upperT)
 
         val integrand = "ReplaceAll[$p, {x -> ($xt), y -> ($yt)}] * D($xt, t) + ReplaceAll[$q, {x -> ($xt), y -> ($yt)}] * D($yt, t)"
+        val indefCmd = "Simplify[Integrate[$integrand, t]]"
         val symCmd = "Simplify[Integrate[$integrand, {t, $a, $b}]]"
 
         val formulaLatex = "\\int_{${SymjaUtils.toLaTeX(lowerT)}}^{${SymjaUtils.toLaTeX(upperT)}} \\left[ P(x(t),y(t)) x'(t) + Q(x(t),y(t)) y'(t) \\right] dt"
 
-        val (symRes, rawSym, numRes, rawNum) = evaluateSymbolicAndNumeric(eval, symCmd, integrand, listOf("t" to Pair(a, b)))
+        val (antiDeriv, rawAnti, symRes, rawSym, numRes, rawNum) = evaluateAntiAndSymbolicAndNumeric(
+            eval = eval,
+            indefCmd = indefCmd,
+            symCmd = symCmd,
+            integrand = integrand,
+            boundsList = listOf("t" to Pair(a, b)),
+            lowerBoundLatex = SymjaUtils.toLaTeX(lowerT),
+            upperBoundLatex = SymjaUtils.toLaTeX(upperT)
+        )
 
         return GeoIntegResult(
             modeTitle = "Vector Line Integral",
+            antiDerivativeResult = antiDeriv,
+            rawAntiDerivative = rawAnti,
             symbolicResult = symRes,
             rawSymbolicResult = rawSym,
             numericResult = numRes,
@@ -176,19 +212,23 @@ object GeoIntegFunc {
         val dy = SymjaUtils.prepareForSymja(upperY)
 
         val integrand = "($f) * Sqrt[1 + (D($f, x))^2 + (D($f, y))^2]"
+        val indefCmd = "Simplify[Integrate[Integrate[$integrand, y], x]]"
         val symCmd = "Simplify[Integrate[Integrate[$integrand, {y, $cy, $dy}], {x, $ax, $bx}]]"
 
         val formulaLatex = "S = \\iint_R f(x,y) \\sqrt{1 + \\left(\\frac{\\partial f}{\\partial x}\\right)^2 + \\left(\\frac{\\partial f}{\\partial y}\\right)^2} \\, dA"
 
-        val (symRes, rawSym, numRes, rawNum) = evaluateSymbolicAndNumeric(
-            eval,
-            symCmd,
-            integrand,
-            listOf("y" to Pair(cy, dy), "x" to Pair(ax, bx))
+        val (antiDeriv, rawAnti, symRes, rawSym, numRes, rawNum) = evaluateAntiAndSymbolicAndNumeric(
+            eval = eval,
+            indefCmd = indefCmd,
+            symCmd = symCmd,
+            integrand = integrand,
+            boundsList = listOf("y" to Pair(cy, dy), "x" to Pair(ax, bx))
         )
 
         return GeoIntegResult(
             modeTitle = "Surface Integral",
+            antiDerivativeResult = antiDeriv,
+            rawAntiDerivative = rawAnti,
             symbolicResult = symRes,
             rawSymbolicResult = rawSym,
             numericResult = numRes,
@@ -226,17 +266,28 @@ object GeoIntegFunc {
         val boundsList = diffTokens.mapNotNull { boundsMap[it] }
 
         var symCmd = f
+        var indefCmd = f
         for ((v, bounds) in boundsList) {
             symCmd = "Integrate[$symCmd, {$v, ${bounds.first}, ${bounds.second}}]"
+            indefCmd = "Integrate[$indefCmd, $v]"
         }
         symCmd = "Simplify[$symCmd]"
+        indefCmd = "Simplify[$indefCmd]"
 
         val formulaLatex = "\\iiint_R f(x,y,z) \\, dV"
 
-        val (symRes, rawSym, numRes, rawNum) = evaluateSymbolicAndNumeric(eval, symCmd, f, boundsList)
+        val (antiDeriv, rawAnti, symRes, rawSym, numRes, rawNum) = evaluateAntiAndSymbolicAndNumeric(
+            eval = eval,
+            indefCmd = indefCmd,
+            symCmd = symCmd,
+            integrand = f,
+            boundsList = boundsList
+        )
 
         return GeoIntegResult(
             modeTitle = "Volume Integral",
+            antiDerivativeResult = antiDeriv,
+            rawAntiDerivative = rawAnti,
             symbolicResult = symRes,
             rawSymbolicResult = rawSym,
             numericResult = numRes,
@@ -245,12 +296,35 @@ object GeoIntegFunc {
         )
     }
 
-    private fun evaluateSymbolicAndNumeric(
+    private fun evaluateAntiAndSymbolicAndNumeric(
         eval: ExprEvaluator,
+        indefCmd: String,
         symCmd: String,
         integrand: String,
-        boundsList: List<Pair<String, Pair<String, String>>>
-    ): Tuple4Result {
+        boundsList: List<Pair<String, Pair<String, String>>>,
+        lowerBoundLatex: String? = null,
+        upperBoundLatex: String? = null
+    ): Tuple6Result {
+        // 1. Anti-derivative evaluation (indefinite integral before bounds substitution)
+        val rawAnti: String? = try {
+            val res = eval.eval(indefCmd).toString()
+            if (res.contains("Integrate", ignoreCase = true) || res == "\$Failed") null else res
+        } catch (_: Exception) {
+            null
+        }
+
+        val antiDerivLatex = if (rawAnti != null) {
+            val latexPart = SymjaUtils.toLaTeX(rawAnti)
+            if (lowerBoundLatex != null && upperBoundLatex != null) {
+                "\\left[ $latexPart \\right]_{$lowerBoundLatex}^{$upperBoundLatex}"
+            } else {
+                latexPart
+            }
+        } else {
+            null
+        }
+
+        // 2. Symbolic definite integral evaluation
         val rawSym = try {
             eval.eval(symCmd).toString()
         } catch (_: Exception) {
@@ -263,44 +337,54 @@ object GeoIntegFunc {
             SymjaUtils.formatResult(rawSym)
         }
 
+        // 3. Numeric evaluation (forced decimal float)
         var rawNum: String? = null
         var numRes: String? = null
 
         if (rawSym != "No closed form solution" && rawSym != "\$Failed") {
             try {
-                val numEval = eval.eval("N[$rawSym]").toString()
-                if (numEval.toDoubleOrNull() != null || (!numEval.contains("N[") && !numEval.contains("Integrate"))) {
-                    rawNum = numEval
-                    numRes = SymjaUtils.formatResult(numEval)
+                val calculatedNum = SymjaUtils.calculateNumerical(rawSym, useRadians = true, precision = 6)
+                if (calculatedNum.isNotEmpty() && calculatedNum != symRes) {
+                    rawNum = calculatedNum
+                    numRes = calculatedNum
                 }
             } catch (_: Exception) {
             }
         }
 
-        if (numRes == null || numRes == "No closed form solution") {
+        if (numRes == null && (rawSym == "No closed form solution" || rawSym == "\$Failed")) {
             try {
                 var nCmd = integrand
                 for ((v, bounds) in boundsList) {
                     nCmd = "NIntegrate[$nCmd, {$v, ${bounds.first}, ${bounds.second}}]"
                 }
                 val nResStr = eval.eval(nCmd).toString()
-                if (nResStr.toDoubleOrNull() != null || (!nResStr.contains("NIntegrate") && !nResStr.contains("\$Failed"))) {
-                    rawNum = nResStr
-                    numRes = SymjaUtils.formatResult(nResStr)
+                val nDouble = nResStr.toDoubleOrNull()
+                if (nDouble != null && !nDouble.isNaN()) {
+                    val formattedN = CalcFuncs.formatResult(nDouble, 6)
+                    rawNum = formattedN
+                    numRes = formattedN
                 }
             } catch (_: Exception) {
             }
         }
 
-        return Tuple4Result(
+        val finalNumericResult = if (numRes != null && numRes != symRes) numRes else null
+        val finalRawNumericResult = if (numRes != null && numRes != symRes) rawNum else null
+
+        return Tuple6Result(
+            antiDeriv = antiDerivLatex,
+            rawAnti = rawAnti,
             symRes = symRes,
             rawSym = if (symRes == "No closed form solution") "" else rawSym,
-            numRes = numRes,
-            rawNum = rawNum
+            numRes = finalNumericResult,
+            rawNum = finalRawNumericResult
         )
     }
 
-    private data class Tuple4Result(
+    private data class Tuple6Result(
+        val antiDeriv: String?,
+        val rawAnti: String?,
         val symRes: String,
         val rawSym: String,
         val numRes: String?,
