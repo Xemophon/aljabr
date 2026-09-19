@@ -5,7 +5,8 @@ import com.xemophon.aljabr.modules.algebra.bde.BDEResult
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.twod.TwoDIntegFunc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceFunc
 import com.xemophon.aljabr.modules.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
@@ -41,42 +42,42 @@ object IntegrationEngine {
     ): String {
         val pVal = if (displayText == "0") "" else displayText
         val fullExpr = if (innerLowerLimitText.isBlank()) pVal else "$pVal, $innerLowerLimitText"
-        if (useRationalize) {
-            return IntegFunc.integrateSymbolic(
-                expression = fullExpr,
-                lower = lowerLimitText,
-                upper = upperLimitText,
-                useRadians = useRadians,
-                useRationalize = true,
-                type = integType
-            )
-        } else {
-            val lNum = lowerLimitText.toDoubleOrNull() ?: 0.0
-            val uNum = upperLimitText.toDoubleOrNull() ?: 1.0
-            val result = IntegFunc.integrate(
-                expression = fullExpr,
-                lower = lNum,
-                upper = uNum,
-                useRadians = useRadians,
-                type = integType
-            )
-            return if (result.isNaN()) {
-                IntegFunc.integrateSymbolic(
-                    expression = fullExpr,
-                    lower = lowerLimitText,
-                    upper = upperLimitText,
-                    useRadians = useRadians,
-                    useRationalize = false,
-                    type = integType
-                )
-            } else {
-                CalcFuncs.formatResult(result, precision)
-            }
-        }
+        return TwoDIntegFunc.integrateCurve(
+            expression = fullExpr,
+            lower = lowerLimitText,
+            upper = upperLimitText,
+            useRadians = useRadians,
+            useRationalize = useRationalize,
+            type = integType
+        )
     }
 
-    fun integrateDoubleIndefinite(displayText: String, useRadians: Boolean, useRationalize: Boolean): String {
-        return IntegFunc.integrateDoubleIndefinite(displayText, useRadians, useRationalize)
+    fun integrateApplication(
+        displayText: String,
+        lowerLimitText: String,
+        upperLimitText: String,
+        useRadians: Boolean,
+        useRationalize: Boolean,
+        precision: Int,
+        integType: IntegralType
+    ): String {
+        return TwoDIntegFunc.integrateApplication(
+            expression = displayText,
+            lower = lowerLimitText,
+            upper = upperLimitText,
+            useRadians = useRadians,
+            useRationalize = useRationalize,
+            type = integType
+        )
+    }
+
+    fun integrateDoubleIndefinite(
+        displayText: String,
+        axis: String = "X",
+        useRadians: Boolean,
+        useRationalize: Boolean
+    ): String {
+        return TwoDIntegFunc.integrateDoubleIndefinite(displayText, axis, useRadians, useRationalize)
     }
 
     fun integrateDoubleDefinite(
@@ -91,7 +92,7 @@ object IntegrationEngine {
         precision: Int
     ): String {
         if (useRationalize) {
-            return IntegFunc.integrateDoubleDefinite(
+            return TwoDIntegFunc.integrateDoubleDefinite(
                 expression = displayText,
                 lower = lowerLimitText,
                 upper = upperLimitText,
@@ -102,7 +103,7 @@ object IntegrationEngine {
                 useRationalize = true
             )
         } else {
-            val result = IntegFunc.integrateDoubleNumerical(
+            val result = TwoDIntegFunc.integrateDoubleNumerical(
                 expression = displayText,
                 lower = lowerLimitText,
                 upper = upperLimitText,
@@ -112,7 +113,7 @@ object IntegrationEngine {
                 useRadians = useRadians
             )
             return if (result.isNaN()) {
-                IntegFunc.integrateDoubleDefinite(
+                TwoDIntegFunc.integrateDoubleDefinite(
                     expression = displayText,
                     lower = lowerLimitText,
                     upper = upperLimitText,

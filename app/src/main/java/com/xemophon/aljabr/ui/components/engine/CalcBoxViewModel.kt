@@ -25,7 +25,7 @@ import com.xemophon.aljabr.ui.components.screens.PolynomialResult
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE, ODE }
+enum class CalculatorMode { STANDARD, GRAPH, LIMITS, INTEGRATE, INTEGRATE_2D, DIFFERENTIATE, POLYNOMIALS, TAYLOR, LAPLACE, ODE }
 enum class CalculatorFocus { EXPRESSION, TARGET, INTEG_LOWER, INTEG_UPPER, INTEG_INNER_LOWER, INTEG_INNER_UPPER, ORDER }
 
 class CalcBoxViewModel @JvmOverloads constructor(
@@ -109,7 +109,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
 
     fun handleAction(action: CalcButtonAction) {
         if ((action !is CalcButtonAction.Calculate) && (action !is CalcButtonAction.Graph) && (action !is CalcButtonAction.Clear)) {
-            if ((calculatorMode == CalculatorMode.INTEGRATE) || (calculatorMode == CalculatorMode.LIMITS) ||
+            if ((calculatorMode == CalculatorMode.INTEGRATE) || (calculatorMode == CalculatorMode.INTEGRATE_2D) || (calculatorMode == CalculatorMode.LIMITS) ||
                 (calculatorMode == CalculatorMode.POLYNOMIALS) || (calculatorMode == CalculatorMode.TAYLOR) ||
                 (calculatorMode == CalculatorMode.LAPLACE) || (calculatorMode == CalculatorMode.ODE)) {
                 resultText = ""
@@ -167,9 +167,10 @@ class CalcBoxViewModel @JvmOverloads constructor(
                 }
 
                 if (isSameType && (action.type == IntegralType.XVOL || action.type == IntegralType.YVOL ||
-                            action.type == IntegralType.XSURF || action.type == IntegralType.YSURF || action.type == IntegralType.NDOUBLE)) {
+                            action.type == IntegralType.XSURF || action.type == IntegralType.YSURF ||
+                            action.type == IntegralType.DOUBLE || action.type == IntegralType.NDOUBLE)) {
                     integrationAxis = if (integrationAxis == "X") "Y" else "X"
-                    integType = if (action.type == IntegralType.NDOUBLE) {
+                    integType = if (action.type == IntegralType.NDOUBLE || action.type == IntegralType.DOUBLE) {
                         action.type
                     } else {
                         when (integType) {
@@ -258,7 +259,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
             }
         }
 
-        if (calculatorMode == CalculatorMode.INTEGRATE) {
+        if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.INTEGRATE_2D) {
             when (currentFocus) {
                 CalculatorFocus.INTEG_LOWER -> {
                     lowerLimitText += symbol
@@ -381,7 +382,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
             return
         }
 
-        if (calculatorMode == CalculatorMode.INTEGRATE && (
+        if ((calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.INTEGRATE_2D) && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
                     currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
@@ -419,7 +420,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
             return
         }
 
-        if (calculatorMode == CalculatorMode.INTEGRATE && (
+        if ((calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.INTEGRATE_2D) && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
                     currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
@@ -451,7 +452,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
             return
         }
 
-        if (calculatorMode == CalculatorMode.INTEGRATE && (
+        if ((calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.INTEGRATE_2D) && (
                     currentFocus == CalculatorFocus.INTEG_LOWER ||
                     currentFocus == CalculatorFocus.INTEG_UPPER ||
                     currentFocus == CalculatorFocus.INTEG_INNER_LOWER ||
@@ -563,6 +564,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
         if (!calculationEnabled || displayText == "0" || displayText.isBlank() ||
             calculatorMode == CalculatorMode.LIMITS ||
             calculatorMode == CalculatorMode.INTEGRATE ||
+            calculatorMode == CalculatorMode.INTEGRATE_2D ||
             calculatorMode == CalculatorMode.DIFFERENTIATE ||
             calculatorMode == CalculatorMode.TAYLOR ||
             calculatorMode == CalculatorMode.POLYNOMIALS ||
@@ -678,7 +680,22 @@ class CalcBoxViewModel @JvmOverloads constructor(
         stepsList.clear()
 
         when (integType) {
-            IntegralType.CURVET2 -> {
+            IntegralType.ARC, IntegralType.XVOL, IntegralType.YVOL, IntegralType.XSURF, IntegralType.YSURF -> {
+                try {
+                    resultText = IntegrationEngine.integrateApplication(
+                        displayText = displayText,
+                        lowerLimitText = lowerLimitText,
+                        upperLimitText = upperLimitText,
+                        useRadians = useRadians,
+                        useRationalize = useRationalize,
+                        precision = precision,
+                        integType = integType
+                    )
+                } catch (e: Exception) {
+                    resultText = "Calculation Error"
+                }
+            }
+            IntegralType.CURVET1, IntegralType.CURVET2 -> {
                 try {
                     resultText = IntegrationEngine.integrateCurve(
                         displayText = displayText,
@@ -698,6 +715,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                 try {
                     val res = IntegrationEngine.integrateDoubleIndefinite(
                         displayText = displayText,
+                        axis = integrationAxis,
                         useRadians = useRadians,
                         useRationalize = useRationalize
                     )
@@ -992,7 +1010,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
             }
         }
 
-        if (calculatorMode == CalculatorMode.INTEGRATE) {
+        if (calculatorMode == CalculatorMode.INTEGRATE || calculatorMode == CalculatorMode.INTEGRATE_2D) {
             if (currentFocus == CalculatorFocus.INTEG_LOWER && lowerLimitText.isNotEmpty()) {
                 lowerLimitText = lowerLimitText.dropLast(1)
                 return

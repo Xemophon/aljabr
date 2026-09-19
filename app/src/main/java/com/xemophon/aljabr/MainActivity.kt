@@ -41,7 +41,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xemophon.aljabr.data.AppTheme
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.modules.calculus.integrate.IntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.twod.TwoDIntegFunc
 import com.xemophon.aljabr.modules.misc.SettingsViewModel
 import com.xemophon.aljabr.navigation.Algebra
 import com.xemophon.aljabr.navigation.BasicCalcRoute
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
         // Warm up the math engines in the background to improve first-use performance
         lifecycleScope.launch(Dispatchers.Default) {
             IntegFunc.warmUp()
+            TwoDIntegFunc.warmUp()
             DiffFunc.warmUp()
         }
 

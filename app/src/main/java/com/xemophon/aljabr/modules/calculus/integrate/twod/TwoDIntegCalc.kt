@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.calculus.integrate
+package com.xemophon.aljabr.modules.calculus.integrate.twod
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +26,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,32 +35,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hrm.latex.renderer.Latex
-import com.hrm.latex.renderer.model.LatexConfig
-import com.hrm.latex.renderer.model.LatexTheme
-import com.xemophon.aljabr.ui.components.screens.CalculusStep
-import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
 import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
-import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
+import com.xemophon.aljabr.ui.components.buttons.IntegralType
+import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
 import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
 import com.xemophon.aljabr.ui.components.engine.CalculatorMode
+import com.xemophon.aljabr.ui.components.screens.CalculusStep
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
 import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
-import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import com.xemophon.aljabr.ui.components.screens.StepsBottomSheet
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IntegCalc(onOpenDrawer: () -> Unit) {
+fun TwoDIntegCalc(onOpenDrawer: () -> Unit) {
     val viewModel: CalcBoxViewModel = viewModel()
 
     LaunchedEffect(Unit) {
-        viewModel.calculatorMode = CalculatorMode.INTEGRATE
+        viewModel.calculatorMode = CalculatorMode.INTEGRATE_2D
+        if (viewModel.integType == IntegralType.DEFINITE || viewModel.integType == IntegralType.INDEFINITE) {
+            viewModel.integType = IntegralType.DOUBLE
+        }
     }
 
     if (viewModel.showStepsSheet) {
@@ -74,7 +69,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
         )
     }
 
-    IntegCalcContent(
+    TwoDIntegCalcContent(
         displayText = viewModel.displayText,
         lowerLimitText = viewModel.lowerLimitText,
         upperLimitText = viewModel.upperLimitText,
@@ -96,7 +91,7 @@ fun IntegCalc(onOpenDrawer: () -> Unit) {
 }
 
 @Composable
-fun IntegCalcContent(
+fun TwoDIntegCalcContent(
     displayText: String,
     lowerLimitText: String,
     upperLimitText: String,
@@ -116,7 +111,7 @@ fun IntegCalcContent(
     onOpenDrawer: () -> Unit
 ) {
     CalculatorScaffold(
-        title = { Text("Integrate") },
+        title = { Text("2D Integration") },
         onOpenDrawer = onOpenDrawer
     ) { padding ->
         Surface(
@@ -135,7 +130,7 @@ fun IntegCalcContent(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    IntegDisplay(
+                    TwoDIntegDisplay(
                         expression = displayText,
                         lower = lowerLimitText,
                         upper = upperLimitText,
@@ -153,7 +148,7 @@ fun IntegCalcContent(
                     )
                 }
                 AdvancedButtonsGrid(
-                    gridMode = AdvancedGridMode.Integration(integType, integrationAxis),
+                    gridMode = AdvancedGridMode.Integration2D(integType, integrationAxis),
                     onAction = onAction
                 )
             }
@@ -162,7 +157,7 @@ fun IntegCalcContent(
 }
 
 @Composable
-fun IntegDisplay(
+fun TwoDIntegDisplay(
     expression: String,
     lower: String,
     upper: String,
@@ -293,18 +288,6 @@ fun IntegDisplay(
                                 }
                             }
                         }
-                        IntegralType.INDEFINITE -> {
-                            Box(
-                                modifier = Modifier.height(100.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Text(
-                                    text = "∫",
-                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
                         else -> {
                             Box(
                                 modifier = Modifier.height(100.dp),
@@ -429,8 +412,7 @@ fun IntegDisplay(
                                     base.ifEmpty { defaultPlaceholder }
                                 }
 
-                            val displayText = when (integType) {
-                                IntegralType.DEFINITE, IntegralType.INDEFINITE -> "$textWithCursor ∂x"
+                            val displayTextStr = when (integType) {
                                 IntegralType.ARC -> "√[1 + ($textWithCursor)']² ∂x"
                                 IntegralType.XVOL -> "π[$textWithCursor]² ∂x"
                                 IntegralType.YVOL -> "2πx|$textWithCursor| ∂x"
@@ -442,9 +424,9 @@ fun IntegDisplay(
                             }
 
                             Text(
-                                text = displayText,
+                                text = displayTextStr,
                                 style = MaterialTheme.typography.displayMedium.copy(
-                                    fontSize = if (displayText.length > 15) 24.sp else if (displayText.length > 10) 32.sp else 48.sp
+                                    fontSize = if (displayTextStr.length > 15) 24.sp else if (displayTextStr.length > 10) 32.sp else 48.sp
                                 ),
                                 color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
@@ -453,7 +435,6 @@ fun IntegDisplay(
                     }
                 }
             } else {
-                // Display only the result when it exists using LaTeX if possible
                 ScrollableLatexView(
                     expression = result,
                     fontSize = if (result.length > 15) 28.sp else 40.sp,
@@ -468,20 +449,24 @@ fun IntegDisplay(
 
 @Preview(showBackground = true)
 @Composable
-fun IntegPreview() {
+fun TwoDIntegPreview() {
     AlJabrTheme {
-        var displayText by remember { mutableStateOf("x^2") }
+        var displayText by remember { mutableStateOf("x*y") }
         var lowerLimitText by remember { mutableStateOf("0") }
         var upperLimitText by remember { mutableStateOf("1") }
+        var innerLowerLimitText by remember { mutableStateOf("0") }
+        var innerUpperLimitText by remember { mutableStateOf("1") }
         var resultText by remember { mutableStateOf("") }
         var currentFocus by remember { mutableStateOf(CalculatorFocus.EXPRESSION) }
-        var integType by remember { mutableStateOf(IntegralType.DEFINITE) }
+        var integType by remember { mutableStateOf(IntegralType.DOUBLE) }
         var cursorIndex by remember { mutableIntStateOf(3) }
 
-        IntegCalcContent(
+        TwoDIntegCalcContent(
             displayText = displayText,
             lowerLimitText = lowerLimitText,
             upperLimitText = upperLimitText,
+            innerLowerLimitText = innerLowerLimitText,
+            innerUpperLimitText = innerUpperLimitText,
             resultText = resultText,
             currentFocus = currentFocus,
             integType = integType,
@@ -496,6 +481,8 @@ fun IntegPreview() {
                             CalculatorFocus.EXPRESSION -> displayText += action.formula
                             CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.formula
                             CalculatorFocus.INTEG_UPPER -> upperLimitText += action.formula
+                            CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.formula
+                            CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.formula
                             else -> {}
                         }
                     }
@@ -504,6 +491,8 @@ fun IntegPreview() {
                         displayText = ""
                         lowerLimitText = ""
                         upperLimitText = ""
+                        innerLowerLimitText = ""
+                        innerUpperLimitText = ""
                         resultText = ""
                     }
                     else -> {}

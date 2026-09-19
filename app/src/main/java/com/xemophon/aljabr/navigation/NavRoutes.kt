@@ -19,7 +19,8 @@ import com.xemophon.aljabr.modules.algebra.polynomials.PolyCalc
 import com.xemophon.aljabr.modules.basicCalc.BasicCalc
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.modules.graphMaker.GraphMaker
-import com.xemophon.aljabr.modules.calculus.integrate.IntegCalc
+import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegCalc
+import com.xemophon.aljabr.modules.calculus.integrate.twod.TwoDIntegCalc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
 import com.xemophon.aljabr.modules.algebra.bde.BDECalc
@@ -41,6 +42,8 @@ object GraphMakerRoute
 object LimitsRoute
 @Serializable
 object IntegrateRoute
+@Serializable
+object IntegrateTwoDRoute
 @Serializable
 object DifferentiateRoute
 @Serializable
@@ -79,9 +82,16 @@ val Calculus = listOf(
     CalculatorVariant(
         route = IntegrateRoute,
         routeClass = IntegrateRoute::class,
-        label = "Integrate",
+        label = "1D Integration",
         icon = Icons.Default.Functions,
         content = { onOpenDrawer -> IntegCalc(onOpenDrawer = onOpenDrawer) }
+    ),
+    CalculatorVariant(
+        route = IntegrateTwoDRoute,
+        routeClass = IntegrateTwoDRoute::class,
+        label = "2D Integration",
+        icon = R.drawable.twodimens,
+        content = { onOpenDrawer -> TwoDIntegCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = DifferentiateRoute,
