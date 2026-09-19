@@ -231,7 +231,7 @@ fun GeoIntegReport(
         item { AnalysisSectionHeader("Symbolic Output") }
         item {
             ResultItemCard(
-                label = "Exact / Symbolic Solution",
+                label = "Symbolic Solution",
                 displayText = result.symbolicResult,
                 rawValue = result.rawSymbolicResult.ifEmpty { null }
             )

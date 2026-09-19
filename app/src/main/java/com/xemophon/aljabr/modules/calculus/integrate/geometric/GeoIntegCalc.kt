@@ -79,10 +79,9 @@ fun GeoIntegCalc(
         title = { Text("Geometric Integration") },
         onOpenDrawer = onOpenDrawer
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             if (viewModel.isCalculating) {
                 LoadingIndicator(
@@ -95,10 +94,6 @@ fun GeoIntegCalc(
                     onClear = { viewModel.clearResult() }
                 )
             } else {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -225,7 +220,6 @@ fun GeoIntegCalc(
                 )
             }
         }
-    }
 }
 
 @Composable
