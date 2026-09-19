@@ -54,9 +54,10 @@ object PolyFuncs {
                 val pfd = try {
                     val isFraction = eval.eval("Denominator($cleaned)").toString() != "1"
                     val pfdRes = eval.eval("Apart($cleaned)").toString()
-                    if (isFraction && pfdRes != cleaned) pfdRes else null
+                    if (isFraction && pfdRes != cleaned && pfdRes != rawFactored) pfdRes else null
                 } catch (_: Exception) { null }
-                val pfdString = pfd?.let { SymjaUtils.formatResult(it) }
+                val pfdString = pfd?.let { SymjaUtils.formatResult(it) }?.takeIf { it != factored }
+                val finalPfd = if (pfdString != null) pfd else null
 
                 PolynomialResult(
                     expression = expression,
@@ -66,7 +67,7 @@ object PolyFuncs {
                     factoredForm = factored,
                     rawFactoredForm = rawFactored,
                     pfdForm = pfdString,
-                    rawPfdForm = pfd
+                    rawPfdForm = finalPfd
                 )
             } catch (e: Exception) {
                 PolynomialResult(expression, "", emptyList(), error = e.message)
