@@ -418,11 +418,11 @@ fun DescriptivesReport(
             )
         }
         item {
-            val modeStr = if (result.mode.isEmpty()) "No Mode (All values unique)"
+            val modeStr = if (result.mode.isEmpty()) "None"
             else result.mode.joinToString(", ") { formatDouble(it) }
             ResultItemCard(
                 label = "Mode",
-                displayText = modeStr
+                displayText = modeStr,
             )
         }
 

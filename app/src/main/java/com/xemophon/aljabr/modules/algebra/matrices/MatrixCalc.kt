@@ -1,6 +1,5 @@
 package com.xemophon.aljabr.modules.algebra.matrices
 
-import android.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
