@@ -283,22 +283,20 @@ class CalcBoxViewModel @JvmOverloads constructor(
             }
         }
 
-        if (symbol == "0" && displayText == "0") return
-
-        if (displayText == "Error" || displayText == "NaN" || displayText == "Infinity") {
-            displayText = if (symbol.contains(Regex("[0-9]"))) symbol else "0"
+        if (cursorIndex == -1) {
             cursorIndex = displayText.length
-            return
+            currentFocus = CalculatorFocus.EXPRESSION
+            resultText = ""
+            isShowingResult = false
         }
 
-        val isDigitOrDot = symbol.all { it.isDigit() || it == '.' }
-        val lastChar = if (cursorIndex > 0) displayText[cursorIndex - 1] else null
-        val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
-
-        val applyImplicit = (isDigitOrDot && isImplicitMultiplicationNeeded() && !isLastCharDigitOrDot) ||
-                (symbol == "(" && isImplicitMultiplicationNeeded())
-
-        insertText(symbol, applyImplicitMultiplication = applyImplicit)
+        val state = MathInputHandler.handleSymbol(
+            currentText = displayText,
+            cursorIndex = cursorIndex,
+            symbol = symbol
+        )
+        displayText = state.text
+        cursorIndex = state.cursorIndex
         isShowingResult = false
     }
 
@@ -318,10 +316,6 @@ class CalcBoxViewModel @JvmOverloads constructor(
         )
         displayText = state.text
         cursorIndex = state.cursorIndex
-    }
-
-    private fun isImplicitMultiplicationNeeded(): Boolean {
-        return MathInputHandler.isImplicitMultiplicationNeeded(displayText, cursorIndex)
     }
 
     private fun handleBrackets() {

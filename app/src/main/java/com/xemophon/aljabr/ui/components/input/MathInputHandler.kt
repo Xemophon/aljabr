@@ -11,8 +11,14 @@ data class InputState(
 
 object MathInputHandler {
 
+    private val binaryOperators = setOf('+', '-', '×', '÷', '*', '/', '^')
+
+    fun isBinaryOperator(char: Char?): Boolean {
+        return char != null && char in binaryOperators
+    }
+
     fun isImplicitMultiplicationNeeded(text: String, cursorIndex: Int): Boolean {
-        if (text.isEmpty() || text == "0") return false
+        if (text.isEmpty() || text == "0" || text == "Error" || text == "NaN" || text == "Infinity") return false
         val clampedIndex = cursorIndex.coerceIn(0, text.length)
         val lastChar = if (clampedIndex > 0) text[clampedIndex - 1] else null
         return lastChar != null && (
@@ -34,22 +40,54 @@ object MathInputHandler {
         applyImplicitMultiplication: Boolean = false
     ): InputState {
         val safeCursor = if (cursorIndex == -1) currentText.length else cursorIndex.coerceIn(0, currentText.length)
-        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded(currentText, safeCursor)) "*" else ""
-        val finalInsert = "$prefix$toInsert"
+        val textBefore = currentText.substring(0, safeCursor)
+        val textBeforeTrimmed = textBefore.dropLastWhile { it == ' ' }
+        val lastCharTrimmed = textBeforeTrimmed.lastOrNull()
 
-        if (currentText == "0" && !finalInsert.startsWith(" × ")) {
-            return if (finalInsert == ".") {
-                InputState("0.", 2)
-            } else if (finalInsert == "%") {
-                InputState("0%", 2)
-            } else {
-                InputState(finalInsert, finalInsert.length)
+        if (currentText == "Error" || currentText == "NaN" || currentText == "Infinity") {
+            val startText = if (toInsert.contains(Regex("[0-9]")) || toInsert.endsWith("(")) toInsert else "0"
+            return InputState(startText, startText.length)
+        }
+
+        // Prevent invalid % insertion after operator, (, %, ., or when empty (except "0")
+        if (toInsert == "%") {
+            if (currentText != "0" && (lastCharTrimmed == null || isBinaryOperator(lastCharTrimmed) || lastCharTrimmed == '(' || lastCharTrimmed == '%' || lastCharTrimmed == '.')) {
+                return InputState(currentText, safeCursor)
             }
         }
 
-        if (currentText == "Error" || currentText == "NaN" || currentText == "Infinity") {
-            val startText = if (finalInsert.contains(Regex("[0-9]"))) finalInsert else "0"
-            return InputState(startText, startText.length)
+        // Prevent invalid ! insertion after operator, (, !, ., or when empty
+        if (toInsert == "!") {
+            if (lastCharTrimmed == null || isBinaryOperator(lastCharTrimmed) || lastCharTrimmed == '(' || lastCharTrimmed == '!' || lastCharTrimmed == '.') {
+                return InputState(currentText, safeCursor)
+            }
+        }
+
+        // Prevent multiple decimal points in a single number
+        if (toInsert == ".") {
+            val numberSegment = textBeforeTrimmed.takeLastWhile { it.isDigit() || it == '.' }
+            if (numberSegment.contains('.')) {
+                return InputState(currentText, safeCursor)
+            }
+            if (lastCharTrimmed == null || isBinaryOperator(lastCharTrimmed) || lastCharTrimmed == '(') {
+                return insertText(currentText, safeCursor, "0.", applyImplicitMultiplication)
+            }
+        }
+
+        val prefix = if (applyImplicitMultiplication && isImplicitMultiplicationNeeded(currentText, safeCursor)) "*" else ""
+        val finalInsert = "$prefix$toInsert"
+
+        if (currentText == "0") {
+            val trimmedInsert = finalInsert.trim()
+            if (trimmedInsert == ".") {
+                return InputState("0.", 2)
+            } else if (trimmedInsert == "%") {
+                return InputState("0%", 2)
+            } else if (trimmedInsert.length == 1 && isBinaryOperator(trimmedInsert[0])) {
+                return InputState("0$finalInsert", 1 + finalInsert.length)
+            } else {
+                return InputState(finalInsert, finalInsert.length)
+            }
         }
 
         val sb = StringBuilder(currentText)
@@ -64,9 +102,81 @@ object MathInputHandler {
             return InputState("0", 1)
         }
 
+        if (currentText == "Error" || currentText == "NaN" || currentText == "Infinity") {
+            val trimmed = symbol.trim()
+            val startText = if (trimmed.length == 1 && isBinaryOperator(trimmed[0])) {
+                if (trimmed == "-") "-" else "0$symbol"
+            } else if (trimmed == ".") {
+                "0."
+            } else if (trimmed == "%") {
+                "0%"
+            } else {
+                symbol
+            }
+            return InputState(startText, startText.length)
+        }
+
         val safeCursor = if (cursorIndex == -1) currentText.length else cursorIndex.coerceIn(0, currentText.length)
-        val isDigitOrDot = symbol.all { it.isDigit() || it == '.' }
+        val textBefore = currentText.substring(0, safeCursor)
+        val textAfter = currentText.substring(safeCursor)
+
+        val trimmedSymbol = symbol.trim()
+        val isNewSymbolOperator = trimmedSymbol.length == 1 && isBinaryOperator(trimmedSymbol[0])
+
+        if (isNewSymbolOperator) {
+            val opChar = trimmedSymbol[0]
+
+            val textBeforeTrimmed1 = textBefore.dropLastWhile { it == ' ' }
+            val last1 = textBeforeTrimmed1.lastOrNull()
+
+            // Do not allow binary operators (except unary - or +) at start or after '('
+            if (last1 == null || last1 == '(') {
+                if (opChar != '-' && opChar != '+') {
+                    return InputState(currentText, safeCursor)
+                }
+            }
+
+            if (last1 != null && isBinaryOperator(last1)) {
+                val textBeforeTrimmed2 = textBeforeTrimmed1.dropLast(1).dropLastWhile { it == ' ' }
+                val last2 = textBeforeTrimmed2.lastOrNull()
+
+                if (isBinaryOperator(last2)) {
+                    // Two operators already present (e.g. "5 * -" or "5*-")
+                    if (opChar == '-') {
+                        // Do not allow three consecutive operators (e.g. "5 * --")
+                        return InputState(currentText, safeCursor)
+                    } else {
+                        // Replace both operators with the new operator (e.g., "5 * -" + "+" -> "5+")
+                        val prefix = textBeforeTrimmed2.dropLast(1).dropLastWhile { it == ' ' }
+                        val newText = prefix + symbol + textAfter
+                        val newCursor = (prefix.length + symbol.length).coerceAtLeast(0)
+                        return InputState(newText, newCursor)
+                    }
+                } else {
+                    // One operator present (e.g. "5 + " or "5*")
+                    if (opChar == '-') {
+                        if (last1 == '-') {
+                            // Do not allow double minus "--"
+                            return InputState(currentText, safeCursor)
+                        } else {
+                            // Append unary minus after binary operator ("5 *" -> "5*-")
+                            val newText = textBeforeTrimmed1 + symbol + textAfter
+                            val newCursor = textBeforeTrimmed1.length + symbol.length
+                            return InputState(newText, newCursor)
+                        }
+                    } else {
+                        // Replace the single operator with the new operator ("5 +" + "*" -> "5*")
+                        val prefix = textBeforeTrimmed1.dropLast(1).dropLastWhile { it == ' ' }
+                        val newText = prefix + symbol + textAfter
+                        val newCursor = (prefix.length + symbol.length).coerceAtLeast(0)
+                        return InputState(newText, newCursor)
+                    }
+                }
+            }
+        }
+
         val lastChar = if (safeCursor > 0) currentText[safeCursor - 1] else null
+        val isDigitOrDot = symbol.all { it.isDigit() || it == '.' }
         val isLastCharDigitOrDot = lastChar != null && (lastChar.isDigit() || lastChar == '.')
 
         val applyImplicit = (isDigitOrDot && isImplicitMultiplicationNeeded(currentText, safeCursor) && !isLastCharDigitOrDot) ||
