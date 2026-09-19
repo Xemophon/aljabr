@@ -25,7 +25,7 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
 - **Integration:** 
     - **Indefinite:** Exact symbolic integration powered by a robust CAS engine with step-by-step guidance.
     - **Definite:** Numerical integration using Simpson's 1/3 rule as well as symbolic evaluation.
-    - **Multiple Integrals:** Support for double integrals and surface/volume integration.
+    - **Multiple Integrals:** Support for double integrals and arc/surface/volume integration.
 - **Limits:** Calculate finite and infinite ($\infty$) limits, including left/right-sided evaluations.
 - **Laplace Transform:** Compute direct Laplace transforms and inverse Laplace transforms for differential equations and signal analysis.
 
@@ -85,8 +85,10 @@ The project is organized into modular packages under `com.xemophon.aljabr`:
 - `modules/`
     - `basicCalc/`: Core logic and UI for the scientific calculator.
     - `calculus/`:
-        - `differentiate/`: Symbolic derivatives and step-by-step solutions.
-        - `integrate/`: Indefinite/definite integration, double integrals, and steps.
+        - `differentiate/`: Symbolic derivatives with analysis.
+        - `integrate/`: 
+            - `standard/`: Indefinite/definite integration & double integrals.
+            - `geometric/`: Evaluate scalar, vector, arc, area and volume integrals.
         - `limits/`: Limit evaluation engine.
         - `laplace/`: Laplace and Inverse Laplace transform calculators.
     - `algebra/`:
