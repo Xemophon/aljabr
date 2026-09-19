@@ -616,7 +616,7 @@ private fun ModeToggleButton(
 
 
 @Composable
-private fun ButtonGrid(
+fun ButtonGrid(
     gridData: List<List<CalcButtonAction>>,
     modifier: Modifier = Modifier,
     calcContext: CalcContext = CalcContext.BASIC,

@@ -34,6 +34,7 @@ import com.hrm.latex.renderer.model.LatexConfig
 import com.hrm.latex.renderer.model.LatexTheme
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.modules.algebra.bde.BDEResult
+import com.xemophon.aljabr.modules.calculus.integrate.geometric.GeoIntegResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -207,6 +208,43 @@ fun MatrixReport(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun GeoIntegReport(
+    result: GeoIntegResult,
+    onClear: () -> Unit
+) {
+    ReportScreen(
+        title = result.modeTitle,
+        error = result.error,
+        onClear = onClear
+    ) {
+        if (result.formulaLatex.isNotEmpty()) {
+            item { AnalysisSectionHeader("Applied Formula") }
+            item { LatexResultCard(result.formulaLatex) }
+        }
+
+        item { AnalysisSectionHeader("Symbolic Output") }
+        item {
+            ResultItemCard(
+                label = "Exact / Symbolic Solution",
+                displayText = result.symbolicResult,
+                rawValue = result.rawSymbolicResult.ifEmpty { null }
+            )
+        }
+
+        result.numericResult?.let { numeric ->
+            item { AnalysisSectionHeader("Numeric Output") }
+            item {
+                ResultItemCard(
+                    label = "Numerical Approximation",
+                    displayText = numeric,
+                    rawValue = result.rawNumericResult?.ifEmpty { null }
+                )
             }
         }
     }

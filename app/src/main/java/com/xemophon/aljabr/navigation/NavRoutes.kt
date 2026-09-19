@@ -20,7 +20,7 @@ import com.xemophon.aljabr.modules.basicCalc.BasicCalc
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.modules.graphMaker.GraphMaker
 import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegCalc
-import com.xemophon.aljabr.modules.calculus.integrate.geometric.TwoDIntegCalc
+import com.xemophon.aljabr.modules.calculus.integrate.geometric.GeoIntegCalc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
 import com.xemophon.aljabr.modules.algebra.bde.BDECalc
@@ -91,7 +91,7 @@ val Calculus = listOf(
         routeClass = IntegrateTwoDRoute::class,
         label = "Geometric Integration",
         icon = R.drawable.twodimens,
-        content = { onOpenDrawer -> TwoDIntegCalc(onOpenDrawer = onOpenDrawer) }
+        content = { onOpenDrawer -> GeoIntegCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = DifferentiateRoute,

@@ -1,156 +1,227 @@
 package com.xemophon.aljabr.modules.calculus.integrate.geometric
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xemophon.aljabr.ui.components.buttons.AdvancedButtonsGrid
-import com.xemophon.aljabr.ui.components.buttons.AdvancedGridMode
+import com.xemophon.aljabr.ui.components.buttons.ButtonGrid
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
-import com.xemophon.aljabr.ui.components.buttons.IntegralType
-import com.xemophon.aljabr.ui.components.engine.CalcBoxViewModel
-import com.xemophon.aljabr.ui.components.engine.CalculatorFocus
-import com.xemophon.aljabr.ui.components.engine.CalculatorMode
-import com.xemophon.aljabr.ui.components.screens.CalculusStep
+import com.xemophon.aljabr.ui.components.buttons.CalcContext
+import com.xemophon.aljabr.ui.components.buttons.MultipleVariableGrid
+import com.xemophon.aljabr.ui.components.buttons.SegmentedToggleButtons
+import com.xemophon.aljabr.ui.components.buttons.Variables
 import com.xemophon.aljabr.ui.components.screens.CalculatorScaffold
-import com.xemophon.aljabr.ui.components.screens.ScrollableLatexView
-import com.xemophon.aljabr.ui.components.screens.StepsBottomSheet
+import com.xemophon.aljabr.ui.components.screens.FocusedInputOverlay
+import com.xemophon.aljabr.ui.components.screens.GeoIntegReport
+import com.xemophon.aljabr.ui.components.screens.LoadingIndicator
 import com.xemophon.aljabr.ui.theme.AlJabrTheme
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TwoDIntegCalc(onOpenDrawer: () -> Unit) {
-    val viewModel: CalcBoxViewModel = viewModel()
-
-    LaunchedEffect(Unit) {
-        viewModel.calculatorMode = CalculatorMode.INTEGRATE_2D
-        if (viewModel.integType == IntegralType.DEFINITE || viewModel.integType == IntegralType.INDEFINITE ||
-            viewModel.integType == IntegralType.DOUBLE || viewModel.integType == IntegralType.NDOUBLE) {
-            viewModel.integType = IntegralType.CURVET1
-        }
-    }
-
-    if (viewModel.showStepsSheet) {
-        StepsBottomSheet(
-            steps = viewModel.stepsList,
-            isCalculating = viewModel.isCalculatingSteps,
-            sheetState = rememberModalBottomSheetState(),
-            onDismissRequest = { viewModel.showStepsSheet = false },
-        )
-    }
-
-    TwoDIntegCalcContent(
-        displayText = viewModel.displayText,
-        lowerLimitText = viewModel.lowerLimitText,
-        upperLimitText = viewModel.upperLimitText,
-        innerLowerLimitText = viewModel.innerLowerLimitText,
-        innerUpperLimitText = viewModel.innerUpperLimitText,
-        resultText = viewModel.resultText,
-        currentFocus = viewModel.currentFocus,
-        integType = viewModel.integType,
-        integrationAxis = viewModel.integrationAxis,
-        cursorIndex = viewModel.cursorIndex,
-        steps = viewModel.stepsList,
-        isCalculatingSteps = viewModel.isCalculatingSteps,
-        onShowStepsClick = { viewModel.showStepsSheet = true },
-        onFocusChange = { viewModel.setFocus(it) },
-        onCursorIndexChange = { viewModel.updateCursorIndex(it) },
-        onAction = { viewModel.handleAction(it) },
-        onOpenDrawer = onOpenDrawer
-    )
-}
+import com.xemophon.aljabr.ui.theme.Dimens
 
 @Composable
-fun TwoDIntegCalcContent(
-    displayText: String,
-    lowerLimitText: String,
-    upperLimitText: String,
-    innerLowerLimitText: String = "",
-    innerUpperLimitText: String = "",
-    resultText: String,
-    currentFocus: CalculatorFocus,
-    integType: IntegralType,
-    integrationAxis: String = "X",
-    cursorIndex: Int,
-    steps: List<CalculusStep> = emptyList(),
-    isCalculatingSteps: Boolean = false,
-    onShowStepsClick: () -> Unit = {},
-    onFocusChange: (CalculatorFocus) -> Unit,
-    onCursorIndexChange: (Int) -> Unit,
-    onAction: (CalcButtonAction) -> Unit,
-    onOpenDrawer: () -> Unit
+fun GeoIntegCalc(
+    onOpenDrawer: () -> Unit,
+    viewModel: GeoIntegViewModel = viewModel()
 ) {
+    BackHandler(enabled = viewModel.geoIntegResult != null || viewModel.isCalculating) {
+        viewModel.clearResult()
+    }
+
     CalculatorScaffold(
-        title = { Text("2D Integration") },
+        title = { Text("Geometric Integration") },
         onOpenDrawer = onOpenDrawer
     ) { padding ->
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            color = MaterialTheme.colorScheme.surfaceVariant
+                .padding(padding)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+            if (viewModel.isCalculating) {
+                LoadingIndicator(
+                    modifier = Modifier.fillMaxSize(),
+                    message = "Calculating Geometric Integration..."
+                )
+            } else if (viewModel.geoIntegResult != null) {
+                GeoIntegReport(
+                    result = viewModel.geoIntegResult!!,
+                    onClear = { viewModel.clearResult() }
+                )
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    TwoDIntegDisplay(
-                        expression = displayText,
-                        lower = lowerLimitText,
-                        upper = upperLimitText,
-                        innerLower = innerLowerLimitText,
-                        innerUpper = innerUpperLimitText,
-                        result = resultText,
-                        focus = currentFocus,
-                        integType = integType,
-                        integrationAxis = integrationAxis,
-                        cursorIndex = cursorIndex,
-                        onFocusChange = onFocusChange,
-                        onCursorIndexChange = onCursorIndexChange,
-                        showStepsButton = steps.isNotEmpty() || isCalculatingSteps,
-                        onShowStepsClick = onShowStepsClick
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        // Mode Selector Slider / Row
+                        SegmentedToggleButtons(
+                            options = GeoIntegMode.entries.map { it to it.title },
+                            selectedOption = viewModel.mode,
+                            onOptionSelected = { viewModel.selectMode(it) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        )
+
+                        when (viewModel.mode) {
+                            GeoIntegMode.SCALAR_LINE -> {
+                                ScalarLineIntegralView(viewModel = viewModel)
+                            }
+                            GeoIntegMode.ARC_LINE -> {
+                                ArcLineIntegralView(viewModel = viewModel)
+                            }
+                            GeoIntegMode.VECTOR_LINE -> {
+                                VectorLineIntegralView(viewModel = viewModel)
+                            }
+                            GeoIntegMode.SURFACE -> {
+                                SurfaceIntegralView(viewModel = viewModel)
+                            }
+                            GeoIntegMode.VOLUME -> {
+                                VolumeIntegralView(viewModel = viewModel)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Compute & Clear Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.computeResult() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Calculate, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Solve")
+                            }
+
+                            Button(
+                                onClick = { viewModel.clearAllFields() },
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                )
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Clear", color = MaterialTheme.colorScheme.onError)
+                            }
+                        }
+                    }
                 }
-                AdvancedButtonsGrid(
-                    gridMode = AdvancedGridMode.Integration2D(integType, integrationAxis),
-                    onAction = onAction
+            }
+
+            // Focused Input Overlay containing the keypad grid
+            if (viewModel.currentFocus != GeoIntegFocus.NONE && viewModel.geoIntegResult == null && !viewModel.isCalculating) {
+                FocusedInputOverlay(
+                    value = viewModel.getActiveText(),
+                    title = "Editing ${viewModel.getFocusedTitle()}",
+                    placeholder = viewModel.getFocusedPlaceholder(),
+                    onDismiss = { viewModel.dismissFocus() },
+                    onPrev = { viewModel.prevFocus() },
+                    onNext = { viewModel.nextFocus() },
+                    keypadContent = {
+                        ButtonGrid(
+                            gridData = MultipleVariableGrid,
+                            isExpanded = true,
+                            onAction = { viewModel.handleAction(it) },
+                            buttonModifier = Modifier.aspectRatio(Dimens.ButtonAspectRatioExpanded).graphicsLayer(
+                                scaleX = 0.95f,
+                                scaleY = 0.9f
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            overrides = when (viewModel.mode) {
+                                GeoIntegMode.SCALAR_LINE, GeoIntegMode.ARC_LINE, GeoIntegMode.VECTOR_LINE -> {
+                                    mapOf(
+                                        (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
+                                        (0 to 1) to CalcButtonAction.Variable("y", Variables.Y),
+                                        (0 to 2) to CalcButtonAction.Variable("t", Variables.T),
+                                        (0 to 3) to CalcButtonAction.Symbol("( )")
+                                    )
+                                }
+                                GeoIntegMode.SURFACE -> {
+                                    mapOf(
+                                        (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
+                                        (0 to 1) to CalcButtonAction.Variable("y", Variables.Y),
+                                        (0 to 2) to CalcButtonAction.Symbol("("),
+                                        (0 to 3) to CalcButtonAction.Symbol(")")
+                                    )
+                                }
+                                GeoIntegMode.VOLUME -> {
+                                    mapOf(
+                                        (0 to 0) to CalcButtonAction.Variable("x", Variables.X),
+                                        (0 to 1) to CalcButtonAction.Variable("y", Variables.Y),
+                                        (0 to 2) to CalcButtonAction.Variable("z", Variables.Z),
+                                        (0 to 3) to CalcButtonAction.Symbol("( )")
+                                    )
+                                }
+                            },
+                            calcContext = CalcContext.MULTI_VARIABLE_INTEGRATION
+                        )
+                    }
                 )
             }
         }
@@ -158,291 +229,551 @@ fun TwoDIntegCalcContent(
 }
 
 @Composable
-fun TwoDIntegDisplay(
-    expression: String,
-    lower: String,
-    upper: String,
-    innerLower: String = "",
-    innerUpper: String = "",
-    result: String,
-    focus: CalculatorFocus,
-    integType: IntegralType,
-    integrationAxis: String = "X",
-    cursorIndex: Int,
-    onFocusChange: (CalculatorFocus) -> Unit,
-    onCursorIndexChange: (Int) -> Unit,
-    showStepsButton: Boolean = false,
-    onShowStepsClick: () -> Unit = {}
+fun ScalarLineIntegralView(
+    viewModel: GeoIntegViewModel
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (showStepsButton) {
-            IconButton(
-                onClick = onShowStepsClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Show Steps",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+        // f(x, y) box
+        GeoIntegInputBox(
+            label = "f(x, y)",
+            value = viewModel.fXYText,
+            placeholder = "f(x, y)",
+            isFocused = viewModel.currentFocus == GeoIntegFocus.F_XY,
+            cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.F_XY) viewModel.cursorIndex else -1,
+            onClick = { viewModel.setFocus(GeoIntegFocus.F_XY) },
+            prefixText = "∫꜀ "
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // , x(t),
+            GeoIntegInputBox(
+                label = "x(t)",
+                value = viewModel.paramXText,
+                placeholder = "x(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // upper t bound.
+            GeoIntegInputBox(
+                label = "Upper t bound",
+                value = viewModel.upperTText,
+                placeholder = "upper t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_T) },
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (result.isEmpty()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    when (integType) {
-                        IntegralType.DOUBLE -> {
-                            Box(
-                                modifier = Modifier.height(100.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "∫∫",
-                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 72.sp),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // y(t),
+            GeoIntegInputBox(
+                label = "y(t)",
+                value = viewModel.paramYText,
+                placeholder = "y(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_Y) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // lower t bound,
+            GeoIntegInputBox(
+                label = "Lower t bound",
+                value = viewModel.lowerTText,
+                placeholder = "lower t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_T) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ArcLineIntegralView(
+    viewModel: GeoIntegViewModel
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // , x(t),
+            GeoIntegInputBox(
+                label = "x(t)",
+                value = viewModel.paramXText,
+                placeholder = "x(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // upper t bound.
+            GeoIntegInputBox(
+                label = "Upper t bound",
+                value = viewModel.upperTText,
+                placeholder = "upper t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_T) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // y(t),
+            GeoIntegInputBox(
+                label = "y(t)",
+                value = viewModel.paramYText,
+                placeholder = "y(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_Y) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // lower t bound,
+            GeoIntegInputBox(
+                label = "Lower t bound",
+                value = viewModel.lowerTText,
+                placeholder = "lower t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_T) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun VectorLineIntegralView(
+    viewModel: GeoIntegViewModel
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // P(x, y),
+            GeoIntegInputBox(
+                label = "P(x, y)",
+                value = viewModel.pXYText,
+                placeholder = "P(x, y)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.P_XY,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.P_XY) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.P_XY) },
+                prefixText = "∮꜀ [ ",
+                modifier = Modifier.weight(1f)
+            )
+
+            // , Q(x, y),
+            GeoIntegInputBox(
+                label = "Q(x, y)",
+                value = viewModel.qXYText,
+                placeholder = "Q(x, y)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.Q_XY,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.Q_XY) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.Q_XY) },
+                suffixText = " ]",
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // [ x(t), ]
+            GeoIntegInputBox(
+                label = "x(t)",
+                value = viewModel.paramXText,
+                placeholder = "x(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // upper t bound.
+            GeoIntegInputBox(
+                label = "Upper t bound",
+                value = viewModel.upperTText,
+                placeholder = "upper t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_T) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // [ y(t), ]
+            GeoIntegInputBox(
+                label = "y(t)",
+                value = viewModel.paramYText,
+                placeholder = "y(t)",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.PARAM_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.PARAM_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.PARAM_Y) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // lower t bound,
+            GeoIntegInputBox(
+                label = "Lower t bound",
+                value = viewModel.lowerTText,
+                placeholder = "lower t bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_T,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_T) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_T) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun SurfaceIntegralView(
+    viewModel: GeoIntegViewModel
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // f(x, y),
+        GeoIntegInputBox(
+            label = "f(x, y)",
+            value = viewModel.fXYText,
+            placeholder = "f(x, y)",
+            isFocused = viewModel.currentFocus == GeoIntegFocus.F_XY,
+            cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.F_XY) viewModel.cursorIndex else -1,
+            onClick = { viewModel.setFocus(GeoIntegFocus.F_XY) },
+            prefixText = "∫∫ₛ "
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // upper x bound,
+            GeoIntegInputBox(
+                label = "Upper x bound",
+                value = viewModel.upperXText,
+                placeholder = "upper x bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // upper y bound.
+            GeoIntegInputBox(
+                label = "Upper y bound",
+                value = viewModel.upperYText,
+                placeholder = "upper y bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_Y) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // lower x bound,
+            GeoIntegInputBox(
+                label = "Lower x bound",
+                value = viewModel.lowerXText,
+                placeholder = "lower x bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            // lower y bound,
+            GeoIntegInputBox(
+                label = "Lower y bound",
+                value = viewModel.lowerYText,
+                placeholder = "lower y bound",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_Y) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun VolumeIntegralView(
+    viewModel: GeoIntegViewModel
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // f(x, y, z)
+        GeoIntegInputBox(
+            label = "f(x, y, z)",
+            value = viewModel.fXYZText,
+            placeholder = "f(x, y, z)",
+            isFocused = viewModel.currentFocus == GeoIntegFocus.F_XYZ,
+            cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.F_XYZ) viewModel.cursorIndex else -1,
+            onClick = { viewModel.setFocus(GeoIntegFocus.F_XYZ) },
+            prefixText = "∫∫∫ᵥ "
+        )
+
+        Text(
+            text = "Bounds for x y z",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+        )
+
+        // Upper Bounds Row (x, y, z)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            GeoIntegInputBox(
+                label = "Upper x",
+                value = viewModel.upperXText,
+                placeholder = "upper x",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            GeoIntegInputBox(
+                label = "Upper y",
+                value = viewModel.upperYText,
+                placeholder = "upper y",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_Y) },
+                modifier = Modifier.weight(1f)
+            )
+
+            GeoIntegInputBox(
+                label = "Upper z",
+                value = viewModel.upperZText,
+                placeholder = "upper z",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.UPPER_Z,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.UPPER_Z) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.UPPER_Z) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Lower Bounds Row (x, y, z)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            GeoIntegInputBox(
+                label = "Lower x",
+                value = viewModel.lowerXText,
+                placeholder = "lower x",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_X,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_X) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_X) },
+                modifier = Modifier.weight(1f)
+            )
+
+            GeoIntegInputBox(
+                label = "Lower y",
+                value = viewModel.lowerYText,
+                placeholder = "lower y",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_Y,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_Y) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_Y) },
+                modifier = Modifier.weight(1f)
+            )
+
+            GeoIntegInputBox(
+                label = "Lower z",
+                value = viewModel.lowerZText,
+                placeholder = "lower z",
+                isFocused = viewModel.currentFocus == GeoIntegFocus.LOWER_Z,
+                cursorIndex = if (viewModel.currentFocus == GeoIntegFocus.LOWER_Z) viewModel.cursorIndex else -1,
+                onClick = { viewModel.setFocus(GeoIntegFocus.LOWER_Z) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // dxdydz order switch button
+        Button(
+            onClick = { viewModel.cycleOrder() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.SwapHoriz,
+                contentDescription = "Switch Order"
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Order: ${viewModel.currentOrder}",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun GeoIntegInputBox(
+    label: String,
+    value: String,
+    placeholder: String,
+    isFocused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    cursorIndex: Int = -1,
+    prefixText: String? = null,
+    suffixText: String? = null
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "Cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "CursorAlpha"
+    )
+
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(value, isFocused) {
+        if (isFocused) {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
+
+    Column(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .clip(RoundedCornerShape(Dimens.ButtonCornerRadiusStandard))
+                .border(
+                    width = if (isFocused) 2.dp else 1.dp,
+                    color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    shape = RoundedCornerShape(Dimens.ButtonCornerRadiusStandard)
+                )
+                .clickable { onClick() },
+            color = if (isFocused) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.4f),
+            shape = RoundedCornerShape(Dimens.ButtonCornerRadiusStandard)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (prefixText != null) {
+                    Text(
+                        text = prefixText,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+
+                val annotatedText = buildAnnotatedString {
+                    if (value.isEmpty() && !isFocused) {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))) {
+                            append(placeholder)
                         }
-                        IntegralType.NDOUBLE -> {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Outer Integral Box
-                                Box(
-                                    modifier = Modifier.height(100.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = "∫",
-                                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    // Outer Upper limit b
-                                    Text(
-                                        text = upper.ifEmpty { "b" },
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .offset(x = 25.dp, y = (-8).dp)
-                                            .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                        fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    // Outer Lower limit a
-                                    Text(
-                                        text = lower.ifEmpty { "a" },
-                                        modifier = Modifier
-                                            .align(Alignment.BottomStart)
-                                            .offset(x = (-10).dp, y = 18.dp)
-                                            .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                        fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                // Inner Integral Box
-                                Box(
-                                    modifier = Modifier.height(100.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = "∫",
-                                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    // Inner Upper limit d
-                                    Text(
-                                        text = innerUpper.ifEmpty { "d" },
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .offset(x = 25.dp, y = (-8).dp)
-                                            .clickable { onFocusChange(CalculatorFocus.INTEG_INNER_UPPER) },
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                        fontWeight = if (focus == CalculatorFocus.INTEG_INNER_UPPER) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (focus == CalculatorFocus.INTEG_INNER_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    // Inner Lower limit c
-                                    Text(
-                                        text = innerLower.ifEmpty { "c" },
-                                        modifier = Modifier
-                                            .align(Alignment.BottomStart)
-                                            .offset(x = (-10).dp, y = 18.dp)
-                                            .clickable { onFocusChange(CalculatorFocus.INTEG_INNER_LOWER) },
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                        fontWeight = if (focus == CalculatorFocus.INTEG_INNER_LOWER) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (focus == CalculatorFocus.INTEG_INNER_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
+                    } else if (isFocused) {
+                        val safeCursor = if (cursorIndex == -1) value.length else cursorIndex.coerceIn(0, value.length)
+                        append(value.substring(0, safeCursor))
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = cursorAlpha))) {
+                            append("|")
                         }
-                        else -> {
-                            Box(
-                                modifier = Modifier.height(100.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Text(
-                                    text = "∫",
-                                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                // Upper limit b
-                                Text(
-                                    text = upper.ifEmpty { "b" },
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .offset(x = 25.dp, y = (-8).dp)
-                                        .clickable { onFocusChange(CalculatorFocus.INTEG_UPPER) },
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                    fontWeight = if (focus == CalculatorFocus.INTEG_UPPER) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (focus == CalculatorFocus.INTEG_UPPER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                                // Lower limit a
-                                Text(
-                                    text = lower.ifEmpty { "a" },
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart)
-                                        .offset(x = (-10).dp, y = 18.dp)
-                                        .clickable { onFocusChange(CalculatorFocus.INTEG_LOWER) },
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
-                                    fontWeight = if (focus == CalculatorFocus.INTEG_LOWER) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (focus == CalculatorFocus.INTEG_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    // Expression Box
-                    if (integType == IntegralType.CURVET2) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // P(x,y) Box (Focus: EXPRESSION)
-                            Box(
-                                modifier = Modifier
-                                    .clickable {
-                                        onFocusChange(CalculatorFocus.EXPRESSION)
-                                        onCursorIndexChange(expression.length)
-                                    }
-                                    .padding(4.dp)
-                            ) {
-                                val baseP = if (expression == "0") "" else expression
-                                val textP = if ((focus == CalculatorFocus.EXPRESSION) && (cursorIndex != -1)) {
-                                    if (cursorIndex < baseP.length) StringBuilder(baseP).insert(cursorIndex, "|").toString() else "$baseP|"
-                                } else {
-                                    baseP.ifEmpty { "P(x,y)" }
-                                }
-                                Text(
-                                    text = "$textP ∂x",
-                                    style = MaterialTheme.typography.displayMedium.copy(
-                                        fontSize = if (textP.length > 15) 24.sp else if (textP.length > 10) 28.sp else 36.sp
-                                    ),
-                                    color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-
-                            Text(
-                                text = " + ",
-                                style = MaterialTheme.typography.displayMedium.copy(fontSize = 32.sp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            // Q(x,y) Box (Focus: INTEG_INNER_LOWER)
-                            Box(
-                                modifier = Modifier
-                                    .clickable {
-                                        onFocusChange(CalculatorFocus.INTEG_INNER_LOWER)
-                                    }
-                                    .padding(4.dp)
-                            ) {
-                                val textQ = if (focus == CalculatorFocus.INTEG_INNER_LOWER) {
-                                    if (innerLower.isEmpty()) "|" else "$innerLower|"
-                                } else {
-                                    innerLower.ifEmpty { "Q(x,y)" }
-                                }
-                                Text(
-                                    text = "$textQ ∂y",
-                                    style = MaterialTheme.typography.displayMedium.copy(
-                                        fontSize = if (textQ.length > 15) 24.sp else if (textQ.length > 10) 28.sp else 36.sp
-                                    ),
-                                    color = if (focus == CalculatorFocus.INTEG_INNER_LOWER) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (focus == CalculatorFocus.INTEG_INNER_LOWER) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
+                        append(value.substring(safeCursor))
                     } else {
-                        Box(
-                            modifier = Modifier
-                                .clickable {
-                                    onFocusChange(CalculatorFocus.EXPRESSION)
-                                    onCursorIndexChange(expression.length)
-                                }
-                                .padding(8.dp)
-                        ) {
-                            val base = if (expression == "0") "" else expression
-                            val defaultPlaceholder = when (integType) {
-                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> "f(x,y)"
-                                IntegralType.CURVET1 -> "f(x,y)"
-                                else -> "f(x)"
-                            }
-                            val textWithCursor =
-                                if (focus == CalculatorFocus.EXPRESSION && cursorIndex != -1) {
-                                    if (cursorIndex < base.length) {
-                                        StringBuilder(base).insert(cursorIndex, "|").toString()
-                                    } else {
-                                        "$base|"
-                                    }
-                                } else {
-                                    base.ifEmpty { defaultPlaceholder }
-                                }
-
-                            val displayTextStr = when (integType) {
-                                IntegralType.ARC -> "√[1 + ($textWithCursor)']² ∂x"
-                                IntegralType.XVOL -> "π[$textWithCursor]² ∂x"
-                                IntegralType.YVOL -> "2πx|$textWithCursor| ∂x"
-                                IntegralType.XSURF -> "2π|$textWithCursor|√[1 + ($textWithCursor)']² ∂x"
-                                IntegralType.YSURF -> "2π|x|√[1 + ($textWithCursor)']² ∂x"
-                                IntegralType.DOUBLE, IntegralType.NDOUBLE -> if (integrationAxis == "Y") "$textWithCursor ∂x∂y" else "$textWithCursor ∂y∂x"
-                                IntegralType.CURVET1 -> "$textWithCursor ∂s"
-                                else -> "$textWithCursor ∂x"
-                            }
-
-                            Text(
-                                text = displayTextStr,
-                                style = MaterialTheme.typography.displayMedium.copy(
-                                    fontSize = if (displayTextStr.length > 15) 24.sp else if (displayTextStr.length > 10) 32.sp else 48.sp
-                                ),
-                                color = if (focus == CalculatorFocus.EXPRESSION) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = if (focus == CalculatorFocus.EXPRESSION) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                        append(value)
                     }
                 }
-            } else {
-                ScrollableLatexView(
-                    expression = result,
-                    fontSize = if (result.length > 15) 28.sp else 40.sp,
-                    color = MaterialTheme.colorScheme.secondary,
-                    onClick = { onFocusChange(CalculatorFocus.EXPRESSION) },
-                    modifier = Modifier.padding(16.dp)
+
+                Text(
+                    text = annotatedText,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .horizontalScroll(scrollState),
+                    textAlign = TextAlign.Start
                 )
+
+                if (suffixText != null) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = suffixText,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
@@ -450,56 +781,8 @@ fun TwoDIntegDisplay(
 
 @Preview(showBackground = true)
 @Composable
-fun TwoDIntegPreview() {
+fun GeoIntegPreview() {
     AlJabrTheme {
-        var displayText by remember { mutableStateOf("x*y") }
-        var lowerLimitText by remember { mutableStateOf("0") }
-        var upperLimitText by remember { mutableStateOf("1") }
-        var innerLowerLimitText by remember { mutableStateOf("0") }
-        var innerUpperLimitText by remember { mutableStateOf("1") }
-        var resultText by remember { mutableStateOf("") }
-        var currentFocus by remember { mutableStateOf(CalculatorFocus.EXPRESSION) }
-        var integType by remember { mutableStateOf(IntegralType.DOUBLE) }
-        var cursorIndex by remember { mutableIntStateOf(3) }
-
-        TwoDIntegCalcContent(
-            displayText = displayText,
-            lowerLimitText = lowerLimitText,
-            upperLimitText = upperLimitText,
-            innerLowerLimitText = innerLowerLimitText,
-            innerUpperLimitText = innerUpperLimitText,
-            resultText = resultText,
-            currentFocus = currentFocus,
-            integType = integType,
-            integrationAxis = "X",
-            cursorIndex = cursorIndex,
-            onFocusChange = { currentFocus = it },
-            onCursorIndexChange = { cursorIndex = it },
-            onAction = { action ->
-                when (action) {
-                    is CalcButtonAction.Symbol -> {
-                        when (currentFocus) {
-                            CalculatorFocus.EXPRESSION -> displayText += action.formula
-                            CalculatorFocus.INTEG_LOWER -> lowerLimitText += action.formula
-                            CalculatorFocus.INTEG_UPPER -> upperLimitText += action.formula
-                            CalculatorFocus.INTEG_INNER_LOWER -> innerLowerLimitText += action.formula
-                            CalculatorFocus.INTEG_INNER_UPPER -> innerUpperLimitText += action.formula
-                            else -> {}
-                        }
-                    }
-                    is CalcButtonAction.Integrals -> integType = action.type
-                    is CalcButtonAction.Clear -> {
-                        displayText = ""
-                        lowerLimitText = ""
-                        upperLimitText = ""
-                        innerLowerLimitText = ""
-                        innerUpperLimitText = ""
-                        resultText = ""
-                    }
-                    else -> {}
-                }
-            },
-            onOpenDrawer = {}
-        )
+        GeoIntegCalc(onOpenDrawer = {})
     }
 }

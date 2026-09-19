@@ -1,10 +1,11 @@
 package com.xemophon.aljabr.ui.components.buttons
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,7 +54,9 @@ fun <T> SegmentedToggleButtons(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -62,7 +65,7 @@ fun <T> SegmentedToggleButtons(
                 text = label,
                 isSelected = option == selectedOption,
                 onClick = { onOptionSelected(option) },
-                modifier = Modifier.weight(1f)
+                modifier = if (options.size <= 3) Modifier.weight(1f) else Modifier
             )
         }
     }

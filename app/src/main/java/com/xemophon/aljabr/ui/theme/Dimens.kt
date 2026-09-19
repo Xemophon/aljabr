@@ -21,6 +21,9 @@ object Dimens {
     @Suppress("ConstPropertyName")
     const val ButtonAspectRatioExpanded = 1.3f
 
+    @Suppress("ConstPropertyName")
+    const val ButtonAspectRationSqueezed = 1.5f
+
     val TextSizeToggle = 24.sp
     val TextSizeSwitchLabel = 8.sp
     val GraphButtonTextSizeExpanded = 14.sp
