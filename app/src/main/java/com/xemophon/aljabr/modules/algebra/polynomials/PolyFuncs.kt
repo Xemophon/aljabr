@@ -50,13 +50,23 @@ object PolyFuncs {
                 } catch (_: Exception) { null }
                 val factored = rawFactored?.let { SymjaUtils.formatResult(it) }
 
+                // 4. Partial fraction decomposition
+                val pfd = try {
+                    val isFraction = eval.eval("Denominator($cleaned)").toString() != "1"
+                    val pfdRes = eval.eval("Apart($cleaned)").toString()
+                    if (isFraction && pfdRes != cleaned) pfdRes else null
+                } catch (_: Exception) { null }
+                val pfdString = pfd?.let { SymjaUtils.formatResult(it) }
+
                 PolynomialResult(
                     expression = expression,
                     variable = variable,
                     roots = roots,
                     rawRoots = rawRoots,
                     factoredForm = factored,
-                    rawFactoredForm = rawFactored
+                    rawFactoredForm = rawFactored,
+                    pfdForm = pfdString,
+                    rawPfdForm = pfd
                 )
             } catch (e: Exception) {
                 PolynomialResult(expression, "", emptyList(), error = e.message)

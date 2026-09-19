@@ -84,6 +84,8 @@ data class PolynomialResult(
     val rawRoots: List<String> = emptyList(),
     val factoredForm: String? = null,
     val rawFactoredForm: String? = null,
+    val pfdForm: String? = null,
+    val rawPfdForm: String? = null,
     val error: String? = null
 )
 
@@ -422,6 +424,14 @@ fun PolynomialReport(
             item { AnalysisSectionHeader("Factored Form") }
             item {
                 ResultItemCard(displayText = factored, rawValue = result.rawFactoredForm)
+            }
+        }
+
+        // Partial Fraction Decomposition
+        result.pfdForm?.let { pfd ->
+            item { AnalysisSectionHeader("Partial Fraction Decomposition") }
+            item {
+                ResultItemCard(displayText = pfd, rawValue = result.rawPfdForm)
             }
         }
     }
