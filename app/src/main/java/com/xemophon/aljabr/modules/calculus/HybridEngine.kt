@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.modules.calculus
 
-import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegrationSolver
+import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegrationSolver
 import com.xemophon.aljabr.modules.calculus.differentiate.DerivativeSolver
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.screens.CalculusStep

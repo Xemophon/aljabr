@@ -31,6 +31,8 @@ class SettingsRepository(private val context: Context) {
     private val showStepsKey = booleanPreferencesKey("show_steps")
     private val autoClearCacheKey = booleanPreferencesKey("auto_clear_cache")
 
+    private val useSimplifyKey = booleanPreferencesKey("use_simplify")
+
     val themeFlow: Flow<AppTheme> = context.dataStore.data.map { preferences ->
         val themeName = preferences[themeKey] ?: AppTheme.AUTO.name
         AppTheme.valueOf(themeName)
@@ -51,6 +53,10 @@ class SettingsRepository(private val context: Context) {
 
     val useRationalizeFlow : Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[useRationalizeKey] ?: false
+    }
+
+    val useSimplifyFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[useSimplifyKey] ?: true
     }
 
     val precisionFlow: Flow<Int> = context.dataStore.data.map { preferences ->
@@ -110,6 +116,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setUseRationalize(useRationalize: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[useRationalizeKey] = useRationalize
+        }
+    }
+
+    suspend fun setUseSimplify(useSimplify: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[useSimplifyKey] = useSimplify
         }
     }
 }

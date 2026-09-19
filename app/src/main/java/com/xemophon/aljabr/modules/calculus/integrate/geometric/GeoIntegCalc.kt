@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.calculus.integrate.twod
+package com.xemophon.aljabr.modules.calculus.integrate.geometric
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,8 +55,9 @@ fun TwoDIntegCalc(onOpenDrawer: () -> Unit) {
 
     LaunchedEffect(Unit) {
         viewModel.calculatorMode = CalculatorMode.INTEGRATE_2D
-        if (viewModel.integType == IntegralType.DEFINITE || viewModel.integType == IntegralType.INDEFINITE) {
-            viewModel.integType = IntegralType.DOUBLE
+        if (viewModel.integType == IntegralType.DEFINITE || viewModel.integType == IntegralType.INDEFINITE ||
+            viewModel.integType == IntegralType.DOUBLE || viewModel.integType == IntegralType.NDOUBLE) {
+            viewModel.integType = IntegralType.CURVET1
         }
     }
 

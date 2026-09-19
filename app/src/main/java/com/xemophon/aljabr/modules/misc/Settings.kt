@@ -118,6 +118,7 @@ fun SettingsContent(
     val colorSchemeType by viewModel.colorScheme.collectAsState()
     val useRadians by viewModel.useRadians.collectAsState()
     val useRationalize by viewModel.useRationalize.collectAsState()
+    val useSimplify by viewModel.useSimplify.collectAsState()
     val precision by viewModel.precision.collectAsState()
     val showSteps by viewModel.showSteps.collectAsState()
     val autoClearCache by viewModel.autoClearCache.collectAsState()
@@ -413,6 +414,32 @@ fun SettingsContent(
                 Switch(
                     checked = useRationalize,
                     onCheckedChange = { viewModel.setUseRationalize(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Simplify Expressions",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Wraps calculus results for cleaner expressions",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = useSimplify,
+                    onCheckedChange = { viewModel.setUseSimplify(it) }
                 )
             }
 

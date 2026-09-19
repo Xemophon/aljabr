@@ -44,6 +44,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         initialValue = false
     )
 
+    val useSimplify: StateFlow<Boolean> = repository.useSimplifyFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
 
     val precision: StateFlow<Int> = repository.precisionFlow.stateIn(
         scope = viewModelScope,
@@ -90,6 +96,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setUseRationalize(useRationalize: Boolean) {
         viewModelScope.launch {
             repository.setUseRationalize(useRationalize)
+        }
+    }
+
+    fun setUseSimplify(useSimplify: Boolean) {
+        viewModelScope.launch {
+            repository.setUseSimplify(useSimplify)
         }
     }
 

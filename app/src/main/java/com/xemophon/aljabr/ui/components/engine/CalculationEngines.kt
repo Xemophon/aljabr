@@ -5,8 +5,8 @@ import com.xemophon.aljabr.modules.algebra.bde.BDEResult
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
 import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
-import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegFunc
-import com.xemophon.aljabr.modules.calculus.integrate.twod.TwoDIntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegFunc
+import com.xemophon.aljabr.modules.calculus.integrate.geometric.GeoIntegFunc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceFunc
 import com.xemophon.aljabr.modules.calculus.limits.LimitsFunc
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
@@ -26,8 +26,8 @@ object IntegrationEngine {
         }
     }
 
-    fun integrateIndefinite(displayText: String, useRationalize: Boolean): String {
-        return IntegFunc.integrateIndefinite(displayText, useRationalize)
+    fun integrateIndefinite(displayText: String, useRationalize: Boolean, useSimplify: Boolean = true): String {
+        return IntegFunc.integrateIndefinite(displayText, useRationalize, useSimplify)
     }
 
     fun integrateCurve(
@@ -37,17 +37,19 @@ object IntegrationEngine {
         upperLimitText: String,
         useRadians: Boolean,
         useRationalize: Boolean,
+        useSimplify: Boolean = true,
         precision: Int,
         integType: IntegralType,
     ): String {
         val pVal = if (displayText == "0") "" else displayText
         val fullExpr = if (innerLowerLimitText.isBlank()) pVal else "$pVal, $innerLowerLimitText"
-        return TwoDIntegFunc.integrateCurve(
+        return GeoIntegFunc.integrateCurve(
             expression = fullExpr,
             lower = lowerLimitText,
             upper = upperLimitText,
             useRadians = useRadians,
             useRationalize = useRationalize,
+            useSimplify = useSimplify,
             type = integType
         )
     }
@@ -58,15 +60,17 @@ object IntegrationEngine {
         upperLimitText: String,
         useRadians: Boolean,
         useRationalize: Boolean,
+        useSimplify: Boolean = true,
         precision: Int,
         integType: IntegralType
     ): String {
-        return TwoDIntegFunc.integrateApplication(
+        return GeoIntegFunc.integrateApplication(
             expression = displayText,
             lower = lowerLimitText,
             upper = upperLimitText,
             useRadians = useRadians,
             useRationalize = useRationalize,
+            useSimplify = useSimplify,
             type = integType
         )
     }
@@ -75,9 +79,10 @@ object IntegrationEngine {
         displayText: String,
         axis: String = "X",
         useRadians: Boolean,
-        useRationalize: Boolean
+        useRationalize: Boolean,
+        useSimplify: Boolean = true
     ): String {
-        return TwoDIntegFunc.integrateDoubleIndefinite(displayText, axis, useRadians, useRationalize)
+        return IntegFunc.integrateDoubleIndefinite(displayText, axis, useRadians, useRationalize, useSimplify)
     }
 
     fun integrateDoubleDefinite(
@@ -89,10 +94,11 @@ object IntegrationEngine {
         axis: String,
         useRadians: Boolean,
         useRationalize: Boolean,
+        useSimplify: Boolean = true,
         precision: Int
     ): String {
         if (useRationalize) {
-            return TwoDIntegFunc.integrateDoubleDefinite(
+            return IntegFunc.integrateDoubleDefinite(
                 expression = displayText,
                 lower = lowerLimitText,
                 upper = upperLimitText,
@@ -100,10 +106,11 @@ object IntegrationEngine {
                 innerUpper = innerUpperLimitText,
                 axis = axis,
                 useRadians = useRadians,
-                useRationalize = true
+                useRationalize = true,
+                useSimplify = useSimplify
             )
         } else {
-            val result = TwoDIntegFunc.integrateDoubleNumerical(
+            val result = IntegFunc.integrateDoubleNumerical(
                 expression = displayText,
                 lower = lowerLimitText,
                 upper = upperLimitText,
@@ -113,7 +120,7 @@ object IntegrationEngine {
                 useRadians = useRadians
             )
             return if (result.isNaN()) {
-                TwoDIntegFunc.integrateDoubleDefinite(
+                IntegFunc.integrateDoubleDefinite(
                     expression = displayText,
                     lower = lowerLimitText,
                     upper = upperLimitText,
@@ -121,7 +128,8 @@ object IntegrationEngine {
                     innerUpper = innerUpperLimitText,
                     axis = axis,
                     useRadians = useRadians,
-                    useRationalize = false
+                    useRationalize = false,
+                    useSimplify = useSimplify
                 )
             } else {
                 CalcFuncs.formatResult(result, precision)
@@ -135,6 +143,7 @@ object IntegrationEngine {
         upperLimitText: String,
         useRadians: Boolean,
         useRationalize: Boolean,
+        useSimplify: Boolean = true,
         precision: Int,
         integType: IntegralType
     ): String {
@@ -145,6 +154,7 @@ object IntegrationEngine {
                 upper = upperLimitText,
                 useRadians = useRadians,
                 useRationalize = true,
+                useSimplify = useSimplify,
                 type = integType
             )
         } else {
@@ -169,6 +179,7 @@ object IntegrationEngine {
                     upper = upperLimitText,
                     useRadians = useRadians,
                     useRationalize = false,
+                    useSimplify = useSimplify,
                     type = integType
                 )
                 if (symRes.contains("∫")) "Numerical integration failed" else symRes

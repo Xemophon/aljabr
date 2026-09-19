@@ -43,6 +43,8 @@ class CalcBoxViewModel @JvmOverloads constructor(
 
     var useRationalize by mutableStateOf(value = false)
 
+    var useSimplify by mutableStateOf(value = true)
+
     var displayText by mutableStateOf("0")
         private set
 
@@ -688,6 +690,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                         upperLimitText = upperLimitText,
                         useRadians = useRadians,
                         useRationalize = useRationalize,
+                        useSimplify = useSimplify,
                         precision = precision,
                         integType = integType
                     )
@@ -704,6 +707,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                         upperLimitText = upperLimitText,
                         useRadians = useRadians,
                         useRationalize = useRationalize,
+                        useSimplify = useSimplify,
                         precision = precision,
                         integType = integType
                     )
@@ -717,7 +721,8 @@ class CalcBoxViewModel @JvmOverloads constructor(
                         displayText = displayText,
                         axis = integrationAxis,
                         useRadians = useRadians,
-                        useRationalize = useRationalize
+                        useRationalize = useRationalize,
+                        useSimplify = useSimplify
                     )
                     if (res.isNotEmpty()) {
                         resultText = res
@@ -737,6 +742,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                         axis = integrationAxis,
                         useRadians = useRadians,
                         useRationalize = useRationalize,
+                        useSimplify = useSimplify,
                         precision = precision
                     )
                 } catch (e: Exception) {
@@ -759,7 +765,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                                     }
                                 }
                             } else {
-                                val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize)
+                                val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize, useSimplify)
                                 if (res.isNotEmpty()) {
                                     resultText = res
                                 }
@@ -772,7 +778,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                     }
                 } else {
                     try {
-                        val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize)
+                        val res = IntegrationEngine.integrateIndefinite(displayText, useRationalize, useSimplify)
                         if (res.isNotEmpty()) {
                             resultText = res
                         }
@@ -789,6 +795,7 @@ class CalcBoxViewModel @JvmOverloads constructor(
                         upperLimitText = upperLimitText,
                         useRadians = useRadians,
                         useRationalize = useRationalize,
+                        useSimplify = useSimplify,
                         precision = precision,
                         integType = integType
                     )
@@ -1088,6 +1095,12 @@ class CalcBoxViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             settingsRepository.useRationalizeFlow.collectLatest {
                 useRationalize = it
+                updateInstantResult()
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.useSimplifyFlow.collectLatest {
+                useSimplify = it
                 updateInstantResult()
             }
         }

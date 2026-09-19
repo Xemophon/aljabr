@@ -263,9 +263,9 @@ fun CalcButtons(
 
 sealed class AdvancedGridMode {
     data class Limits(val currentType: LimitType) : AdvancedGridMode()
-    data class Integration1D(val currentType: IntegralType) : AdvancedGridMode()
-    data class Integration2D(val currentType: IntegralType, val axis: String) : AdvancedGridMode()
-    data class Integration(val currentType: IntegralType, val axis: String) : AdvancedGridMode()
+    data class Integration1D(val currentType: IntegralType, val axis: String = "X") : AdvancedGridMode()
+    data class Integration2D(val currentType: IntegralType, val axis: String = "X") : AdvancedGridMode()
+    data class Integration(val currentType: IntegralType, val axis: String = "X") : AdvancedGridMode()
     data class Differentiation(val currentMode: String) : AdvancedGridMode()
     data class Laplace(val currentMode: String) : AdvancedGridMode()
     data object Taylor : AdvancedGridMode()
@@ -281,7 +281,10 @@ fun AdvancedButtonsGrid(
 ) = CalcButtonSheet(modifier) {
     val selectedGrid = when (gridMode) {
         is AdvancedGridMode.Differentiation -> if (gridMode.currentMode == "Single") SingleVariableGrid else MultipleVariableGrid
-        is AdvancedGridMode.Integration1D -> SingleVariableGrid
+        is AdvancedGridMode.Integration1D -> if (
+            gridMode.currentType == IntegralType.DOUBLE ||
+            gridMode.currentType == IntegralType.NDOUBLE
+        ) MultipleVariableGrid else SingleVariableGrid
         is AdvancedGridMode.Integration2D -> MultipleVariableGrid
         is AdvancedGridMode.Integration -> if (
             gridMode.currentType == IntegralType.DOUBLE ||
@@ -359,9 +362,6 @@ fun AdvancedButtonsGrid(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-        }
-
-        is AdvancedGridMode.Integration2D -> {
             buttons.add {
                 ModeToggleButton(
                     label = if (gridMode.currentType == IntegralType.DOUBLE) "∬ (${if (gridMode.axis == "X") "I" else "II"})" else "∬",
@@ -378,6 +378,9 @@ fun AdvancedButtonsGrid(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+
+        is AdvancedGridMode.Integration2D -> {
             buttons.add {
                 ModeToggleButton(
                     label = "∮₁",

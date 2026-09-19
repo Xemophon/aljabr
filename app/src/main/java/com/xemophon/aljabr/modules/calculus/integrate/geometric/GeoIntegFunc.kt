@@ -1,9 +1,9 @@
-package com.xemophon.aljabr.modules.calculus.integrate.twod
+package com.xemophon.aljabr.modules.calculus.integrate.geometric
 
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 
-object TwoDIntegFunc {
+object GeoIntegFunc {
 
     /**
      * Warms up the CAS engine for 2D integration on a background thread.
@@ -59,140 +59,6 @@ object TwoDIntegFunc {
     }
 
     /**
-     * Performs symbolic indefinite double integration over two variables (x and y).
-     * Region I (axis == "X"): dy dx -> inner y, outer x. Symja command: Integrate[expr, y, x]
-     * Region II (axis == "Y"): dx dy -> inner x, outer y. Symja command: Integrate[expr, x, y]
-     * Formats constants as + C₁(x) + C₂(y) for Region I, or + C₁(y) + C₂(x) for Region II.
-     */
-    fun integrateDoubleIndefinite(
-        expression: String,
-        axis: String = "X",
-        useRadians: Boolean = true,
-        useRationalize: Boolean = false
-    ): String {
-        return try {
-            SymjaUtils.evaluate { eval ->
-                val cleaned = SymjaUtils.prepareForSymja(expression, useRadians)
-                val command = if (axis == "Y") {
-                    // Region II: outer y, inner x
-                    if (useRationalize) {
-                        "Simplify[Integrate[Rationalize[$cleaned], x, y]]"
-                    } else {
-                        "Simplify[Integrate[$cleaned, x, y]]"
-                    }
-                } else {
-                    // Region I: outer x, inner y
-                    if (useRationalize) {
-                        "Simplify[Integrate[Rationalize[$cleaned], y, x]]"
-                    } else {
-                        "Simplify[Integrate[$cleaned, y, x]]"
-                    }
-                }
-                val resStr = eval.eval(command).toString()
-
-                val diffs = if (axis == "Y") "dx dy" else "dy dx"
-                if (resStr.contains("Integrate", ignoreCase = true) || resStr == "\$Failed") {
-                    return@evaluate categorizeIntegralResult(resStr, false, "∫∫($expression) $diffs")
-                }
-
-                val formatted = SymjaUtils.formatResult(resStr)
-                if (axis == "Y") "$formatted + C₁(y) + C₂(x)" else "$formatted + C₁(x) + C₂(y)"
-            }
-        } catch (_: Exception) {
-            val diffs = if (axis == "Y") "dx dy" else "dy dx"
-            "∫∫($expression) $diffs"
-        }
-    }
-
-    /**
-     * Performs symbolic definite double integration over x and y.
-     * Region I (axis == "X"): outer x (a to b), inner y (c(x) to d(x)). Symja: Integrate[expr, {x, a, b}, {y, c, d}]
-     * Region II (axis == "Y"): outer y (a to b), inner x (c(y) to d(y)). Symja: Integrate[expr, {y, a, b}, {x, c, d}]
-     */
-    fun integrateDoubleDefinite(
-        expression: String,
-        lower: String,
-        upper: String,
-        innerLower: String,
-        innerUpper: String,
-        axis: String = "X",
-        useRadians: Boolean = true,
-        useRationalize: Boolean = false
-    ): String {
-        return try {
-            SymjaUtils.evaluate { eval ->
-                val formula = SymjaUtils.prepareForSymja(expression, useRadians)
-                val l1 = if (lower.isBlank()) "a" else SymjaUtils.prepareForSymja(lower, useRadians)
-                val u1 = if (upper.isBlank()) "b" else SymjaUtils.prepareForSymja(upper, useRadians)
-                val l2 = if (innerLower.isBlank()) "c" else SymjaUtils.prepareForSymja(innerLower, useRadians)
-                val u2 = if (innerUpper.isBlank()) "d" else SymjaUtils.prepareForSymja(innerUpper, useRadians)
-
-                val command = if (axis == "Y") {
-                    // Region II: outer y (l1..u1), inner x (l2..u2)
-                    if (useRationalize) {
-                        "Integrate[Rationalize[$formula], {y, Rationalize[$l1], Rationalize[$u1]}, {x, Rationalize[$l2], Rationalize[$u2]}]"
-                    } else {
-                        "Integrate[$formula, {y, $l1, $u1}, {x, $l2, $u2}]"
-                    }
-                } else {
-                    // Region I: outer x (l1..u1), inner y (l2..u2)
-                    if (useRationalize) {
-                        "Integrate[Rationalize[$formula], {x, Rationalize[$l1], Rationalize[$u1]}, {y, Rationalize[$l2], Rationalize[$u2]}]"
-                    } else {
-                        "Integrate[$formula, {x, $l1, $u1}, {y, $l2, $u2}]"
-                    }
-                }
-
-                val res = eval.eval(command).toString()
-
-                if (res.contains("Integrate", ignoreCase = true) || res == "\$Failed") {
-                    val num = integrateDoubleNumerical(expression, lower, upper, innerLower, innerUpper, axis, useRadians)
-                    if (!num.isNaN()) return@evaluate SymjaUtils.formatResult(num.toString())
-                    val diffs = if (axis == "Y") "dx dy" else "dy dx"
-                    return@evaluate categorizeIntegralResult(res, false, "∫∫($expression) $diffs")
-                }
-
-                SymjaUtils.formatResult(res)
-            }
-        } catch (_: Exception) {
-            "Error"
-        }
-    }
-
-    /**
-     * Performs numerical double integration using Symja's NIntegrate.
-     */
-    fun integrateDoubleNumerical(
-        expression: String,
-        lower: String,
-        upper: String,
-        innerLower: String,
-        innerUpper: String,
-        axis: String = "X",
-        useRadians: Boolean = true
-    ): Double {
-        return try {
-            SymjaUtils.evaluate { eval ->
-                val formula = SymjaUtils.prepareForSymja(expression, useRadians)
-                val l1 = if (lower.isBlank()) "0" else SymjaUtils.prepareForSymja(lower, useRadians)
-                val u1 = if (upper.isBlank()) "1" else SymjaUtils.prepareForSymja(upper, useRadians)
-                val l2 = if (innerLower.isBlank()) "0" else SymjaUtils.prepareForSymja(innerLower, useRadians)
-                val u2 = if (innerUpper.isBlank()) "1" else SymjaUtils.prepareForSymja(innerUpper, useRadians)
-
-                val command = if (axis == "Y") {
-                    "NIntegrate[$formula, {y, $l1, $u1}, {x, $l2, $u2}]"
-                } else {
-                    "NIntegrate[$formula, {x, $l1, $u1}, {y, $l2, $u2}]"
-                }
-                val res = eval.eval(command).toString()
-                res.toDoubleOrNull() ?: Double.NaN
-            }
-        } catch (_: Throwable) {
-            Double.NaN
-        }
-    }
-
-    /**
      * Performs line integration (Scalar Curve 1 or Vector Curve 2).
      */
     fun integrateCurve(
@@ -201,6 +67,7 @@ object TwoDIntegFunc {
         upper: String,
         useRadians: Boolean = true,
         useRationalize: Boolean = false,
+        useSimplify: Boolean = true,
         type: IntegralType = IntegralType.CURVET1
     ): String {
         return try {
@@ -210,11 +77,12 @@ object TwoDIntegFunc {
                 val lStr = SymjaUtils.prepareForSymja(lower, useRadians)
                 val uStr = SymjaUtils.prepareForSymja(upper, useRadians)
 
-                val command = if (useRationalize) {
+                val core = if (useRationalize) {
                     "Integrate[Rationalize[$formula], {$v, Rationalize[$lStr], Rationalize[$uStr]}]"
                 } else {
                     "Integrate[$formula, {$v, $lStr, $uStr}]"
                 }
+                val command = if (useSimplify) "Simplify[$core]" else core
 
                 val res = eval.eval(command).toString()
 
@@ -244,6 +112,7 @@ object TwoDIntegFunc {
         upper: String,
         useRadians: Boolean = true,
         useRationalize: Boolean = false,
+        useSimplify: Boolean = true,
         type: IntegralType = IntegralType.ARC
     ): String {
         return try {
@@ -252,11 +121,12 @@ object TwoDIntegFunc {
                 val lStr = SymjaUtils.prepareForSymja(lower, useRadians)
                 val uStr = SymjaUtils.prepareForSymja(upper, useRadians)
 
-                val command = if (useRationalize) {
+                val core = if (useRationalize) {
                     "Integrate[Rationalize[$formula], {x, Rationalize[$lStr], Rationalize[$uStr]}]"
                 } else {
                     "Integrate[$formula, {x, $lStr, $uStr}]"
                 }
+                val command = if (useSimplify) "Simplify[$core]" else core
 
                 val res = eval.eval(command).toString()
 

@@ -19,8 +19,8 @@ import com.xemophon.aljabr.modules.algebra.polynomials.PolyCalc
 import com.xemophon.aljabr.modules.basicCalc.BasicCalc
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.modules.graphMaker.GraphMaker
-import com.xemophon.aljabr.modules.calculus.integrate.oned.IntegCalc
-import com.xemophon.aljabr.modules.calculus.integrate.twod.TwoDIntegCalc
+import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegCalc
+import com.xemophon.aljabr.modules.calculus.integrate.geometric.TwoDIntegCalc
 import com.xemophon.aljabr.modules.calculus.laplace.LaplaceCalc
 import com.xemophon.aljabr.modules.calculus.limits.Limits
 import com.xemophon.aljabr.modules.algebra.bde.BDECalc
@@ -82,14 +82,14 @@ val Calculus = listOf(
     CalculatorVariant(
         route = IntegrateRoute,
         routeClass = IntegrateRoute::class,
-        label = "1D Integration",
+        label = "Standard Integration",
         icon = Icons.Default.Functions,
         content = { onOpenDrawer -> IntegCalc(onOpenDrawer = onOpenDrawer) }
     ),
     CalculatorVariant(
         route = IntegrateTwoDRoute,
         routeClass = IntegrateTwoDRoute::class,
-        label = "2D Integration",
+        label = "Geometric Integration",
         icon = R.drawable.twodimens,
         content = { onOpenDrawer -> TwoDIntegCalc(onOpenDrawer = onOpenDrawer) }
     ),

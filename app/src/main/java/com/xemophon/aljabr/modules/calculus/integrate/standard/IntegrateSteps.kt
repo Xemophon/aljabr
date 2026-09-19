@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.calculus.integrate.oned
+package com.xemophon.aljabr.modules.calculus.integrate.standard
 
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.screens.CalculusStep

@@ -70,6 +70,9 @@ object SymjaUtils {
             .replace("%", "/100")
             .replace("π", "Pi")
             .replace("φ", "GoldenRatio")
+            .replace(Regex("""Rational\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\]"""), "($1/$2)")
+            .replace(Regex("""Rational\(\s*(-?\d+)\s*,\s*(-?\d+)\s*\)"""), "($1/$2)")
+            .replace(Regex("""√\s*([a-zA-Z0-9_]+|\([^()]*\))""")) { "Sqrt(${it.groupValues[1]})" }
             .replace("√", "Sqrt")
             .replace("sqrt", "Sqrt", ignoreCase = true)
             .replace("ⁿ", "^n")
@@ -234,17 +237,24 @@ object SymjaUtils {
     }
 
     fun toLaTeX(expression: String, assumeIntegerN: Boolean = false): String {
-        val cacheKey = "$expression|$assumeIntegerN"
+        val trimmed = expression.trim()
+        if (trimmed.startsWith("Diverges") || trimmed.startsWith("Undefined") ||
+            trimmed.startsWith("No closed") || trimmed.startsWith("Numerical integration") ||
+            trimmed.startsWith("Error") || trimmed.isBlank()) {
+            return trimmed
+        }
+
+        val cacheKey = "$trimmed|$assumeIntegerN"
         lateXCache[cacheKey]?.let { return it }
 
-        val trailingConstantRegex = Regex("""\s*\+\s*(C|c|C1|C_1|C₁\(x\)\s*\+\s*C₂\(y\)|C1\(x\)\s*\+\s*C2\(y\))\s*$""")
-        val trailingMatch = trailingConstantRegex.find(expression.trim())
+        val trailingConstantRegex = Regex("""\s*\+\s*(C|c|C1|C_1|C2|C_2|C₁|C₂|C₁\([xy]\)\s*\+\s*C₂\([xy]\)|C1\([xy]\)\s*\+\s*C2\([xy]\)|C_1\([xy]\)\s*\+\s*C_2\([xy]\))\s*$""")
+        val trailingMatch = trailingConstantRegex.find(trimmed)
         val (expressionToEval, trailingSuffix) = if (trailingMatch != null) {
-            val suffix = expression.trim().substring(trailingMatch.range.first)
-            val main = expression.trim().substring(0, trailingMatch.range.first).trim()
-            if (main.isNotEmpty()) main to suffix else expression to ""
+            val suffix = trimmed.substring(trailingMatch.range.first)
+            val main = trimmed.substring(0, trailingMatch.range.first).trim()
+            if (main.isNotEmpty()) main to suffix else trimmed to ""
         } else {
-            expression to ""
+            trimmed to ""
         }
 
         val formatted = evaluate { eval ->
@@ -296,6 +306,14 @@ object SymjaUtils {
                     val formattedSuffix = trailingSuffix
                         .replace("C₁(x)", "C_1(x)")
                         .replace("C₂(y)", "C_2(y)")
+                        .replace("C₁(y)", "C_1(y)")
+                        .replace("C₂(x)", "C_2(x)")
+                        .replace("C1(x)", "C_1(x)")
+                        .replace("C2(y)", "C_2(y)")
+                        .replace("C1(y)", "C_1(y)")
+                        .replace("C2(x)", "C_2(x)")
+                        .replace("C₁", "C_1")
+                        .replace("C₂", "C_2")
                     result = "$result $formattedSuffix"
                 }
 
@@ -414,10 +432,12 @@ object SymjaUtils {
             .replace("E", "e")
             .replace("Sqrt", "√")
 
-        result = result.replace("Plus", "")
+        result = result
+            .replace(Regex("""Rational\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\]"""), "($1/$2)")
+            .replace(Regex("""Rational\(\s*(-?\d+)\s*,\s*(-?\d+)\s*\)"""), "($1/$2)")
+            .replace("Plus", "")
             .replace("Times", "")
             .replace("Power", "")
-            .replace("Rational", "")
             .replace("Subtract", "")
             .replace("Divide", "")
 
