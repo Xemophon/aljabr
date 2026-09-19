@@ -360,6 +360,8 @@ object SymjaUtils {
                         if (next == '{') {
                             depth++
                             if (depth > 1) current.append("\\{")
+                            i += 2
+                            continue
                         } else if (next == '}') {
                             depth--
                             if (depth > 0) {
@@ -368,9 +370,9 @@ object SymjaUtils {
                                 rows.add(current.toString())
                                 current = StringBuilder()
                             }
+                            i += 2
+                            continue
                         }
-                        i += 2
-                        continue
                     }
 
                     if (depth > 0) {
@@ -380,17 +382,58 @@ object SymjaUtils {
                 }
 
                 val latexRows = rows.map { row ->
-                    val elements = row.trim().split(",")
+                    val elements = splitTopLevelCommas(row.trim())
                     elements.joinToString(" & ") { it.trim() }
                 }
                 "\\begin{pmatrix} ${latexRows.joinToString(" \\\\ ")} \\end{pmatrix}"
             } else {
-                val elements = content.split(",")
+                val elements = splitTopLevelCommas(content)
                 "\\begin{pmatrix} ${elements.joinToString(" \\\\ ") { it.trim() }} \\end{pmatrix}"
             }
         } catch (_: Exception) {
             texStr
         }
+    }
+
+    private fun splitTopLevelCommas(str: String): List<String> {
+        val result = mutableListOf<String>()
+        var parenDepth = 0
+        var bracketDepth = 0
+        var braceDepth = 0
+        var current = StringBuilder()
+
+        var i = 0
+        while (i < str.length) {
+            val char = str[i]
+            if (char == '\\' && i + 1 < str.length) {
+                val next = str[i + 1]
+                if (next == '{' || next == '}' || next == '(' || next == ')' || next == '[' || next == ']') {
+                    current.append(char).append(next)
+                    i += 2
+                    continue
+                }
+            }
+            when (char) {
+                '(' -> parenDepth++
+                ')' -> if (parenDepth > 0) parenDepth--
+                '[' -> bracketDepth++
+                ']' -> if (bracketDepth > 0) bracketDepth--
+                '{' -> braceDepth++
+                '}' -> if (braceDepth > 0) braceDepth--
+                ',' -> {
+                    if (parenDepth == 0 && bracketDepth == 0 && braceDepth == 0) {
+                        result.add(current.toString())
+                        current = StringBuilder()
+                        i++
+                        continue
+                    }
+                }
+            }
+            current.append(char)
+            i++
+        }
+        result.add(current.toString())
+        return result
     }
 
     fun formatResult(resStr: String): String {
