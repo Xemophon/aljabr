@@ -83,7 +83,7 @@ AlJabr is a modern, high-performance mathematical toolkit for Android, designed 
 The project is organized into modular packages under `com.xemophon.aljabr`:
 
 - `modules/`
-    - `basicCalc/`: Core logic and UI for the scientific calculator.
+    - `basic/`: Core logic and UI for the scientific calculator.
     - `calculus/`:
         - `differentiate/`: Symbolic derivatives with analysis.
         - `integrate/`: 
