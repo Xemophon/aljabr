@@ -3,7 +3,7 @@ package com.xemophon.aljabr.ui.components.engine
 import com.xemophon.aljabr.modules.algebra.bde.BDEFuncs
 import com.xemophon.aljabr.modules.algebra.bde.BDEResult
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyFuncs
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffFunc
 import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegFunc
 import com.xemophon.aljabr.modules.calculus.integrate.geometric.GeoIntegFunc

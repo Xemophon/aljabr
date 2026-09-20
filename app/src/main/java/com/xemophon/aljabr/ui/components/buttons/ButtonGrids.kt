@@ -67,7 +67,7 @@ private fun CalcButtonSheet(
 sealed class ShortGridMode{
     data object Convertor : ShortGridMode()
     data object Polynomials : ShortGridMode()
-    data object BDE: ShortGridMode()
+    data class BDE(val isSecondary: Boolean = false): ShortGridMode()
     data object Limits : ShortGridMode()
     data object Functions : ShortGridMode()
     data object Distributions : ShortGridMode()
@@ -85,10 +85,11 @@ fun ShortCalcButtons(
         val selectedGrid = when (gridMode) {
             ShortGridMode.Descriptives -> NumberButtonGrid
             ShortGridMode.Distributions -> NumberButtonGrid
+            is ShortGridMode.BDE -> if (gridMode.isSecondary) ScientificButtonsGrid else ShortButtonGrid
             else -> ShortButtonGrid
         }
 
-        val isPolyOrOde = gridMode == ShortGridMode.Polynomials || gridMode == ShortGridMode.BDE
+        val isPolyOrOde = gridMode == ShortGridMode.Polynomials || gridMode is ShortGridMode.BDE
         if (isPolyOrOde) {
             Row(
                 modifier = Modifier
@@ -114,14 +115,16 @@ fun ShortCalcButtons(
                 (1 to 3) to CalcButtonAction.Symbol("×", "*"),
                 (0 to 3) to CalcButtonAction.Symbol("÷", "/")
             )
-            ShortGridMode.BDE -> mapOf(
+            is ShortGridMode.BDE -> if(!gridMode.isSecondary) mapOf(
                 (0 to 0) to CalcButtonAction.Variable("y", Variables.Y),
-                (0 to 1) to CalcButtonAction.Symbol("^"),
+                (0 to 1) to CalcButtonAction.Misc("'", Misc.PRIME),
                 (4 to 3) to CalcButtonAction.Symbol("=", "="),
                 (3 to 3) to CalcButtonAction.Symbol("+"),
                 (2 to 3) to CalcButtonAction.Symbol("-"),
                 (1 to 3) to CalcButtonAction.Symbol("×", "*"),
                 (0 to 3) to CalcButtonAction.Symbol("÷", "/")
+            ) else mapOf(
+                (1 to 1) to CalcButtonAction.Variable("x", Variables.X),
             )
             ShortGridMode.Distributions -> mapOf(
                 (0 to 1) to CalcButtonAction.Symbol("%"),
@@ -149,7 +152,7 @@ fun ShortCalcButtons(
             calcContext = when(gridMode) {
                 ShortGridMode.Polynomials -> CalcContext.POLYNOMIALS
                 ShortGridMode.Functions -> CalcContext.POLYNOMIALS
-                ShortGridMode.BDE -> CalcContext.BDE
+                is ShortGridMode.BDE -> CalcContext.BDE
                 else -> CalcContext.BASIC
             },
             isExpanded = true,

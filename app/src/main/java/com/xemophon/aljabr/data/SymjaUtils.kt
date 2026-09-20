@@ -1,6 +1,6 @@
 package com.xemophon.aljabr.data
 
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import org.matheclipse.core.eval.ExprEvaluator
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue

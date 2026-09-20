@@ -134,6 +134,13 @@ fun CalcButtonAction.getAdditionalActions(
                     )
                     else -> emptyList()
                 }
+
+                Constants.E -> when {
+                    calcContext == CalcContext.BDE -> listOf(
+                        CalcButtonAction.Constant("π", Constants.PI)
+                    )
+                    else -> emptyList()
+                }
                 else -> emptyList()
             }
         }
@@ -153,16 +160,6 @@ fun CalcButtonAction.getAdditionalActions(
                     CalcButtonAction.Symbol("E"),
                     CalcButtonAction.Symbol("F")
                 )
-                else -> emptyList()
-            }
-        }
-
-        is CalcButtonAction.Variable -> {
-            when(type) {
-                Variables.Y -> if(calcContext == CalcContext.BDE) listOf(
-                    CalcButtonAction.Variable("x", Variables.X),
-                    CalcButtonAction.Misc("'", Misc.PRIME)
-                ) else emptyList()
                 else -> emptyList()
             }
         }

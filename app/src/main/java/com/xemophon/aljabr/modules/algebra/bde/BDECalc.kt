@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -179,12 +181,26 @@ fun BDEContent(
                 }
 
                 if ((bdeResult == null) && !isCalculating) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ShortCalcButtons(
-                        modifier = Modifier.weight(1.5f),
-                        gridMode = ShortGridMode.BDE,
-                        onAction = onAction
-                    )
+                    val pagerState = rememberPagerState(pageCount = { 2 })
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1.3f)
+                    ) { page ->
+                        when (page) {
+                            0 -> ShortCalcButtons(
+                                modifier = Modifier.fillMaxSize(),
+                                gridMode = ShortGridMode.BDE(isSecondary = false),
+                                onAction = onAction
+                            )
+                            1 -> ShortCalcButtons(
+                                modifier = Modifier.fillMaxSize(),
+                                gridMode = ShortGridMode.BDE(isSecondary = true),
+                                onAction = onAction
+                            )
+                        }
+                    }
                 }
             }
         }

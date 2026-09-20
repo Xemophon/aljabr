@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.basicCalc
+package com.xemophon.aljabr.modules.basic
 
 import java.math.RoundingMode
 import java.text.DecimalFormat

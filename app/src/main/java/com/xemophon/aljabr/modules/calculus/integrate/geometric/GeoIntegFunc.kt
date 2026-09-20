@@ -1,7 +1,7 @@
 package com.xemophon.aljabr.modules.calculus.integrate.geometric
 
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import com.xemophon.aljabr.ui.components.buttons.IntegralType
 import org.matheclipse.core.eval.ExprEvaluator
 

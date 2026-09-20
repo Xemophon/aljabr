@@ -1,4 +1,4 @@
-package com.xemophon.aljabr.modules.basicCalc
+package com.xemophon.aljabr.modules.basic
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

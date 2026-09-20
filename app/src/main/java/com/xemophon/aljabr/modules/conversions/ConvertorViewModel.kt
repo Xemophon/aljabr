@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.SymjaUtils
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction

@@ -1,7 +1,7 @@
 package com.xemophon.aljabr.modules.graphMaker
 
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import com.xemophon.aljabr.modules.statistics.distributions.DistributionsFunc
 import org.matheclipse.core.interfaces.IAST
 import kotlin.math.abs

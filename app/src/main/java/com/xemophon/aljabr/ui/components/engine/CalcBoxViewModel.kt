@@ -11,7 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.xemophon.aljabr.data.SettingsRepository
 import com.xemophon.aljabr.data.StorageUtils
 import com.xemophon.aljabr.data.SymjaUtils
-import com.xemophon.aljabr.modules.basicCalc.CalcFuncs
+import com.xemophon.aljabr.modules.basic.CalcFuncs
 import com.xemophon.aljabr.modules.graphMaker.GraphGenerator
 import com.xemophon.aljabr.ui.components.buttons.CalcButtonAction
 import com.xemophon.aljabr.ui.components.buttons.Constants

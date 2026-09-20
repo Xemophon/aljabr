@@ -16,7 +16,7 @@ import com.xemophon.aljabr.R
 import com.xemophon.aljabr.modules.algebra.matrices.MatrixScreen
 import com.xemophon.aljabr.modules.algebra.matrices.MatrixViewModel
 import com.xemophon.aljabr.modules.algebra.polynomials.PolyCalc
-import com.xemophon.aljabr.modules.basicCalc.BasicCalc
+import com.xemophon.aljabr.modules.basic.BasicCalc
 import com.xemophon.aljabr.modules.calculus.differentiate.DiffCalc
 import com.xemophon.aljabr.modules.graphMaker.GraphMaker
 import com.xemophon.aljabr.modules.calculus.integrate.standard.IntegCalc
