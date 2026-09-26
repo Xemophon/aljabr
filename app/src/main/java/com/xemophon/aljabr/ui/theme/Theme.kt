@@ -14,8 +14,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
     tertiary = Pink80,
-    primaryContainer = CalcButtonStandardDark,
-    secondaryContainer = CalcButtonOperationDark,
+    primaryContainer = CalcButtonOperationDark,
+    secondaryContainer = CalcButtonStandardDark,
     tertiaryContainer = CalcButtonEqualDark,
     surfaceVariant = CalcContainerBackgroundDark,
     primaryFixedDim = CalcPrimaryFixedDimDark,
@@ -25,11 +25,11 @@ private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
     tertiary = Pink40,
-    primaryContainer = CalcButtonStandardLight,
-    secondaryContainer = CalcButtonOperationLight,
+    primaryContainer = CalcButtonOperationLight,
+    secondaryContainer = CalcButtonStandardLight,
     tertiaryContainer = CalcButtonEqualLight,
     surfaceVariant = CalcContainerBackgroundLight,
-    primaryFixedDim = CalcPrimaryFixedDimLight
+    primaryFixedDim = CalcPrimaryFixedDimLight,
 )
 
 // Blue Color Schemes
@@ -53,7 +53,7 @@ private val BlueLightColorScheme = lightColorScheme(
     outline = BlueOutlineLight,
     inversePrimary = BlueInversePrimaryLight,
     inverseSurface = BlueInverseSurfaceLight,
-    inverseOnSurface = BlueInverseOnSurfaceLight
+    inverseOnSurface = BlueInverseOnSurfaceLight,
 )
 
 private val BlueDarkColorScheme = darkColorScheme(

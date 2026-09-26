@@ -210,100 +210,100 @@ fun SettingsContent(
                                     option.name.lowercase().replaceFirstChar { it.uppercase() }
                                 val (primary, secondary, tertiary) = when (option) {
                                     ColorSchemeType.DEFAULT -> if (isDarkTheme) {
-                                        Triple(Purple40, PurpleGrey40, Pink40)
-                                    } else {
                                         Triple(Purple80, PurpleGrey80, Pink80)
+                                    } else {
+                                        Triple(Purple40, PurpleGrey40, Pink40)
                                     }
 
                                     ColorSchemeType.BLUE -> if (isDarkTheme) {
+                                        Triple(BluePrimaryDark, BlueSecondaryDark, BlueTertiaryDark)
+                                    } else {
                                         Triple(
                                             BluePrimaryLight,
                                             BlueSecondaryLight,
                                             BlueTertiaryLight
                                         )
-                                    } else {
-                                        Triple(BluePrimaryDark, BlueSecondaryDark, BlueTertiaryDark)
                                     }
 
                                     ColorSchemeType.GREEN -> if (isDarkTheme) {
-                                        Triple(
-                                            GreenPrimaryLight,
-                                            GreenSecondaryLight,
-                                            GreenTertiaryLight
-                                        )
-                                    } else {
                                         Triple(
                                             GreenPrimaryDark,
                                             GreenSecondaryDark,
                                             GreenTertiaryDark
                                         )
+                                    } else {
+                                        Triple(
+                                            GreenPrimaryLight,
+                                            GreenSecondaryLight,
+                                            GreenTertiaryLight
+                                        )
                                     }
 
                                     ColorSchemeType.RED -> if (isDarkTheme) {
-                                        Triple(RedPrimaryLight, RedSecondaryLight, RedTertiaryLight)
-                                    } else {
                                         Triple(RedPrimaryDark, RedSecondaryDark, RedTertiaryDark)
+                                    } else {
+                                        Triple(RedPrimaryLight, RedSecondaryLight, RedTertiaryLight)
                                     }
 
                                     ColorSchemeType.YELLOW -> if (isDarkTheme) {
-                                        Triple(
-                                            YellowPrimaryLight,
-                                            YellowSecondaryLight,
-                                            YellowTertiaryLight
-                                        )
-                                    } else {
                                         Triple(
                                             YellowPrimaryDark,
                                             YellowSecondaryDark,
                                             YellowTertiaryDark
                                         )
+                                    } else {
+                                        Triple(
+                                            YellowPrimaryLight,
+                                            YellowSecondaryLight,
+                                            YellowTertiaryLight
+                                        )
                                     }
 
                                     ColorSchemeType.ORANGE -> if (isDarkTheme) {
-                                        Triple(
-                                            OrangePrimaryLight,
-                                            OrangeSecondaryLight,
-                                            OrangeTertiaryLight
-                                        )
-                                    } else {
                                         Triple(
                                             OrangePrimaryDark,
                                             OrangeSecondaryDark,
                                             OrangeTertiaryDark
                                         )
+                                    } else {
+                                        Triple(
+                                            OrangePrimaryLight,
+                                            OrangeSecondaryLight,
+                                            OrangeTertiaryLight
+                                        )
                                     }
 
                                     ColorSchemeType.TEAL -> if (isDarkTheme) {
+                                        Triple(TealPrimaryDark, TealSecondaryDark, TealTertiaryDark)
+                                    } else {
                                         Triple(
                                             TealPrimaryLight,
                                             TealSecondaryLight,
                                             TealTertiaryLight
                                         )
-                                    } else {
-                                        Triple(TealPrimaryDark, TealSecondaryDark, TealTertiaryDark)
                                     }
 
                                     ColorSchemeType.PINK -> if (isDarkTheme) {
+                                        Triple(PinkPrimaryDark, PinkSecondaryDark, PinkTertiaryDark)
+                                    } else {
                                         Triple(
                                             PinkPrimaryLight,
                                             PinkSecondaryLight,
                                             PinkTertiaryLight
                                         )
-                                    } else {
-                                        Triple(PinkPrimaryDark, PinkSecondaryDark, PinkTertiaryDark)
                                     }
 
                                     ColorSchemeType.BROWN -> if (isDarkTheme) {
                                         Triple(
-                                            BrownPrimaryLight,
-                                            BrownSecondaryLight,
-                                            BrownTertiaryLight
-                                        )
-                                    } else {
-                                        Triple(
                                             BrownPrimaryDark,
                                             BrownSecondaryDark,
                                             BrownTertiaryDark
+                                        )
+                                    } else {
+                                        Triple(
+                                            BrownPrimaryLight,
+                                            BrownSecondaryLight,
+                                            BrownTertiaryLight
                                         )
                                     }
                                 }
