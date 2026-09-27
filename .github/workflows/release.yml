@@ -1,9 +1,8 @@
 name: Build & Publish Release APK
 
 # 1. TRIGGER CONDITION
-# Tells GitHub to only run this workflow when you push a Git tag starting with "v" (e.g. v1.0.0)
 on:
-workflow_dispatch:
+  workflow_dispatch:
     inputs:
       version_name:
         description: 'Version Name (e.g. v1.2.0)'
@@ -22,7 +21,6 @@ permissions:
 
 jobs:
   build-and-release:
-    # Runs on a clean Ubuntu virtual machine managed by GitHub
     runs-on: ubuntu-latest
 
     steps:
@@ -36,7 +34,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # Caches dependencies to make future builds much faster
+          cache: 'gradle'
 
       # Step 3: Sets up Gradle execution permissions and environment
       - name: Setup Gradle
@@ -61,12 +59,15 @@ jobs:
         if: always()
         run: rm -f app/release.jks
 
-      # Step 7: Creates a GitHub Release entry and automatically uploads the generated APK file
+      # Step 7: Creates a GitHub Release entry and uploads the APK
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # Uses the input tag for manual dispatch, or the Git tag when pushed via Git
+          tag_name: ${{ inputs.version_name || github.ref_name }}
+          name: ${{ inputs.version_name || github.ref_name }}
+          prerelease: ${{ inputs.is_prerelease || false }}
           files: app/build/outputs/apk/release/*.apk
-          generate_release_notes: true # Auto-generates changelog from commit messages
+          generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in GitHub token, no setup needed
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
